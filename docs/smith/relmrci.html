@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Relativistic Multireference configuration interaction (RelMRCI) &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Nuclear gradients and related functionalities" href="../grad/grad.html" />
     <link rel="prev" title="Relativistic multireference second-order perturbation theory (RelCASPT2)" href="relcaspt2.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -54,7 +45,7 @@
 <p>Relativistic version of the fully internally contracted multireference configuration interaction.
 This is implemented with the automatical code generator SMITH3.
 By default, the Davidson corrected (+Q) energy is also printed.</p>
-<p>Title: <code class="docutils literal"><span class="pre">relsmith</span></code>, method: <code class="docutils literal"><span class="pre">mrci</span></code></p>
+<p>Title: <code class="docutils literal notranslate"><span class="pre">relsmith</span></code>, method: <code class="docutils literal notranslate"><span class="pre">mrci</span></code></p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
@@ -66,7 +57,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 <h3>SMITH keywords<a class="headerlink" href="#smith-keywords" title="Permalink to this headline">¶</a></h3>
 <p>The default values are recommended unless mentioned otherwise.</p>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Convergence threshold.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -74,7 +65,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh_overlap</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh_overlap</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Overlap threshold.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -82,7 +73,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">frozen</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">frozen</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Freeze core orbitals.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -90,15 +81,15 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ncore</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ncore</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of frozen core orbitals.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
-<div class="line"><strong>Default:</strong> If <code class="docutils literal"><span class="pre">frozen</span></code> is true, subvalence orbitals are frozen. If false, zero.</div>
+<div class="line"><strong>Default:</strong> If <code class="docutils literal notranslate"><span class="pre">frozen</span></code> is true, subvalence orbitals are frozen. If false, zero.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nfrozenvirt</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nfrozenvirt</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of frozen virtual orbitals.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -106,7 +97,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of iterations in MRCI calculations.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -114,7 +105,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxtile</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxtile</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of orbitals in a single data tile used in SMITH3.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -122,7 +113,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">davidson_subspace</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">davidson_subspace</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong>  Number of vectors retained in the limited-memory Davidson algorithm.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -134,7 +125,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -177,7 +168,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </pre></div>
 </div>
 <p>from which one obtains</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="nx">Zeroth</span> <span class="nx">order</span> <span class="nx">energy</span> <span class="o">:</span> <span class="nx">state</span>  <span class="mi">0</span>       <span class="o">-</span><span class="mf">0.4311850170</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="nx">Zeroth</span> <span class="nx">order</span> <span class="nx">energy</span> <span class="o">:</span> <span class="nx">state</span>  <span class="mi">0</span>       <span class="o">-</span><span class="mf">0.4311850170</span>
 <span class="o">*</span> <span class="nx">Zeroth</span> <span class="nx">order</span> <span class="nx">energy</span> <span class="o">:</span> <span class="nx">state</span>  <span class="mi">1</span>       <span class="o">-</span><span class="mf">0.4310720094</span>
 <span class="o">*</span> <span class="nx">Zeroth</span> <span class="nx">order</span> <span class="nx">energy</span> <span class="o">:</span> <span class="nx">state</span>  <span class="mi">2</span>       <span class="o">-</span><span class="mf">0.4310720094</span>
 
@@ -306,12 +297,14 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
                         title="next chapter">Nuclear gradients and related functionalities</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

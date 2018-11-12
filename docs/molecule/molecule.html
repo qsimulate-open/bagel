@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Required keywords &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Self-consistent field" href="../scf/scf.html" />
     <link rel="prev" title="Molecule specification" href="molecule-toc.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -50,19 +41,19 @@
   <div class="section" id="required-keywords">
 <span id="molecule"></span><h1>Required keywords<a class="headerlink" href="#required-keywords" title="Permalink to this headline">¶</a></h1>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">geometry</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">geometry</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Specify atoms and their Cartesian coordinates</div>
 <div class="line"><strong>Datatype</strong>: vector</div>
 <div class="line"><strong>Values</strong>:</div>
 <div class="line-block">
-<div class="line">Vector of atoms provided in the following format <code class="docutils literal"><span class="pre">{</span> <span class="pre">&quot;atom&quot;</span> <span class="pre">:</span> <span class="pre">&quot;atom</span> <span class="pre">symbol&quot;,</span>&#160; <span class="pre">&quot;xyz&quot;</span> <span class="pre">:</span> <span class="pre">[x,</span> <span class="pre">y,</span> <span class="pre">z]</span> <span class="pre">}</span></code>
+<div class="line">Vector of atoms provided in the following format <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">&quot;atom&quot;</span> <span class="pre">:</span> <span class="pre">&quot;atom</span> <span class="pre">symbol&quot;,</span>&#160; <span class="pre">&quot;xyz&quot;</span> <span class="pre">:</span> <span class="pre">[x,</span> <span class="pre">y,</span> <span class="pre">z]</span> <span class="pre">}</span></code>
 Please see the end of the file for some examples.</div>
 </div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">basis</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">basis</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Define default basis set used for the system</div>
 <div class="line"><strong>Datatype</strong>: string</div>
@@ -74,7 +65,7 @@ Please see the end of the file for some examples.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">df_basis</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">df_basis</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Basis sets used for density fitting</div>
 <div class="line"><strong>Datatype</strong>: string</div>
@@ -93,40 +84,40 @@ basis set other than the default for each atom (see example for <a class="refere
 <div class="section" id="optional-keywords">
 <h1>Optional keywords<a class="headerlink" href="#optional-keywords" title="Permalink to this headline">¶</a></h1>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">angstrom</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">angstrom</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Specify units for atomic coordinates (Angstrom or Bohr)</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: use Angstrom</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use Bohr</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: use Angstrom</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: use Bohr</div>
 </div>
 <div class="line"><strong>Default</strong>: false (Bohr)</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">finite_nucleus</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">finite_nucleus</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Represent the nucleus as a Gaussian charge distribution with default exponents</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
 <div class="line"><strong>Default</strong>: false</div>
 <div class="line"><strong>Note</strong>:</div>
 <div class="line-block">
-<div class="line">Within the <code class="docutils literal"><span class="pre">geometry</span></code> block, the <code class="docutils literal"><span class="pre">exponent</span></code> keyword can be used to specify a different exponent for the charge distribution of a particular atom,
+<div class="line">Within the <code class="docutils literal notranslate"><span class="pre">geometry</span></code> block, the <code class="docutils literal notranslate"><span class="pre">exponent</span></code> keyword can be used to specify a different exponent for the charge distribution of a particular atom,
 where a value of 0.0 indicates a point charge.</div>
 </div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">molden_file</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">molden_file</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>: Filename of the molden file, which is required if <code class="docutils literal"><span class="pre">&quot;basis&quot;</span> <span class="pre">:</span> <span class="pre">&quot;molden&quot;</span></code> is specified.</div>
+<div class="line"><strong>Description</strong>: Filename of the molden file, which is required if <code class="docutils literal notranslate"><span class="pre">&quot;basis&quot;</span> <span class="pre">:</span> <span class="pre">&quot;molden&quot;</span></code> is specified.</div>
 <div class="line"><strong>Datatype</strong>: string</div>
 <div class="line"><strong>Recommendation</strong>: restarting from a molden file is not recommended, which is nevertheless sometimes useful.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">cfmm</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">cfmm</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Turn on RHF-FMM; for more details, refer to <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree–Fock</span></a> section.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -135,17 +126,17 @@ where a value of 0.0 indicates a point charge.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">schwarz_thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">schwarz_thresh</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>: Schwarz screening integral threshold, only used in RHF-FMM <code class="docutils literal"><span class="pre">&quot;cfmm&quot;</span> <span class="pre">:</span> <span class="pre">&quot;true&quot;</span></code>.
+<div class="line"><strong>Description</strong>: Schwarz screening integral threshold, only used in RHF-FMM <code class="docutils literal notranslate"><span class="pre">&quot;cfmm&quot;</span> <span class="pre">:</span> <span class="pre">&quot;true&quot;</span></code>.
 For more details, refer to <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree–Fock</span></a> section.</div>
 <div class="line"><strong>Datatype</strong>: double</div>
-<div class="line"><strong>Default</strong>: <span class="math">\(1.0\times 10^{-12}\)</span></div>
+<div class="line"><strong>Default</strong>: <span class="math notranslate nohighlight">\(1.0\times 10^{-12}\)</span></div>
 <div class="line"><strong>Recommendation</strong>: Default, looser thresholds reduce accuracy but potentially increase speed.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">dkh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">dkh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Option to use the second-order Douglas–Kroll–Hess Hamiltonian (DKH2).</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -153,7 +144,7 @@ For more details, refer to <a class="reference internal" href="../scf/hf.html#hf
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">magnetic_field</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">magnetic_field</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: External magnetic field.  External magnetic fields are available only for the <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree–Fock</span></a>, <a class="reference internal" href="../scf/dhf.html#dhf"><span class="std std-ref">Dirac–Hartree–Fock</span></a>, and <a class="reference internal" href="../multi/zcasscf.html#zcasscf"><span class="std std-ref">Relativistic complete active space self-consistent field (RelCASSCF)</span></a> modules.</div>
 <div class="line"><strong>Datatype</strong>: Array of three doubles (x, y, z)</div>
@@ -161,7 +152,7 @@ For more details, refer to <a class="reference internal" href="../scf/hf.html#hf
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">tesla</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">tesla</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: External magnetic field in units of Tesla.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -169,23 +160,23 @@ For more details, refer to <a class="reference internal" href="../scf/hf.html#hf
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">basis_type</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">basis_type</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Specify the type of atomic orbital basis functions,
 either standard Gaussian functions or gauge-including atomic orbitals (GIAOs).</div>
 <div class="line"><strong>Datatype</strong>: string</div>
-<div class="line"><strong>Values</strong>: <code class="docutils literal"><span class="pre">gaussian</span></code> / <code class="docutils literal"><span class="pre">giao</span></code>, <code class="docutils literal"><span class="pre">london</span></code></div>
-<div class="line"><strong>Default</strong>: <code class="docutils literal"><span class="pre">gaussian</span></code> at zero magnetic field; <code class="docutils literal"><span class="pre">giao</span></code> when a field is applied</div>
+<div class="line"><strong>Values</strong>: <code class="docutils literal notranslate"><span class="pre">gaussian</span></code> / <code class="docutils literal notranslate"><span class="pre">giao</span></code>, <code class="docutils literal notranslate"><span class="pre">london</span></code></div>
+<div class="line"><strong>Default</strong>: <code class="docutils literal notranslate"><span class="pre">gaussian</span></code> at zero magnetic field; <code class="docutils literal notranslate"><span class="pre">giao</span></code> when a field is applied</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">skip_self_interaction</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">skip_self_interaction</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Skip the electrostatic interactions between the dummy atoms.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: skip the electrostatic interactions between the dummies.</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: explicitly calculate the electrostatic interactions between the dummies.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: skip the electrostatic interactions between the dummies.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: explicitly calculate the electrostatic interactions between the dummies.</div>
 </div>
 <div class="line"><strong>Default</strong>: true</div>
 </div>
@@ -195,7 +186,7 @@ either standard Gaussian functions or gauge-including atomic orbitals (GIAOs).</
 <h1>Basis sets<a class="headerlink" href="#basis-sets" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="orbital-basis-sets">
 <h2>Orbital basis sets<a class="headerlink" href="#orbital-basis-sets" title="Permalink to this headline">¶</a></h2>
-<p>The following basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal"><span class="pre">basis</span></code> keyword.</p>
+<p>The following basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal notranslate"><span class="pre">basis</span></code> keyword.</p>
 <table class="hlist"><tr><td><ul class="simple">
 <li>sto-3g</li>
 <li>3-21g</li>
@@ -244,7 +235,7 @@ either standard Gaussian functions or gauge-including atomic orbitals (GIAOs).</
 </div>
 <div class="section" id="density-fitting-basis-sets">
 <h2>Density fitting basis sets<a class="headerlink" href="#density-fitting-basis-sets" title="Permalink to this headline">¶</a></h2>
-<p>The following density fitting basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal"><span class="pre">df_basis</span></code> keyword.</p>
+<p>The following density fitting basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal notranslate"><span class="pre">df_basis</span></code> keyword.</p>
 <table class="hlist"><tr><td><ul class="simple">
 <li>svp-jkfit</li>
 <li>tzvpp-jkfit</li>
@@ -261,7 +252,7 @@ either standard Gaussian functions or gauge-including atomic orbitals (GIAOs).</
 </td></tr></table>
 <div class="section" id="examples">
 <h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -283,7 +274,7 @@ either standard Gaussian functions or gauge-including atomic orbitals (GIAOs).</
 </pre></div>
 </div>
 <p>Example with mixed basis sets and density fitting basis sets:</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -304,9 +295,9 @@ either standard Gaussian functions or gauge-including atomic orbitals (GIAOs).</
 <span class="p">]}</span>
 </pre></div>
 </div>
-<p>Example with running a calculation from a molden file using the keyword <code class="docutils literal"><span class="pre">&quot;basis&quot;</span> <span class="pre">:</span> <span class="pre">&quot;molden&quot;</span></code>
-and providing a value for <code class="docutils literal"><span class="pre">&quot;molden_file&quot;</span></code>:</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<p>Example with running a calculation from a molden file using the keyword <code class="docutils literal notranslate"><span class="pre">&quot;basis&quot;</span> <span class="pre">:</span> <span class="pre">&quot;molden&quot;</span></code>
+and providing a value for <code class="docutils literal notranslate"><span class="pre">&quot;molden_file&quot;</span></code>:</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -321,7 +312,7 @@ and providing a value for <code class="docutils literal"><span class="pre">&quot
 </div>
 <p>(refer to Molden in <a class="reference internal" href="../miscellaneous/misc.html#misc"><span class="std std-ref">Miscellaneous features</span></a> for more details)</p>
 <p>Example with external magnetic field using Gauge-invariant atomic orbitals (GIAO):</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -348,7 +339,7 @@ and providing a value for <code class="docutils literal"><span class="pre">&quot
 </div>
 <div class="section" id="auxiliary-basis-sets">
 <h2>Auxiliary basis sets<a class="headerlink" href="#auxiliary-basis-sets" title="Permalink to this headline">¶</a></h2>
-<p>The following MP2-fit basis sets are available in BAGEL. The basis set name can be used with the <code class="docutils literal"><span class="pre">aux_basis</span></code> keyword
+<p>The following MP2-fit basis sets are available in BAGEL. The basis set name can be used with the <code class="docutils literal notranslate"><span class="pre">aux_basis</span></code> keyword
 in the method block (refer to <a class="reference internal" href="../pt2/mp2.html#mp2"><span class="std std-ref">Møller–Plesset perturbation theory (MP2)</span></a> for more details).</p>
 <ul class="simple">
 <li>cc-pvdz-ri</li>
@@ -359,7 +350,7 @@ in the method block (refer to <a class="reference internal" href="../pt2/mp2.htm
 <div class="section" id="example">
 <h3>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
 <p>An example using cc-pvdz-ri in MP2 calculation.</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -395,7 +386,7 @@ in the method block (refer to <a class="reference internal" href="../pt2/mp2.htm
 </div>
 <div class="section" id="effective-core-potential-ecp-basis-sets">
 <h2>Effective core potential (ECP) basis sets<a class="headerlink" href="#effective-core-potential-ecp-basis-sets" title="Permalink to this headline">¶</a></h2>
-<p>The following auxiliary basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal"><span class="pre">basis</span></code> keyword.</p>
+<p>The following auxiliary basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal notranslate"><span class="pre">basis</span></code> keyword.</p>
 <table class="hlist"><tr><td><ul class="simple">
 <li>ecp10mdf</li>
 <li>ecp28mdf</li>
@@ -419,7 +410,7 @@ Refer to <a class="reference internal" href="#user-defined-basis-sets">User defi
 <div class="section" id="id1">
 <h3>Example<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>Example for CuH2 using cc-pvtz basis set for H and lanl2dz-ecp for the heavy atom Cu</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -448,7 +439,7 @@ Refer to <a class="reference internal" href="#user-defined-basis-sets">User defi
 <div class="section" id="user-defined-basis-sets">
 <h2>User defined basis sets<a class="headerlink" href="#user-defined-basis-sets" title="Permalink to this headline">¶</a></h2>
 <p>The basis set file is in the following format</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
  <span class="s2">&quot;H&quot;</span> <span class="o">:</span> <span class="p">[</span>
    <span class="p">{</span>
      <span class="s2">&quot;angular&quot;</span> <span class="o">:</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span>
@@ -479,9 +470,9 @@ The basis set for associated with each element is then made up of further arrays
 of a single basis function.</p>
 <blockquote>
 <div><ul class="simple">
-<li><code class="docutils literal"><span class="pre">angular</span></code> defines the kind of orbital (s,p,d,f…) .</li>
-<li><code class="docutils literal"><span class="pre">prim</span></code> is a array containing the exponents of the primitive orbitals from which the basis function is composed.</li>
-<li><code class="docutils literal"><span class="pre">cont</span></code> is an array containing the coefficients associated with each of these primitive orbitals.</li>
+<li><code class="docutils literal notranslate"><span class="pre">angular</span></code> defines the kind of orbital (s,p,d,f…) .</li>
+<li><code class="docutils literal notranslate"><span class="pre">prim</span></code> is a array containing the exponents of the primitive orbitals from which the basis function is composed.</li>
+<li><code class="docutils literal notranslate"><span class="pre">cont</span></code> is an array containing the coefficients associated with each of these primitive orbitals.</li>
 </ul>
 </div></blockquote>
 <p>The user can specify their own basis set using the above format, or use one of the predefined basis sets listed in <a class="reference internal" href="#basis-sets">Basis sets</a>.</p>
@@ -492,7 +483,7 @@ of a single basis function.</p>
 <p>To use a user specified basis the explicit path to the basis set file must be specified in the basis set block.</p>
 <div class="section" id="id2">
 <h3>Example<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -526,7 +517,7 @@ Introduction of such a charge is accomplished by inclusion of an additional line
 <div class="section" id="id3">
 <h3>Example<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
 <p>A dihydrogen molecule with a nearby dummy charge of +0.2. Note that the charge specified in the “hf” block does not include the charge associated with the dummy atom.</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -548,7 +539,7 @@ Introduction of such a charge is accomplished by inclusion of an additional line
 </pre></div>
 </div>
 <p>from which one obtains</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">===</span> <span class="nx">RHF</span> <span class="nx">iteration</span> <span class="p">(</span><span class="nx">tzvpp</span><span class="p">)</span> <span class="o">===</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="o">===</span> <span class="nx">RHF</span> <span class="nx">iteration</span> <span class="p">(</span><span class="nx">tzvpp</span><span class="p">)</span> <span class="o">===</span>
 
              <span class="nx">o</span> <span class="nx">Fock</span> <span class="nx">build</span>                                  <span class="mf">0.01</span>
     <span class="mi">0</span>         <span class="o">-</span><span class="mf">1.12552716</span>          <span class="mf">0.00743295</span>           <span class="mf">0.01</span>
@@ -601,50 +592,50 @@ used to provide an initial guess for a more difficult calculation.</p>
 <div class="section" id="useful-parameters-to-change">
 <h2>Useful Parameters to Change<a class="headerlink" href="#useful-parameters-to-change" title="Permalink to this headline">¶</a></h2>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">geometry</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">geometry</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Specify atoms and their Cartesian coordinates</div>
 <div class="line"><strong>Note</strong>:</div>
 <div class="line-block">
 <div class="line">If atom positions have changed, new molecular orbitals will be generated by projecting the old orbitals into the space spanned by the new basis functions.
 The atom positions and basis set cannot be changed simultaneously.
-If units of Angstrom are to be used, the <code class="docutils literal"><span class="pre">angstrom</span></code> keyword must be supplied within the same <code class="docutils literal"><span class="pre">molecule</span></code> block.</div>
+If units of Angstrom are to be used, the <code class="docutils literal notranslate"><span class="pre">angstrom</span></code> keyword must be supplied within the same <code class="docutils literal notranslate"><span class="pre">molecule</span></code> block.</div>
 </div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">basis</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">basis</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Change the basis set</div>
 <div class="line"><strong>Note</strong>:</div>
 <div class="line-block">
-<div class="line">The new basis set will be applied to all atoms, unless exceptions are specified in a new <code class="docutils literal"><span class="pre">geometry</span></code> block.
+<div class="line">The new basis set will be applied to all atoms, unless exceptions are specified in a new <code class="docutils literal notranslate"><span class="pre">geometry</span></code> block.
 The new basis set must be identical to or larger than that used in any previous calculation.
 Molecular orbitals will be projected into the expanded space.</div>
 </div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">df_basis</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">df_basis</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Change the auxiliary basis set used for density fitting</div>
 <div class="line"><strong>Note</strong>:
-The new fitting basis set will be applied to all atoms, unless exceptions are specified in a new <code class="docutils literal"><span class="pre">geometry</span></code> block.</div>
+The new fitting basis set will be applied to all atoms, unless exceptions are specified in a new <code class="docutils literal notranslate"><span class="pre">geometry</span></code> block.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">magnetic_field</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">magnetic_field</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Change the external magnetic field</div>
 <div class="line"><strong>Note</strong>:</div>
 <div class="line-block">
 <div class="line">Because giao basis orbitals are field-dependent, a projection will be performed to update the molecular orbitals.
-If units of Tesla are to be used, the <code class="docutils literal"><span class="pre">tesla</span></code> keyword must be supplied within the same <code class="docutils literal"><span class="pre">molecule</span></code> block.</div>
+If units of Tesla are to be used, the <code class="docutils literal notranslate"><span class="pre">tesla</span></code> keyword must be supplied within the same <code class="docutils literal notranslate"><span class="pre">molecule</span></code> block.</div>
 </div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">basis_type</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">basis_type</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: For relativistic calculations, this parameter can be used to convert from gaussian-type to giao-type orbitals.</div>
 <div class="line"><strong>Note</strong>:</div>
@@ -652,7 +643,7 @@ If units of Tesla are to be used, the <code class="docutils literal"><span class
 <div class="line">When using the results of standard zero-field calculations to provide guess orbitals for a calculation with finite magnetic field,
 this parameter is used to indicate a change to the giao basis set and prepare for magnetic field.
 The atom positions, basis set, and magnetic field must not be changed simultaneously with this parameter.
-(This means that to use a nonzero magnetic field, a second <code class="docutils literal"><span class="pre">molecule</span></code> block must be supplied.)</div>
+(This means that to use a nonzero magnetic field, a second <code class="docutils literal notranslate"><span class="pre">molecule</span></code> block must be supplied.)</div>
 </div>
 </div>
 </div>
@@ -721,12 +712,14 @@ default exponents</td>
                         title="next chapter">Self-consistent field</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

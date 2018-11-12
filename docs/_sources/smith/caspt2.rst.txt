@@ -66,6 +66,25 @@ The default values are recommended unless mentioned otherwise.
    | **Description:** Vertical shift.
    | **Datatype:** double precision
    | **Default:** 0.0
+   
+.. topic:: ``shift_imag``
+
+   | **Description:** Whether to use imaginary or real shift.
+   | **Datatype:** bool
+   | **Values:**
+   |    ``true``: use imaginary shift.
+   |    ``false``: use real shift.
+   | **Default:** false.
+
+.. topic:: ``orthogonal_basis``
+
+   | **Description:** Whether to use orthogonal basis in CASPT2 iterations.
+   | **Datatype:** bool
+   | **Values:**
+   |    ``true``: use orthogonal basis.
+   |    ``false``: use redundant basis.
+   | **Default:** with imaginary shift, true. otherwise, false.
+   | **Recommendation:** Imaginary shift only works with true. Use of orthogonal basis makes the code slightly slower due to the additional transformations.
 
 .. topic:: ``thresh``
 

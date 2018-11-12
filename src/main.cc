@@ -35,13 +35,15 @@ using namespace bagel;
 
 int main(int argc, char** argv) {
   try {
-    const bool input_provided = argc == 2;
-    if (!input_provided)
+    if (argc == 2) {
+      const string input = argv[1];
+      run_bagel_from_input(input);
+    } else if (argc == 3 && string(argv[1]) == "-i") {
+      const string input = argv[2];
+      run_bagel_from_json(input);
+    } else {
       throw runtime_error("no input file provided");
-    const string input = argv[1];
-
-    // this is the main driver
-    bagel::run_bagel_from_input(input);
+    }
   } catch (const Termination& e) {
     cout << "  -- Termination requested --" << endl;
     cout << "  message: " << e.what() << endl;

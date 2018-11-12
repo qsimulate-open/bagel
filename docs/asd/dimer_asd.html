@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Dimer ASD &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Description" href="dimer.html" />
     <link rel="prev" title="Active space decomposition method" href="asd.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -68,37 +59,37 @@
 <div class="section" id="required-keywords">
 <h3>Required Keywords<a class="headerlink" href="#required-keywords" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">method</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">method</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Method to compute active subspaces.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Value:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">cas</span></code> or <code class="docutils literal"><span class="pre">fci</span></code>: use full configuration interaction method</div>
-<div class="line"><code class="docutils literal"><span class="pre">ras</span></code>: use restricted active space configuration interaction method</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">cas</span></code> or <code class="docutils literal notranslate"><span class="pre">fci</span></code>: use full configuration interaction method</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">ras</span></code>: use restricted active space configuration interaction method</div>
 </div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">fci</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">fci</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong> If <code class="docutils literal"><span class="pre">fci</span></code> is used, specify the implementations here.</div>
+<div class="line"><strong>Description:</strong> If <code class="docutils literal notranslate"><span class="pre">fci</span></code> is used, specify the implementations here.</div>
 <div class="line"><strong>Recommendation:</strong> See <a class="reference internal" href="../ci/fci.html#fci"><span class="std std-ref">Full configuration interaction (FCI)</span></a> for details.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ras</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ras</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong> If <code class="docutils literal"><span class="pre">ras</span></code> is used, specify the implementations here.</div>
+<div class="line"><strong>Description:</strong> If <code class="docutils literal notranslate"><span class="pre">ras</span></code> is used, specify the implementations here.</div>
 <div class="line"><strong>Recommendation:</strong> See <a class="reference internal" href="../ci/rasci.html#rasci"><span class="std std-ref">Restricted active space configuration interaction (RASCI)</span></a> for details.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">space</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">space</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Specify important fragment states with the following keys:</div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">charge</span></code>, <code class="docutils literal"><span class="pre">spin</span></code>, <code class="docutils literal"><span class="pre">nstate</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">charge</span></code>, <code class="docutils literal notranslate"><span class="pre">spin</span></code>, <code class="docutils literal notranslate"><span class="pre">nstate</span></code></div>
 </div>
 <div class="line"><strong>Recommendation:</strong> See sample input for details.</div>
 </div>
@@ -107,7 +98,7 @@
 <div class="section" id="optional-keywords">
 <h3>Optional Keywords<a class="headerlink" href="#optional-keywords" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nstates</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nstates</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of target states.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -115,7 +106,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">charge</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">charge</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Dimer charge.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -123,7 +114,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nspin</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nspin</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of dimer total spin.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -131,15 +122,15 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nguess</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nguess</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of initial guess state vectors for Davidson diagonalization.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
-<div class="line"><strong>Default:</strong> <span class="math">\(10\times nstates\)</span></div>
+<div class="line"><strong>Default:</strong> <span class="math notranslate nohighlight">\(10\times nstates\)</span></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">Davidson_subspace</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">Davidson_subspace</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Size of Davidson subspace.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -147,7 +138,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">max_iter</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">max_iter</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of iterations for Davidson diagonalization.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -155,7 +146,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">dipoles</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">dipoles</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Whether to calculate dipole moment.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -163,15 +154,15 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Threshold for convergence in Davidson diagonalization.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
-<div class="line"><strong>Default:</strong> <span class="math">\(1.0\times 10^{-7}\)</span></div>
+<div class="line"><strong>Default:</strong> <span class="math notranslate nohighlight">\(1.0\times 10^{-7}\)</span></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">print_thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">print_thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Threshold for printing out important configurations.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
@@ -179,7 +170,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">store</span> <span class="pre">matrix</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">store</span> <span class="pre">matrix</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Whether the Hamiltonian matrix is stored.</div>
 <div class="line"><strong>Datatye:</strong> bool</div>
@@ -187,7 +178,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">print_info</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">print_info</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Whether print out information (e.g. reduced density matrix and energy).</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -204,7 +195,7 @@
 </div>
 <div class="section" id="sample-input">
 <h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -325,12 +316,14 @@ J. Chem. Phys. <strong>139</strong>, 021108 (2013).</td>
                         title="next chapter">Description</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

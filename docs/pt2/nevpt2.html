@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>N-electron valence state perturbation theory (NEVPT2) &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Multireference second-order perturbation theory (CASPT2)" href="caspt2.html" />
     <link rel="prev" title="Møller–Plesset perturbation theory (MP2)" href="mp2.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -52,13 +43,13 @@
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>Calculations using the strongly contracted state-specific n-electron valence state perturbation theory (NEVPT2)
-are done using the keyword <code class="docutils literal"><span class="pre">&quot;title&quot;</span> <span class="pre">:</span> <span class="pre">&quot;nevpt2&quot;</span></code>.</p>
+are done using the keyword <code class="docutils literal notranslate"><span class="pre">&quot;title&quot;</span> <span class="pre">:</span> <span class="pre">&quot;nevpt2&quot;</span></code>.</p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <p>The default values are recommended unless mentioned otherwise.</p>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">frozen</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">frozen</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> to have frozen orbitals or not</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -66,14 +57,14 @@ are done using the keyword <code class="docutils literal"><span class="pre">&quo
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ncore</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ncore</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>: manually specify number of frozen orbitals, used when ‘frozen’ is turned on with <code class="docutils literal"><span class="pre">&quot;frozen&quot;</span> <span class="pre">:</span> <span class="pre">&quot;true&quot;</span></code>.</div>
+<div class="line"><strong>Description</strong>: manually specify number of frozen orbitals, used when ‘frozen’ is turned on with <code class="docutils literal notranslate"><span class="pre">&quot;frozen&quot;</span> <span class="pre">:</span> <span class="pre">&quot;true&quot;</span></code>.</div>
 <div class="line"><strong>Datatype</strong>: int</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">aux_basis</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">aux_basis</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: specify an auxiliary basis set for MP2</div>
 <div class="line"><strong>Datatype</strong>: string</div>
@@ -82,7 +73,7 @@ are done using the keyword <code class="docutils literal"><span class="pre">&quo
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">istate</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">istate</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: specific state used in the evaluation of the dynamical correlation</div>
 <div class="line"><strong>Datatype</strong>: int</div>
@@ -92,7 +83,7 @@ are done using the keyword <code class="docutils literal"><span class="pre">&quo
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -120,7 +111,7 @@ are done using the keyword <code class="docutils literal"><span class="pre">&quo
 </pre></div>
 </div>
 <p>from which one obtains</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span>=== DF-NEVPT2 calculation ===
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span>=== DF-NEVPT2 calculation ===
 
      - RDMs, hole RDMs, others                   0.00
      - Fock computation                          0.01
@@ -229,12 +220,14 @@ Malrieu, J. Chem. Phys. <strong>114</strong>, 10252 (2001).</td>
                         title="next chapter">Multireference second-order perturbation theory (CASPT2)</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

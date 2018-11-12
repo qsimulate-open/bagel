@@ -105,7 +105,6 @@ class Dvector : public btas::Tensor3<DataType> {
     const std::vector<std::shared_ptr<Civector<DataType>>>& dvec() const { return dvec_; }
 
     // returns a vector of Civec's which correspond to an unconverged state
-    std::vector<std::shared_ptr<Civector<DataType>>> dvec(const std::vector<int>& conv);
     std::vector<std::shared_ptr<const Civector<DataType>>> dvec(const std::vector<int>& conv) const;
 
     size_t lena() const { return lena_; }

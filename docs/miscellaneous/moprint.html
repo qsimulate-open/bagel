@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Printing orbital densities to cube files &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Saving and loading MOs and CI coefficients" href="save_ref.html" />
     <link rel="prev" title="MOLDEN" href="molden.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -58,12 +49,12 @@ be viewed in Molden due to the use of complex basis functions or the four-compon
 The axis vectors are simply the Cartesian <em>x</em>, <em>y</em>, and <em>z</em> axes.</p>
 <p>In addition, one can print the relaxed electron density in MP2, SA-CASSCF, and CASPT2 force calculations as well.
 See <a class="reference internal" href="../grad/force.html#force"><span class="std std-ref">nuclear gradient and derivative coupling</span></a> and the example below.</p>
-<p>Command: <code class="docutils literal"><span class="pre">moprint</span></code></p>
+<p>Command: <code class="docutils literal notranslate"><span class="pre">moprint</span></code></p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">paired</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">paired</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Determined whether we plot spatial MOs (true) or spin MOs.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -72,7 +63,7 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">orbitals</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">orbitals</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong>  Indices of the molecular orbitals to be printed.</div>
 <div class="line"><strong>Datatype:</strong> Vector of integers</div>
@@ -80,25 +71,25 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">start_pos</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">start_pos</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Coordinates for one corner of the box within which densities are printed.</div>
 <div class="line"><strong>Datatype:</strong> Array of 3 doubles</div>
-<div class="line"><strong>Default:</strong> A position is chosen so that all atoms (except the dummy atoms) are at least <span class="math">\(4 a_0\)</span> from the edges of the box.</div>
+<div class="line"><strong>Default:</strong> A position is chosen so that all atoms (except the dummy atoms) are at least <span class="math notranslate nohighlight">\(4 a_0\)</span> from the edges of the box.</div>
 <div class="line"><strong>Recommendation:</strong> Use the default.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">inc_size</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">inc_size</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Distances between adjacent gridpoints in each of the three dimensions.</div>
 <div class="line"><strong>Datatype:</strong> Array of 3 doubles</div>
-<div class="line"><strong>Default:</strong> <span class="math">\(0.25 a_0\)</span> in each direction.</div>
+<div class="line"><strong>Default:</strong> <span class="math notranslate nohighlight">\(0.25 a_0\)</span> in each direction.</div>
 <div class="line"><strong>Recommendation:</strong> Use the default.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">angstrom</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">angstrom</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Unit of the “inc_size” parameter</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -106,7 +97,7 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">mo_filename</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">mo_filename</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Name of the MO cube file</div>
 <div class="line"><strong>Datatype:</strong> string</div>
@@ -114,7 +105,7 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">density_filename</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">density_filename</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Name of the density cube file</div>
 <div class="line"><strong>Datatype:</strong> string</div>
@@ -127,7 +118,7 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 <div class="section" id="sample-input-print-mo">
 <h3>Sample input: Print MO<a class="headerlink" href="#sample-input-print-mo" title="Permalink to this headline">¶</a></h3>
 <p>Write molecular orbitals:</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">....</span> <span class="nx">energy</span> <span class="nx">calculation</span><span class="p">....</span>
 
@@ -143,8 +134,8 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 </div>
 <div class="section" id="sample-input-print-relaxed-density">
 <h3>Sample input: Print relaxed density<a class="headerlink" href="#sample-input-print-relaxed-density" title="Permalink to this headline">¶</a></h3>
-<p>Write relaxed density to the file <code class="docutils literal"><span class="pre">density_0.cub</span></code> from the XMS-CASPT2 force calculation:</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<p>Write relaxed density to the file <code class="docutils literal notranslate"><span class="pre">density_0.cub</span></code> from the XMS-CASPT2 force calculation:</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -218,12 +209,14 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
                         title="next chapter">Saving and loading MOs and CI coefficients</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

@@ -573,6 +573,7 @@ void Orthogonal_Basis::set_denom(shared_ptr<const Denom<double>> d) {
 
 void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<double>> t, int istate) {
   // we put the transformed data in data_[istate].
+  data_[istate]->zero();
   for (int ist = 0; ist != nstates_; ++ist) {
     if (!t->at(ist)) continue;
     for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {

@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Restricted active space configuration interaction (RASCI) &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Multiconfiguration self-consistent field" href="../multi/multi.html" />
     <link rel="prev" title="Relativistic full configuration interaction (RelFCI)" href="zfci.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -64,7 +55,7 @@ These active spaces must be selected with caution.</p>
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <p>All of the keywords in FCI apply and are not duplicated in this section.</p>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">active</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">active</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Specifies the three active spaces used to generate the functions in the CI expansion.</div>
 <div class="line"><strong>Datatype:</strong> Three arrays of integers.</div>
@@ -73,7 +64,7 @@ These active spaces must be selected with caution.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">max_holes</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">max_holes</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of particles in R1.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -81,7 +72,7 @@ These active spaces must be selected with caution.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">max_particles</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">max_particles</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of particles in R3.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -89,7 +80,7 @@ These active spaces must be selected with caution.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">batchsize</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">batchsize</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of terms from the RASCI interaction to be evaluated simulataneously.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -105,7 +96,7 @@ The first active space, R1, contains the oxygen 1s orbital; the second active sp
 and the third active space, R3, contains the 3a1 and 2b2 antibonding orbitals.</p>
 <div class="section" id="sample-input">
 <h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
   <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;tzvpp&quot;</span><span class="p">,</span>
@@ -137,7 +128,7 @@ and the third active space, R3, contains the 3a1 and 2b2 antibonding orbitals.</
 </pre></div>
 </div>
 <p>from which one obtains</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="nx">ci</span> <span class="nx">vector</span>   <span class="mi">0</span><span class="p">,</span> <span class="o">&lt;</span><span class="nx">S</span><span class="o">^</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="nx">E</span> <span class="o">=</span>      <span class="o">-</span><span class="mf">76.06133473</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="nx">ci</span> <span class="nx">vector</span>   <span class="mi">0</span><span class="p">,</span> <span class="o">&lt;</span><span class="nx">S</span><span class="o">^</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="nx">E</span> <span class="o">=</span>      <span class="o">-</span><span class="mf">76.06133473</span>
   <span class="mi">2</span><span class="o">-</span><span class="mi">2222</span><span class="o">-</span><span class="p">..</span>     <span class="mf">0.9989778414</span>
 
 <span class="o">*</span> <span class="nx">ci</span> <span class="nx">vector</span>   <span class="mi">1</span><span class="p">,</span> <span class="o">&lt;</span><span class="nx">S</span><span class="o">^</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">=</span> <span class="mf">0.0000</span><span class="p">,</span> <span class="nx">E</span> <span class="o">=</span>      <span class="o">-</span><span class="mf">75.73609103</span>
@@ -209,12 +200,14 @@ Phys. <strong>89</strong>, 2185-2192 (1988).</td>
                         title="next chapter">Multiconfiguration self-consistent field</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

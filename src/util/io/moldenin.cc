@@ -61,13 +61,14 @@ MoldenIn& MoldenIn::operator>> (tuple<shared_ptr<Coeff>, shared_ptr<const Geomet
 
   vector<int> atom_offsets;
   for (auto& ioff : geom->offsets())
-    atom_offsets.push_back(ioff.front());
+    atom_offsets.push_back(!ioff.empty() ? ioff.front(): 0);
 
   double *idata = coeff->data();
   for (auto& imo : mo_coefficients_) {
     auto icoeff = imo.begin();
     int ii = 0;
     for (auto iatom = shell_orders_.begin(); iatom != shell_orders_.end(); ++iatom, ++ii) {
+      if (iatom->empty()) continue;
       double* tmp_idata = idata + atom_offsets[gto_order_[ii]-1];
       for (auto& ishell : *iatom) {
         if (cartesian_) {
@@ -109,6 +110,8 @@ void MoldenIn::read() {
   vector<array<double,3>> positions;
   /* Atom names */
   vector<string> names;
+  /* Atom charges */
+  vector<double> charges;
   /* Map atom number to basis info */
   map<int, vector<tuple<string, vector<double>, vector<double>>>> basis_info;
 
@@ -168,7 +171,7 @@ void MoldenIn::read() {
   while (!ifs.eof()){
     if (regex_search(line,atoms_re)) {
       regex ang_re("Angs");
-      regex atoms_line("(\\w{1,2})\\s+\\d+\\s+\\d+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)");
+      regex atoms_line("(\\w{1,2})\\s+\\d+\\s+([+-]?[0-9]*[.]?[0-9]+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)");
 
       scale = regex_search(line, ang_re) ? (1.0/au2angstrom__) : 1.0;
 
@@ -180,17 +183,18 @@ void MoldenIn::read() {
           const string nm(matches[1].first, matches[1].second);
           names.push_back(nm);
 
-          const string x_str(matches[2].first, matches[2].second);
-          const string y_str(matches[3].first, matches[3].second);
-          const string z_str(matches[4].first, matches[4].second);
+          const string charge_str(matches[2].first, matches[2].second);
+          const string x_str(matches[3].first, matches[3].second);
+          const string y_str(matches[4].first, matches[4].second);
+          const string z_str(matches[5].first, matches[5].second);
 
           array<double,3> pos;
-
           pos[0] = lexical_cast<double>(x_str)*scale;
           pos[1] = lexical_cast<double>(y_str)*scale;
           pos[2] = lexical_cast<double>(z_str)*scale;
-
           positions.push_back(pos);
+
+          charges.push_back(lexical_cast<double>(charge_str));
 
           getline(ifs, line);
         }
@@ -314,16 +318,25 @@ void MoldenIn::read() {
   vector<shared_ptr<const Atom>> all_atoms;
 
   /* Assuming the names and positions vectors are in the right order */
-  vector<string>::iterator iname = names.begin();
-  vector<array<double,3>>::iterator piter = positions.begin();
-  for (int i = 0; i < num_atoms; ++i, ++iname, ++piter){
+  auto iname = names.begin();
+  auto piter = positions.begin();
+  auto citer = charges.begin();
+  for (int i = 0; i < num_atoms; ++i, ++iname, ++piter, ++citer) {
     vector<tuple<string, vector<double>, vector<double>>> binfo = basis_info.find(i+1)->second;
-    if (i == num_atoms) {
+    if (i == num_atoms)
       throw runtime_error("It appears an atom was missing in the GTO section. Check your file");
-    }
 
     /* For each atom, I need to make an atom object and stick it into a vector */
-    all_atoms.push_back(make_shared<const Atom>(is_spherical_, to_lower(*iname), *piter, binfo, "molden"));
+    const string lname = to_lower(*iname);
+    shared_ptr<const Atom> at;
+    if (lname != "q") {
+      at = make_shared<Atom>(is_spherical_, lname, *piter, binfo, "molden");
+      if (fabs(at->atom_charge() - *citer) > 1.0e-16)
+        throw runtime_error("MoldenIn failed - inconsistent atom charge");
+    } else {
+      at = make_shared<Atom>(is_spherical_, lname, *piter, *citer);
+    }
+    all_atoms.push_back(at);
   }
 
   atoms_ = all_atoms;
