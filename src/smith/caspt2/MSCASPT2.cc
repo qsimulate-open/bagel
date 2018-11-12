@@ -283,7 +283,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             add_total(lnhJI);
           }
 
-          if ((!info_->sssr() || (mst == lst && nst == lst)) && !info_->orthogonal_basis()) {
+          if ((!info_->sssr() || (mst == lst && nst == lst)) && !info_->shift_imag()) {
             e0_ = 2.0*info_->shift();
             l2 = t2all_[lst]->at(nst);
             t2 = t2all_[lst]->at(mst);
