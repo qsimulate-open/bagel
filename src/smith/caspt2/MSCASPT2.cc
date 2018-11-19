@@ -365,17 +365,18 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << mst+1 << " /" << setw(2) << nstates << ")";
       timer.tick_print(ss.str());
     }
+  }
 
-    // If we have imaginary shift, construct additional density due to the shift
-    if (info_->shift_imag() && info_->shift() != 0.0) {
-      shared_ptr<Matrix> dshift;
-      tie(dshift, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = make_d2_imag();
-      *den2_ += *dshift;
-      timer.tick_print("dshift");
-    }
+  // If we have imaginary shift, construct additional density due to the shift
+  if (info_->shift_imag() && info_->shift() != 0.0) {
+    shared_ptr<Matrix> dshift;
+    tie(dshift, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = make_d2_imag();
+    *den2_ += *dshift;
+    timer.tick_print("dshift");
+  }
 
-    if (info_->nact())
-      do_rdm_deriv(1.0);
+  if (!nocider && info_->nact()) {
+    do_rdm_deriv(1.0);
     timer.tick_print("CI derivative contraction");
   }
 }
