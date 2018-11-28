@@ -275,12 +275,9 @@ template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared_ptr<const GradInfo> gradinfo) {
 #ifdef COMPILE_SMITH
   const int istate = gradinfo->target_state();
-  const int jstate = gradinfo->target_state2();
+  const int jstate = (jobtitle == "nacme") ? gradinfo->target_state2() : istate;
 
-  if (jobtitle == "nacme")
-    task_->compute_gradient(istate, jstate, gradinfo->nacmtype());
-  else
-    task_->compute_gradient(istate, istate);
+  task_->compute_gradient(istate, jstate, gradinfo->nacmtype(), !gradinfo->cider_eval());
 
   Timer timer;
 
@@ -332,6 +329,10 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
     auto dtotao = make_shared<Matrix>(*coeff * (*d0ms + *d11 + *d1) ^ *coeff);
     Dipole dipole(geom_, dtotao, "CASPT2 unrelaxed");
     dipole.compute();
+  }
+
+  if (!gradinfo->cider_eval()) {
+    return make_shared<GradFile>(geom_->natom());
   }
 
   // compute Yrs
