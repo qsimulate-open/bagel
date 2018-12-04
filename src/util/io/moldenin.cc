@@ -54,14 +54,18 @@ MoldenIn& MoldenIn::operator>> (vector<shared_ptr<const Atom>>& atoms) {
 }
 
 
-MoldenIn& MoldenIn::operator>> (tuple<shared_ptr<Coeff>, shared_ptr<const Geometry>> inp) {
+MoldenIn& MoldenIn::operator>> (tuple<shared_ptr<Coeff>, shared_ptr<const Geometry>, shared_ptr<VectorB>> inp) {
   shared_ptr<Coeff>         coeff = get<0>(inp);
   shared_ptr<const Geometry> geom = get<1>(inp);
+  shared_ptr<VectorB> eig         = get<2>(inp);
   assert(has_mo());
 
   vector<int> atom_offsets;
   for (auto& ioff : geom->offsets())
     atom_offsets.push_back(!ioff.empty() ? ioff.front(): 0);
+
+  for (int i = 0; i != mo_eig_.size(); ++i) 
+    (*eig)[i] = mo_eig_[i];
 
   double *idata = coeff->data();
   for (auto& imo : mo_coefficients_) {
@@ -276,18 +280,25 @@ void MoldenIn::read() {
       }
       /* Not used at the moment. Maybe later.
       regex sym_re("Sym=\\s+(\\S+)");
-      regex ene_re("Ene=\\s+(\\S+)");
       regex spin_re("Spin=\\s+(\\w+)");
       regex occup_re("Occup=\\s+(\\S+)"); */
+      regex ene_re("Ene=\\s+(\\S+)");
       regex coeff_re("\\d+\\s+(\\S+)");
 
       getline(ifs, line);
       while (!regex_search(line, other_re) && !ifs.eof()) {
+        if (regex_search(line.c_str(), matches, ene_re)) {
+          string estring(matches[1].first, matches[1].second);
+          mo_eig_.push_back(lexical_cast<double>(estring));
+        }
         getline(ifs, line);
         if (ifs.eof()) break;
 
         while (!regex_search(line.c_str(), coeff_re)) {
-          /* For now, throwing away excess data until we get to MO coefficients */
+          if (regex_search(line.c_str(), matches, ene_re)) {
+            string estring(matches[1].first, matches[1].second);
+            mo_eig_.push_back(lexical_cast<double>(estring));
+          }
           getline(ifs, line);
         }
 
@@ -299,6 +310,8 @@ void MoldenIn::read() {
         }
         mo_coefficients_.push_back(movec);
       }
+      if (mo_eig_.size() != mo_coefficients_.size())
+        throw logic_error("Eigenvalues and eigenvectors are not consistent");
     } else {
       getline(ifs, line);
     }

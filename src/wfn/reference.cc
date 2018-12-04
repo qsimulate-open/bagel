@@ -73,8 +73,10 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const PTree> itree
   mfs.read();
   if (mfs.has_mo()) {
     auto c = make_shared<Coeff>(geom_);
-    mfs >> tie(c, g);
+    auto e = make_shared<VectorB>(c->mdim());
+    mfs >> tie(c, g, e);
     coeff_ = c;
+    eig_ = *e;
   }
 }
 
