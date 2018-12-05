@@ -148,7 +148,7 @@ void MoldenIn::read() {
   {
     cartesian_ = true;
     ifstream sph_input(filename_);
-    if (!sph_input.is_open()){
+    if (!sph_input.is_open()) {
       throw runtime_error("Molden input file not found");
     } else {
       regex _5d_re("\\[5[Dd]\\]");
@@ -172,7 +172,7 @@ void MoldenIn::read() {
 
   getline(ifs, line);
 
-  while (!ifs.eof()){
+  while (!ifs.eof()) {
     if (regex_search(line,atoms_re)) {
       regex ang_re("Angs");
       regex atoms_line("([a-zA-Z]{1,2})[0-9]*\\s+\\d+\\s+([+-]?[0-9]*[.]?[0-9]+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)");
@@ -214,7 +214,7 @@ void MoldenIn::read() {
       regex exp_line("(\\S+)\\s+(\\S+)");
       regex Dd("[Dd]");
 
-      while (!regex_search(line, other_re) && !ifs.eof()){
+      while (!regex_search(line, other_re) && !ifs.eof()) {
         /* This line should be a new atom */
         if (!regex_search(line.c_str(), matches, atom_line)) {
            getline(ifs, line); continue;
@@ -303,7 +303,7 @@ void MoldenIn::read() {
         }
 
         vector<double> movec;
-        while (regex_search(line.c_str(), matches, coeff_re)){
+        while (regex_search(line.c_str(), matches, coeff_re)) {
           string mo_string(matches[1].first, matches[1].second);
           movec.push_back(lexical_cast<double>(mo_string));
           getline(ifs, line);
@@ -321,10 +321,10 @@ void MoldenIn::read() {
   *  Check to make sure all the necessary information was     *
   *  found.                                                   *
   ************************************************************/
-  if (!(found_atoms && found_gto)){
+  if (!(found_atoms && found_gto)) {
      string message("Section not found in Molden file: ");
-     if (!found_atoms){ message += "atoms "; }
-     if (!found_gto)  { message += "GTO"; }
+     if (!found_atoms) { message += "atoms "; }
+     if (!found_gto)   { message += "GTO"; }
      throw runtime_error(message);
   }
 
