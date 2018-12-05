@@ -58,6 +58,9 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
   if (rdm2_av_)
     mpi__->broadcast(const_cast<double*>(rdm2_av_->data()), rdm2_av_->size(), 0);
 
+  occup_ = VectorB(nclosed_+nact_+nvirt_);
+  fill_n(occup_.data(), nclosed_, 2.0);
+
   //if (nact_ && rdm1_.empty())
   //  throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
 
@@ -74,9 +77,11 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const PTree> itree
   if (mfs.has_mo()) {
     auto c = make_shared<Coeff>(geom_);
     auto e = make_shared<VectorB>(c->mdim());
-    mfs >> tie(c, g, e);
+    auto o = make_shared<VectorB>(c->mdim());
+    mfs >> tie(c, g, e, o);
     coeff_ = c;
     eig_ = *e;
+    occup_ = *o;
   }
 }
 
@@ -236,6 +241,18 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
 void Reference::set_eig(const VectorB& eig) {
   eig_ = eig;
   mpi__->broadcast(eig_.data(), eig_.size(), 0);
+}
+
+
+void Reference::set_eigB(const VectorB& eigB) {
+  eigB_ = eigB;
+  mpi__->broadcast(eigB_.data(), eigB_.size(), 0);
+}
+
+
+void Reference::set_occup(const VectorB& occup) {
+  occup_ = occup;
+  mpi__->broadcast(occup_.data(), occup_.size(), 0);
 }
 
 

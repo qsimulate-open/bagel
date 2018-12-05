@@ -53,8 +53,12 @@ class CASNoopt : public CASSCF {
         energy_ = ref_->energy();
       }
 
-      if (canonical_)
-        coeff_ = semi_canonical_orb();
+      if (canonical_) {
+        auto tmp = semi_canonical_orb();
+        coeff_ = std::get<0>(tmp);
+        eig_   = std::get<1>(tmp);
+        occup_ = std::get<2>(tmp);
+      }
 
       if (do_hyperfine_ && !geom_->external() && nstate_ == 1 && external_rdm_.empty()) {
         HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
@@ -63,12 +67,16 @@ class CASNoopt : public CASSCF {
     }
 
     std::shared_ptr<const Reference> conv_to_ref() const override {
+      std::shared_ptr<Reference> out;
       if (nact_) {
-        return std::make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
-                                           fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+        out = std::make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
+                                          fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
       } else {
-        return std::make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
+        out = std::make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
       }
+      out->set_eig(eig_);
+      out->set_occup(occup_);
+      return out;
     }
 };
 

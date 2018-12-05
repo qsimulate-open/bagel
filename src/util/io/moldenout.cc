@@ -126,26 +126,19 @@ void MoldenOut::write_mos() {
   if (is_spherical)
     ofs_ << "[5D]" << endl << "[7F]" << endl << "[9G]" << endl;
   ofs_ << "[MO]" << endl;
+
   const int num_mos = ref_->coeff()->mdim();
-  int nocc = ref_->nclosed();
-
   const double* modata = ref_->coeff()->data();
+  const VectorB eig = ref_->eig();
+  const VectorB occup = ref_->occup();
 
-  VectorB eigvec = ref_->eig();
-  if (eigvec.empty())
-    eigvec = VectorB(num_mos);
-  assert(eigvec.size() == num_mos);
+  for (int i = 0; i != num_mos; ++i) {
 
-  for (auto& ieig : eigvec) {
+    ofs_ << " Ene=" << setw(12) << setprecision(6) << fixed << (eig.empty() ? 0.0 : eig[i]) << endl;
 
-    ofs_ << " Ene=" << setw(12) << setprecision(6) << fixed << ieig << endl;
-
-    /* At the moment only thinking about RHF, so assume spin is Alpha */
+    // TODO this has to change
     ofs_ << " Spin=" << "  Alpha" << endl;
-
-    /* At the moment, assuming occupation can be 2 or 0. Should be fine for RHF */
-    const string occ_string = nocc-- > 0 ? "  2.000" : "  0.000";
-    ofs_ << " Occup=" << occ_string << endl;
+    ofs_ << " Occup=" << setw(12) << occup[i] << endl;
 
     int j = 0;
     for (auto& iatom : atoms) {

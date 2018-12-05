@@ -54,10 +54,11 @@ MoldenIn& MoldenIn::operator>> (vector<shared_ptr<const Atom>>& atoms) {
 }
 
 
-MoldenIn& MoldenIn::operator>> (tuple<shared_ptr<Coeff>, shared_ptr<const Geometry>, shared_ptr<VectorB>> inp) {
+MoldenIn& MoldenIn::operator>> (tuple<shared_ptr<Coeff>, shared_ptr<const Geometry>, shared_ptr<VectorB>, shared_ptr<VectorB>> inp) {
   shared_ptr<Coeff>         coeff = get<0>(inp);
   shared_ptr<const Geometry> geom = get<1>(inp);
   shared_ptr<VectorB> eig         = get<2>(inp);
+  shared_ptr<VectorB> occup       = get<3>(inp);
   assert(has_mo());
 
   vector<int> atom_offsets;
@@ -66,6 +67,9 @@ MoldenIn& MoldenIn::operator>> (tuple<shared_ptr<Coeff>, shared_ptr<const Geomet
 
   for (int i = 0; i != mo_eig_.size(); ++i) 
     (*eig)[i] = mo_eig_[i];
+
+  for (int i = 0; i != mo_occup_.size(); ++i) 
+    (*occup)[i] = mo_occup_[i];
 
   double *idata = coeff->data();
   for (auto& imo : mo_coefficients_) {
@@ -280,9 +284,9 @@ void MoldenIn::read() {
       }
       /* Not used at the moment. Maybe later.
       regex sym_re("Sym=\\s+(\\S+)");
-      regex spin_re("Spin=\\s+(\\w+)");
-      regex occup_re("Occup=\\s+(\\S+)"); */
+      regex spin_re("Spin=\\s+(\\w+)"); */
       regex ene_re("Ene=\\s+(\\S+)");
+      regex occup_re("Occup=\\s+(\\S+)");
       regex coeff_re("\\d+\\s+(\\S+)");
 
       getline(ifs, line);
@@ -291,6 +295,10 @@ void MoldenIn::read() {
           string estring(matches[1].first, matches[1].second);
           mo_eig_.push_back(lexical_cast<double>(estring));
         }
+        if (regex_search(line.c_str(), matches, occup_re)) {
+          string estring(matches[1].first, matches[1].second);
+          mo_occup_.push_back(lexical_cast<double>(estring));
+        }
         getline(ifs, line);
         if (ifs.eof()) break;
 
@@ -298,6 +306,10 @@ void MoldenIn::read() {
           if (regex_search(line.c_str(), matches, ene_re)) {
             string estring(matches[1].first, matches[1].second);
             mo_eig_.push_back(lexical_cast<double>(estring));
+          }
+          if (regex_search(line.c_str(), matches, occup_re)) {
+            string estring(matches[1].first, matches[1].second);
+            mo_occup_.push_back(lexical_cast<double>(estring));
           }
           getline(ifs, line);
         }

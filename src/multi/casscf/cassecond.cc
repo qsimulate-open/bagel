@@ -146,8 +146,12 @@ void CASSecond::compute() {
   muffle_->unmute();
 
   // block diagonalize coeff_ in nclosed and nvirt
-  if (max_iter_ > 0)
-    coeff_ = semi_canonical_orb();
+  if (max_iter_ > 0) {
+    auto tmp = semi_canonical_orb();
+    coeff_ = get<0>(tmp);
+    eig_   = get<1>(tmp);
+    occup_ = get<2>(tmp);
+  }
 
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch

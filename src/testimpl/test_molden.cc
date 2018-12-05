@@ -74,11 +74,13 @@ double molden_out_energy(std::string inp1, std::string inp2) {
     auto geom = std::make_shared<Geometry>(mol);
 
     auto coeff = std::make_shared<Coeff>(geom);
+    auto tmp = std::make_shared<VectorB>(geom->nbasis());
+    auto tmp2 = std::make_shared<VectorB>(geom->nbasis());
 
     std::string filename = inp1 + ".molden";
     MoldenIn mfs(filename, geom->spherical());
     mfs.read();
-    mfs >> tie(coeff, geom);
+    mfs >> tie(coeff, geom, tmp, tmp2);
 
     std::shared_ptr<const Matrix> ao_density = coeff->form_density_rhf(geom->nele()/2);
     auto hcore = std::make_shared<const Hcore>(geom);

@@ -37,6 +37,7 @@ class MoldenIn : public MoldenIO {
     std::vector<std::shared_ptr<const Atom>> atoms_;
 
     std::vector<double> mo_eig_;
+    std::vector<double> mo_occup_;
     std::vector<std::vector<double>> mo_coefficients_;
 
     std::vector<std::vector<std::vector<std::pair<int, double>>>> lmtuv_;
@@ -52,7 +53,7 @@ class MoldenIn : public MoldenIO {
     void read();
 
     MoldenIn& operator>> (std::vector<std::shared_ptr<const Atom>>& atoms_);
-    MoldenIn& operator>> (std::tuple<std::shared_ptr<Coeff>, std::shared_ptr<const Geometry>, std::shared_ptr<VectorB>>);
+    MoldenIn& operator>> (std::tuple<std::shared_ptr<Coeff>, std::shared_ptr<const Geometry>, std::shared_ptr<VectorB>, std::shared_ptr<VectorB>>);
     bool has_mo() const { return !mo_coefficients_.empty(); }
 };
 

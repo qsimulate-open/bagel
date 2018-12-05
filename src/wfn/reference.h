@@ -59,6 +59,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     std::shared_ptr<const Hcore> hcore_;
     VectorB eig_;
+    VectorB eigB_;
+    VectorB occup_;
 
     int nclosed_;
     int nact_;
@@ -79,7 +81,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & geom_ & coeff_ & coeffA_ & coeffB_ & noccA_ & noccB_ & energy_ & prop_freq_ & prop_ir_ & prop_eig_
-         & hcore_ & eig_ & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_;
+         & hcore_ & eig_ & eigB_ & occup_ & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_;
     }
 
   public:
@@ -111,7 +113,11 @@ class Reference : public std::enable_shared_from_this<Reference> {
     void set_nocc(const int a, const int b) { noccA_ = a; noccB_ = b; }
 
     void set_eig(const VectorB& eig);
+    void set_eigB(const VectorB& eig);
+    void set_occup(const VectorB& occup);
     const VectorB& eig() const { return eig_; }
+    const VectorB& eigB() const { return eigB_; }
+    const VectorB& occup() const { return occup_; }
 
     int nclosed() const { return nclosed_; }
     int nact() const { return nact_; }
