@@ -123,7 +123,7 @@ void MoldenIn::read() {
   *  Set up "global" regular expressions                      *
   ************************************************************/
   regex gto_re("\\[GTO\\]");
-  regex atoms_re("\\[Atoms\\]");
+  regex atoms_re("\\[[Aa][Tt][Oo][Mm][Ss]\\]");
   regex mo_re("\\[MO\\]");
   regex other_re("\\[\\w+\\]");
 
@@ -175,7 +175,7 @@ void MoldenIn::read() {
   while (!ifs.eof()){
     if (regex_search(line,atoms_re)) {
       regex ang_re("Angs");
-      regex atoms_line("(\\w{1,2})\\s+\\d+\\s+([+-]?[0-9]*[.]?[0-9]+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)");
+      regex atoms_line("([a-zA-Z]{1,2})[0-9]*\\s+\\d+\\s+([+-]?[0-9]*[.]?[0-9]+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)");
 
       scale = regex_search(line, ang_re) ? (1.0/au2angstrom__) : 1.0;
 
@@ -206,7 +206,7 @@ void MoldenIn::read() {
       }
       found_atoms = true;
 
-    } else if (regex_search(line,gto_re)){
+    } else if (regex_search(line,gto_re)) {
       getline(ifs, line);
 
       regex atom_line("(\\d+)\\s*\\S*");
