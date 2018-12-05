@@ -68,8 +68,11 @@ void MoldenIO::const_maps() {
     vector<int> sph_d_order = { 3, 4, 1, 2, 0 };
     vector<int> sph_f_order = { 5, 6, 3, 4, 1, 2, 0 };
     vector<int> sph_g_order = { 7, 8, 5, 6, 3, 4, 1, 2, 0 };
+    vector<int> sph_h_order = { 9,10, 7, 8, 5, 6, 3, 4, 1, 2, 0 };
+    vector<int> sph_i_order = {11,12, 9,10, 7, 8, 5, 6, 3, 4, 1, 2, 0 };
+    vector<int> sph_j_order = {13,14,11,12, 9,10, 7, 8, 5, 6, 3, 4, 1, 2, 0 };
 
-    m2b_sph_ = vector<vector<int>>{sph_s_order, sph_p_order, sph_d_order, sph_f_order, sph_g_order};
+    m2b_sph_ = vector<vector<int>>{sph_s_order, sph_p_order, sph_d_order, sph_f_order, sph_g_order, sph_h_order, sph_i_order, sph_j_order};
   }
 
   /************************************************************
@@ -89,8 +92,11 @@ void MoldenIO::const_maps() {
     vector<int> sph_d_order = { 4, 2, 3, 0, 1 };
     vector<int> sph_f_order = { 6, 4, 5, 2, 3, 0, 1 };
     vector<int> sph_g_order = { 8, 6, 7, 4, 5, 2, 3, 0, 1};
+    vector<int> sph_h_order = {10, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1};
+    vector<int> sph_i_order = {12,10,11, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1};
+    vector<int> sph_j_order = {14,12,13,10,11, 8, 9, 6, 7, 4, 5, 2, 3, 0, 1};
 
-    b2m_sph_ = vector<vector<int>>{sph_s_order, sph_p_order, sph_d_order, sph_f_order, sph_g_order};
+    b2m_sph_ = vector<vector<int>>{sph_s_order, sph_p_order, sph_d_order, sph_f_order, sph_g_order, sph_h_order, sph_i_order, sph_j_order};
   }
 }
 

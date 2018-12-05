@@ -38,6 +38,7 @@ MoldenOut::MoldenOut(string filename) : MoldenIO(filename), ofs_(filename) {
 MoldenOut& MoldenOut::operator<< (shared_ptr<const Molecule> mol) {
   mol_ = mol;
   write_geom();
+  write_aos();
 
   return *this;
 }
@@ -79,10 +80,9 @@ void MoldenOut::write_geom() {
   }
 }
 
-void MoldenOut::write_mos() {
-  vector<shared_ptr<const Atom>> atoms = mol_->atoms();
-  const bool is_spherical = mol_->spherical();
 
+void MoldenOut::write_aos() {
+  vector<shared_ptr<const Atom>> atoms = mol_->atoms();
   const int num_atoms = mol_->natom();
 
   /************************************************************
@@ -116,6 +116,13 @@ void MoldenOut::write_mos() {
     ofs_ << endl;
   }
   ofs_ << endl;
+}
+
+
+void MoldenOut::write_mos() {
+  vector<shared_ptr<const Atom>> atoms = mol_->atoms();
+  const bool is_spherical = mol_->spherical();
+
   if (is_spherical)
     ofs_ << "[5D]" << endl << "[7F]" << endl << "[9G]" << endl;
   ofs_ << "[MO]" << endl;

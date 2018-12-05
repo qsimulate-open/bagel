@@ -34,6 +34,7 @@ class MoldenOut : public MoldenIO {
       std::ofstream ofs_;
 
       void write_geom();
+      void write_aos();
       void write_mos();
       void write_freq();
 
