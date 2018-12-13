@@ -274,7 +274,7 @@ tuple<shared_ptr<const Coeff>,VectorB,VectorB> CASSCF::semi_canonical_orb() cons
     shared_ptr<const Matrix> atrans = trans.get_submatrix(nclosed_, nclosed_, nact_, nact_);
     const Matrix transrdm = *atrans * *rdm1mat ^ *atrans; 
     for (int i = 0; i != nact_; ++i)
-      occup[i] = transrdm(i, i);
+      occup[i+nclosed_] = transrdm(i, i);
   }
 
   auto coeffout = make_shared<Coeff>(*coeff_ * trans);
