@@ -44,6 +44,8 @@ enum Basis_Type { residual, amplitude };
 enum Excitations { arbs, arbi, airj, risj, airs, arst, rist, aibj, total };
 
 class Orthogonal_Basis {
+// TODO need fixes
+#if 0
   protected:
 
     IndexRange closed_;
@@ -126,6 +128,7 @@ class Orthogonal_Basis {
       for (auto& i : data_)
         i->zero();
     }
+#endif
 };
 
 }

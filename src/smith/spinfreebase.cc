@@ -282,7 +282,11 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
   }
 
   assert(fockact_);
-  auto denom = make_shared<Denom<double>>(fockact_, nstates, info_->thresh_overlap());
+  shared_ptr<Denom<double>> denom;
+  if (info_->sssr())
+    denom = make_shared<Denom_SSSR<double>>(fockact_, nstates, info_->thresh_overlap());
+  else
+    denom = make_shared<Denom_MSMR<double>>(fockact_, nstates, info_->thresh_overlap());
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
@@ -354,7 +358,11 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
   }
 
   assert(fockact_);
-  auto denom = make_shared<Denom<complex<double>>>(fockact_, nstates, info_->thresh_overlap());
+  shared_ptr<Denom<complex<double>>> denom;
+  if (info_->sssr())
+    denom = make_shared<Denom_SSSR<complex<double>>>(fockact_, nstates, info_->thresh_overlap());
+  else
+    denom = make_shared<Denom_MSMR<complex<double>>>(fockact_, nstates, info_->thresh_overlap());
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {

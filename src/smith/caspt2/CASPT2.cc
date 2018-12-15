@@ -333,6 +333,10 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
 
 tuple<shared_ptr<Orthogonal_Basis>,vector<shared_ptr<MultiTensor_<double>>>>
 CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
+#if 1
+  throw logic_error("need updates");
+  return tuple<shared_ptr<Orthogonal_Basis>,vector<shared_ptr<MultiTensor_<double>>>>();
+#else
   Timer mtimer;
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
   // loop over state of interest
@@ -412,6 +416,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
   }
   cout << endl << "      ------------------------------------------------------------------------------------------------------------------" << endl << endl;
   return make_tuple(amplitude, t);
+#endif
 }
 
 

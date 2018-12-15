@@ -33,6 +33,9 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
+// TODO need fixes
+#if 0
+
 Orthogonal_Basis::Orthogonal_Basis(shared_ptr<const SMITH_Info<double>> info, const IndexRange c, const IndexRange a, const IndexRange v,
 vector<double> f, vector<double> e0, shared_ptr<const Matrix> fact, shared_ptr<const Denom<double>> d, const bool residual) : closed_(c), active_(a), virt_(v), eig_(f), e0all_(e0) {
   nact_ = info->nact();
@@ -1369,4 +1372,5 @@ shared_ptr<Tensor_<double>> Orthogonal_Basis::init_amplitude() const {
 }
 
 
+#endif
 #endif

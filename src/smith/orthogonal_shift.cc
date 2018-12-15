@@ -33,6 +33,8 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
+// TODO needs updates
+#if 0
 
 void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int istate) {
   const double shift2 = shift_ * shift_;
@@ -203,4 +205,5 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
   mpi__->barrier();
 }
 
+#endif
 #endif

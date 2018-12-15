@@ -42,6 +42,7 @@ namespace SMITH {
 template<typename DataType>
 class SpinFreeMethod {
   protected:
+    using ViewType = typename std::conditional<std::is_same<DataType,double>::value,MatView,ZMatView>::type;
     using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
     using VecType = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
     using CIWfnT  = typename std::conditional<std::is_same<DataType,double>::value,CIWfn,RelCIWfn>::type;

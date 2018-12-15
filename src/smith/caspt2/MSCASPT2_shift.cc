@@ -147,6 +147,10 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
 
 tuple<shared_ptr<Matrix>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>
   MSCASPT2::MSCASPT2::make_d2_imag() const {
+#if 1
+  // TODO need updates
+  return tuple<shared_ptr<Matrix>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>();
+#else
   const size_t nact = info_->nact();
   const int nstates = nact ? info_->ciwfn()->nstates() : 1;
   const size_t nclosed = info_->nclosed();
@@ -1210,6 +1214,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<
   mpi__->allreduce(nimag.data(), nimag.size());
 
   return tie(dshift, e1, e2, e3, e4, nimag);
+#endif
 }
 
 #endif
