@@ -261,6 +261,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
   Timer mtimer;
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
   // loop over state of interest
+
   bool converged = true;
   for (int i = 0; i != nstates_; ++i) {  // K states
     bool conv = false;
@@ -340,6 +341,8 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
   cout << endl << "      -------------------------------------------  CASPT2 iteration  ---------------------------------------------------" << endl;
   cout << "       #      aibj      arbs      arbi      airj      risj      airs      arst      rist         Etot      error   time" << endl;
   cout << "      ------------------------------------------------------------------------------------------------------------------" << endl << endl;
+  if (!info_->sssr())
+    throw logic_error("Fix needed for MS-MR CASPT2");
 
   auto source = make_shared<Orthogonal_Basis>(info_, closed_, active_, virt_, eig_, e0all_, fockact_, denom_, /*residual=*/true);
   auto amplitude = make_shared<Orthogonal_Basis>(*source, /*clone=*/true, /*residual=*/false);
