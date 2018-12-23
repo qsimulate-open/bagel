@@ -60,6 +60,7 @@ class Denom {
     virtual void compute() = 0;
 
     virtual const ViewType shalf(const std::string, const int) const = 0;
+    virtual VectorB denom(const std::string& tag, const int ist) const = 0;
     virtual double denom(const std::string& tag, const int ist, const size_t i) const = 0;
 };
 
@@ -93,6 +94,7 @@ class Denom_SSSR : public Denom<DataType> {
 
     const ViewType shalf(const std::string tag, const int ist) const { return *(shalf_.at(tag)[ist]); }
     void compute() override; 
+    VectorB denom(const std::string& tag, const int ist) const override { return denom_.at(tag)[ist]; }
     double denom(const std::string& tag, const int ist, const size_t i) const override { return denom_.at(tag)[ist](i); }
 }; 
 
@@ -128,6 +130,7 @@ class Denom_MSMR : public Denom<DataType> {
       return shalf_.at(tag)->slice(ist*dim, (ist+1)*dim);
     }
     void compute() override; 
+    VectorB denom(const std::string& tag, const int ist) const override { return denom_.at(tag); }
     double denom(const std::string& tag, const int ist, const size_t i) const override { return denom_.at(tag)(i); }
 }; 
 

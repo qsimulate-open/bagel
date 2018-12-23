@@ -45,8 +45,8 @@ enum Excitations { arbs, arbi, airj, risj, airs, arst, rist, aibj, total };
 
 class Orthogonal_Basis {
 // TODO need fixes
-#if 0
   protected:
+    std::map<int,std::string> to_denom_;
 
     IndexRange closed_;
     IndexRange active_;
@@ -69,6 +69,9 @@ class Orthogonal_Basis {
     size_t norb_;
     size_t nstates_;
 
+    // number of vectors in data. (sssr) Nstate X 8, (msmr) 7 + Nstate
+    size_t datasize_;
+
     bool sssr_;
     bool imag_;
     double shift_;
@@ -76,12 +79,11 @@ class Orthogonal_Basis {
     double e0_;
 
     Basis_Type basis_type_;
-    std::vector<std::shared_ptr<Matrix>> shalf_;
-    std::vector<VectorB> phi_;
+    std::shared_ptr<const Denom<double>> d_;
 
     std::vector<std::shared_ptr<MultiTensor_<double>>> data_;
     std::vector<std::shared_ptr<MultiTensor_<double>>> denom_;
-    std::shared_ptr<Tensor_<double>> init_data(const int iext);
+    std::shared_ptr<Tensor_<double>> init_data(const int iext, const int istate);
     std::shared_ptr<MultiTensor_<double>> weight_by_denom(const int istate, std::shared_ptr<const MultiTensor_<double>> original) const;
     void set_shalf(std::shared_ptr<const Denom<double>> d);
     void set_denom(std::shared_ptr<const Denom<double>> d);
@@ -89,6 +91,12 @@ class Orthogonal_Basis {
     // copy of the functions in SpinFreeMethod
     std::shared_ptr<Tensor_<double>> init_amplitude() const;
     void loop_over(std::function<void(const Index&, const Index&, const Index&, const Index&)>) const;
+
+    // constraction scheme dependent implementations
+    void transform_to_orthogonal_sssr(std::shared_ptr<const MultiTensor_<double>> t, const int istate);
+    void transform_to_orthogonal_msmr(std::shared_ptr<const MultiTensor_<double>> t, const int istate);
+    std::shared_ptr<MultiTensor_<double>> transform_to_redundant_sssr(const int istate) const;
+    std::shared_ptr<MultiTensor_<double>> transform_to_redundant_msmr(const int istate) const;
 
   public:
     // Orthogonal basis: construct from scratch (using denom)
@@ -117,8 +125,6 @@ class Orthogonal_Basis {
     std::shared_ptr<MultiTensor_<double>> data(const size_t i) const { return data_[i]; }
     std::shared_ptr<MultiTensor_<double>> denom(const size_t i) const { return denom_[i]; }
     std::shared_ptr<MultiTensor_<double>> get_contravariant(const int istate, const bool weight = false) const;
-    std::shared_ptr<Matrix> shalf(const int type) const { return shalf_[type]; }
-    double phi(const int type, const size_t i) const { return phi_[type][i]; }
 
     bool is_residual() const { return (basis_type_ == Basis_Type::residual); }
     bool is_amplitude() const { return (basis_type_ == Basis_Type::amplitude); }
@@ -128,7 +134,6 @@ class Orthogonal_Basis {
       for (auto& i : data_)
         i->zero();
     }
-#endif
 };
 
 }

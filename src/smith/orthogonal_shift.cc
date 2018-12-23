@@ -33,19 +33,18 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-// TODO needs updates
-#if 0
 
 void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int istate) {
   const double shift2 = shift_ * shift_;
 
   for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
     const shared_ptr<Tensor_<double>> ttensor = t->data(istate)->at(iext);
+    const int dataindex = sssr_ ? iext + istate * Excitations::total : iext;
     switch(iext) {
       case Excitations::arbs:
         for (auto& i3 : virt_)
           for (auto& i1 : virt_)
-            for (auto& i0o : interm_[iext]) {
+            for (auto& i0o : interm_[dataindex]) {
               if (!ttensor->is_local(i0o, i1, i3)) continue;
               unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i1, i3);
               const size_t blocksize = ttensor->get_size(i0o, i1, i3);
@@ -65,7 +64,7 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
         for (auto& i3 : virt_)
           for (auto& i2 : closed_)
             for (auto& i1 : virt_)
-              for (auto& i0o : interm_[iext]) {
+              for (auto& i0o : interm_[dataindex]) {
                 if (!ttensor->is_local(i0o, i1, i2, i3)) continue;
                 unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i1, i2, i3);
                 const size_t blocksize = ttensor->get_size(i0o, i1, i2, i3);
@@ -85,7 +84,7 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
         for (auto& i2 : closed_)
           for (auto& i1 : virt_)
             for (auto& i0 : closed_)
-              for (auto& i0o : interm_[iext]) {
+              for (auto& i0o : interm_[dataindex]) {
                 if (!ttensor->is_local(i0o, i0, i1, i2)) continue;
                 unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i0, i1, i2);
                 const size_t blocksize = ttensor->get_size(i0o, i0, i1, i2);
@@ -104,7 +103,7 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
       case Excitations::risj:
         for (auto& i2 : closed_)
           for (auto& i0 : closed_)
-            for (auto& i0o : interm_[iext]) {
+            for (auto& i0o : interm_[dataindex]) {
               if (!ttensor->is_local(i0o, i0, i2)) continue;
               unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i0, i2);
               const size_t blocksize = ttensor->get_size(i0o, i0, i2);
@@ -123,7 +122,7 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
       case Excitations::airs:
         for (auto& i1 : virt_)
           for (auto& i0 : closed_)
-            for (auto& i0o : interm_[iext]) {
+            for (auto& i0o : interm_[dataindex]) {
               if (!ttensor->is_local(i0o, i0, i1)) continue;
               unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i0, i1);
               const size_t blocksize = ttensor->get_size(i0o, i0, i1);
@@ -141,7 +140,7 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
         break;
       case Excitations::arst:
         for (auto& i1 : virt_)
-          for (auto& i0o : interm_[iext]) {
+          for (auto& i0o : interm_[dataindex]) {
             if (!ttensor->is_local(i0o, i1)) continue;
             unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i1);
             const size_t blocksize = ttensor->get_size(i0o, i1);
@@ -159,7 +158,7 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
         break;
       case Excitations::rist:
         for (auto& i0 : closed_)
-          for (auto& i0o : interm_[iext]) {
+          for (auto& i0o : interm_[dataindex]) {
             if (!ttensor->is_local(i0o, i0)) continue;
             unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i0);
             const size_t blocksize = ttensor->get_size(i0o, i0);
@@ -205,5 +204,4 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
   mpi__->barrier();
 }
 
-#endif
 #endif
