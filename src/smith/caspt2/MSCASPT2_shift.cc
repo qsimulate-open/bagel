@@ -823,8 +823,263 @@ tuple<shared_ptr<Matrix>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<
           }
           break;
         case Excitations::arst:
+          {
+            for (auto& i0 : t_orthogonal_->virt())
+              for (auto& i0o : t_orthogonal_->interm(dataindex)) {
+                if (!t->is_local(i0o, i0)) continue;
+                const unique_ptr<double[]> amplitude = t->get_block(i0o, i0);
+                const unique_ptr<double[]> lambda    = l->get_block(i0o, i0);
+                const unique_ptr<double[]> denom     = d->get_block(i0o, i0);
+                for (size_t j0 = i0.offset(), jall = 0; j0 != i0.offset()+i0.size(); ++j0) {
+                  const size_t j0i = j0 - ncore;
+                  for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
+                    const double Lambda = shift2 * lambda[jall] * amplitude[jall];
+                    dshift->element(j0i, j0i) -= Lambda;
+                    smallz->element(j0o, j0o) -= Lambda;
+                    nimag[ist] -= Lambda;
+                  }
+                }
+                for (auto& i1o : t_orthogonal_->interm(dataindex)) {
+                  const unique_ptr<double[]> amplitudek = t->get_block(i1o, i0);
+                  const unique_ptr<double[]> lambdak    = l->get_block(i1o, i0);
+                  const unique_ptr<double[]> denomk     = d->get_block(i1o, i0);
+                  for (size_t j0 = i0.offset(), jall = 0; j0 != i0.offset()+i0.size(); ++j0) {
+                    for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
+                      for (size_t j1o = i1o.offset(); j1o != i1o.offset()+i1o.size(); ++j1o) {
+                        const size_t kall = j1o - i1o.offset() + i1o.size() * (j0 - i0.offset());
+                        const double lt = lambda[jall] * amplitudek[kall] * shift2 * denom[jall];
+                        const double tl = amplitude[jall] * lambdak[kall] * shift2 * denomk[kall];
+                        largey->element(j0o, j1o) += lambda[jall] * amplitudek[kall] * shift2 * (denom[jall] - denomk[kall]);
+                        largeq->element(j0o, j1o) += (lt + tl);
+                      }
+                    }
+                  }
+                }
+            }
+          smallz->allreduce();
+          largey->allreduce();
+          largeq->allreduce();
+          for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+            for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+              if (j1o == j0o) continue;
+              const double fdiff = t_orthogonal_->phi(iext, ist, j1o) - t_orthogonal_->phi(iext, ist, j0o);
+              smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+            }
+          }
+          for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+            for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+              largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * t_orthogonal_->phi(iext, ist, j1o))
+                                        + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * t_orthogonal_->phi(iext, ist, j0o));
+            }
+          }
+          {
+            MatView Vmat = t_orthogonal_->shalf(iext, ist);
+            auto Qmat = make_shared<Matrix>((*smallz) % Vmat);
+            auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % Vmat);
+            auto Rmat = make_shared<RDM<3>>(nact);
+            for (size_t j0 = 0; j0 != nact; ++j0) {
+              for (size_t j1 = 0; j1 != nact; ++j1) {
+                const int jall = j1 + nact * j0;
+                if (jall % mpi__->size() != mpi__->rank()) continue;
+                for (size_t j2 = 0; j2 != nact; ++j2) {
+                  for (size_t j3 = 0; j3 != nact; ++j3) {
+                    for (size_t j4 = 0; j4 != nact; ++j4) {
+                      for (size_t j5 = 0; j5 != nact; ++j5) {
+                        for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+                          const double VrstO = Vmat.element(j0o, j3 + nact * (j4 + nact * j5));
+                          Rmat->element(j1, j2, j5, j4, j0, j3) += Qmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
+                          e3->at(ist, ist)->element(j0, j1, j5, j4, j2, j3) += Pmat->element(j0o, j2 + nact * (j0 + nact * j1)) * VrstO;
+                          if (j1 == j5) e2->at(ist, ist)->element(j0, j4, j2, j3) += Pmat->element(j0o, j2 + nact * (j0 + nact * j1)) * VrstO;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            Rmat->allreduce();
+            for (size_t j7 = 0; j7 != nact; ++j7)
+              for (size_t j0 = 0; j0 != nact; ++j0) {
+                const int jall = j0 + nact * j7;
+                if (jall % mpi__->size() != mpi__->rank()) continue;
+                for (size_t j6 = 0; j6 != nact; ++j6)
+                  for (size_t j5 = 0; j5 != nact; ++j5)
+                    for (size_t j2 = 0; j2 != nact; ++j2)
+                      for (size_t j1 = 0; j1 != nact; ++j1) {
+                        e4->at(ist, ist)->element(j1, j2, j5, j6, j0, j7) += 2.0 * Rmat->element(j1, j2, j5, j6, j0, j7);
+                        for (size_t j4 = 0; j4 != nact; ++j4) {
+                          size_t j4i = j4 + nclo;
+                          for (size_t j3 = 0; j3 != nact; ++j3) {
+                            size_t j3i = j3 + nclo;
+                            dshift->element(j3i, j4i) += Rmat->element(j1, j2, j5, j6, j0, j7) * rdm4->element(j1, j2, j5, j6, j0, j7, j3, j4);
+                            if (j4 == j5)             dshift->element(j3i, j4i) += Rmat->element(j1, j2, j5, j6, j0, j7) * rdm3->element(j1, j2, j3, j6, j0, j7);
+                            if (j2 == j3)             dshift->element(j3i, j4i) += Rmat->element(j1, j2, j5, j6, j0, j7) * rdm3->element(j1, j4, j5, j6, j0, j7);
+                            if (j2 == j3 && j4 == j5) dshift->element(j3i, j4i) += Rmat->element(j1, j2, j5, j6, j0, j7) * rdm2->element(j1, j6, j0, j7);
+                            if (j2 == j5)             dshift->element(j3i, j4i) += Rmat->element(j1, j2, j5, j6, j0, j7) * rdm3->element(j3, j4, j1, j6, j0, j7);
+                            if (j4 == j5)             e3->at(ist,ist)->element(j1, j2, j3, j6, j0, j7) += 2.0 * Rmat->element(j1, j2, j5, j6, j0, j7) * fockact_->element(j3, j4);
+                            if (j2 == j3)             e3->at(ist,ist)->element(j1, j4, j5, j6, j0, j7) += 2.0 * Rmat->element(j1, j2, j5, j6, j0, j7) * fockact_->element(j3, j4);
+                            if (j2 == j3 && j4 == j5) e2->at(ist,ist)->element(j1, j6, j0, j7)         += 2.0 * Rmat->element(j1, j2, j5, j6, j0, j7) * fockact_->element(j3, j4);
+                            if (j2 == j5)             e3->at(ist,ist)->element(j3, j4, j1, j6, j0, j7) += 2.0 * Rmat->element(j1, j2, j5, j6, j0, j7) * fockact_->element(j3, j4);
+                          }
+                        }
+                      }
+              }
+            }
+          }
           break;
         case Excitations::rist:
+          {
+            for (auto& i0 : t_orthogonal_->closed())
+              for (auto& i0o : t_orthogonal_->interm(dataindex)) {
+                if (!t->is_local(i0o, i0)) continue;
+                const unique_ptr<double[]> amplitude = t->get_block(i0o, i0);
+                const unique_ptr<double[]> lambda    = l->get_block(i0o, i0);
+                const unique_ptr<double[]> denom     = d->get_block(i0o, i0);
+                for (size_t j0 = i0.offset(), jall = 0; j0 != i0.offset()+i0.size(); ++j0) {
+                  const size_t j0i = j0 - ncore;
+                  for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
+                    const double Lambda = shift2 * lambda[jall] * amplitude[jall];
+                    dshift->element(j0i, j0i) += Lambda;
+                    smallz->element(j0o, j0o) -= Lambda;
+                    nimag[ist] -= Lambda;
+                  }
+                }
+                for (auto& i1o : t_orthogonal_->interm(dataindex)) {
+                  const unique_ptr<double[]> amplitudek = t->get_block(i1o, i0);
+                  const unique_ptr<double[]> lambdak    = l->get_block(i1o, i0);
+                  const unique_ptr<double[]> denomk     = d->get_block(i1o, i0);
+                  for (size_t j0 = i0.offset(), jall = 0; j0 != i0.offset()+i0.size(); ++j0) {
+                    for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
+                      for (size_t j1o = i1o.offset(); j1o != i1o.offset()+i1o.size(); ++j1o) {
+                        const size_t kall = j1o - i1o.offset() + i1o.size() * (j0 - i0.offset());
+                        const double lt = lambda[jall] * amplitudek[kall] * shift2 * denom[jall];
+                        const double tl = amplitude[jall] * lambdak[kall] * shift2 * denomk[kall];
+                        largey->element(j0o, j1o) += lambda[jall] * amplitudek[kall] * shift2 * (denom[jall] - denomk[kall]);
+                        largeq->element(j0o, j1o) += (lt + tl);
+                      }
+                    }
+                  }
+                }
+              }
+            smallz->allreduce();
+            largey->allreduce();
+            largeq->allreduce();
+            for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+              for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                if (j1o == j0o) continue;
+                const double fdiff = t_orthogonal_->phi(iext, ist, j1o) - t_orthogonal_->phi(iext, ist, j0o);
+                smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+              }
+            }
+            for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+              for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * t_orthogonal_->phi(iext, ist, j1o))
+                                          + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * t_orthogonal_->phi(iext, ist, j0o));
+              }
+            }
+            {
+              MatView Vmat = t_orthogonal_->shalf(iext, ist);
+              auto Qmat = make_shared<Matrix>((*smallz) % Vmat);
+              auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % Vmat);
+              auto Rmat = make_shared<RDM<3>>(nact);
+              for (size_t j0 = 0; j0 != nact; ++j0) {
+                for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j0 + nact * j1;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
+                  for (size_t j2 = 0; j2 != nact; ++j2) {
+                    for (size_t j3 = 0; j3 != nact; ++j3) {
+                      for (size_t j4 = 0; j4 != nact; ++j4) {
+                        for (size_t j5 = 0; j5 != nact; ++j5) {
+                          for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+                            const double VrstO = Vmat.element(j0o, j3 + nact * (j4 + nact * j5));
+                            Rmat->element(j0, j1, j5, j2, j4, j3) += Qmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
+                            e3->at(ist, ist)->element(j0, j1, j5, j2, j4, j3) += -1.0 * Pmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
+                            if (j2 == j4)             e2->at(ist, ist)->element(j0, j1, j5, j3) += -1.0 * Pmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
+                            if (j2 == j5)             e2->at(ist, ist)->element(j0, j1, j4, j3) +=  2.0 * Pmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
+                            if (j1 == j4)             e2->at(ist, ist)->element(j5, j2, j0, j3) += -1.0 * Pmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
+                            if (j1 == j4 && j2 == j5) e1->at(ist, ist)->element(j0, j3)         +=  2.0 * Pmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
+                            if (j1 == j5)             e2->at(ist, ist)->element(j0, j2, j4, j3) += -1.0 * Pmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
+                            if (j1 == j5 && j2 == j4) e1->at(ist, ist)->element(j0, j3)         += -1.0 * Pmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              Rmat->allreduce();
+              for (size_t j7 = 0; j7 != nact; ++j7)
+                for (size_t j0 = 0; j0 != nact; ++j0) {
+                  const int jall = j0 + nact * j7;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
+                  for (size_t j6 = 0; j6 != nact; ++j6)
+                    for (size_t j5 = 0; j5 != nact; ++j5)
+                      for (size_t j2 = 0; j2 != nact; ++j2)
+                        for (size_t j1 = 0; j1 != nact; ++j1) {
+                          e4->at(ist, ist)->element(j0, j1, j5, j2, j6, j7) -= 2.0 * Rmat->element(j0, j1, j5, j2, j6, j7);
+                          for (size_t j4 = 0; j4 != nact; ++j4) {
+                            size_t j4i = j4 + nclo;
+                            for (size_t j3 = 0; j3 != nact; ++j3) {
+                              size_t j3i = j3 + nclo;
+                              dshift->element(j3i, j4i) -= Rmat->element(j0, j1, j5, j2, j6, j7) * rdm4->element(j0, j1, j5, j2, j6, j7, j3, j4);
+                              if (j4 == j6)                         dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm3->element(j0, j1, j5, j2, j3, j7);
+                              if (j4 == j5)                         dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm3->element(j0, j1, j3, j2, j6, j7);
+                              if (j2 == j6)                         dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm3->element(j0, j1, j3, j4, j5, j7);
+                              if (j2 == j6 && j4 == j5)             dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j0, j1, j3, j7);
+                              if (j2 == j5)                         dshift->element(j3i, j4i) +=  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm3->element(j0, j1, j3, j4, j6, j7);
+                              if (j2 == j5 && j4 == j6)             dshift->element(j3i, j4i) +=  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j0, j1, j3, j7);
+                              if (j2 == j3)                         dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm3->element(j0, j1, j5, j4, j6, j7);
+                              if (j2 == j3 && j4 == j6)             dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j0, j1, j5, j7);
+                              if (j2 == j3 && j4 == j5)             dshift->element(j3i, j4i) +=  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j0, j1, j6, j7);
+                              if (j1 == j6)                         dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm3->element(j3, j4, j5, j2, j0, j7);
+                              if (j1 == j6 && j4 == j5)             dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j3, j2, j0, j7);
+                              if (j1 == j6 && j2 == j3)             dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j5, j4, j0, j7);
+                              if (j1 == j6 && j2 == j3 && j4 == j5) dshift->element(j3i, j4i) +=  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm1->element(j0, j7);
+                              if (j1 == j5)                         dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm3->element(j0, j2, j3, j4, j6, j7);
+                              if (j1 == j5 && j4 == j6)             dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j0, j2, j3, j7);
+                              if (j2 == j3 && j1 == j5)             dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j0, j4, j6, j7);
+                              if (j2 == j3 && j1 == j5 && j4 == j6) dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm1->element(j0, j7);
+                              if (j1 == j3)                         dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm3->element(j0, j4, j5, j2, j6, j7);
+                              if (j1 == j3 && j4 == j6)             dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j5, j2, j0, j7);
+                              if (j1 == j3 && j4 == j5)             dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j0, j2, j6, j7);
+                              if (j2 == j6 && j1 == j3)             dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j0, j4, j5, j7);
+                              if (j2 == j6 && j1 == j3 && j4 == j5) dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm1->element(j0, j7);
+                              if (j1 == j3 && j2 == j5)             dshift->element(j3i, j4i) +=  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j0, j4, j6, j7);
+                              if (j4 == j6 && j2 == j5 && j1 == j3) dshift->element(j3i, j4i) +=  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm1->element(j0, j7);
+                              if (j1 == j6 && j2 == j5)             dshift->element(j3i, j4i) +=  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j3, j4, j0, j7);
+                              if (j1 == j5 && j2 == j6)             dshift->element(j3i, j4i) += -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * rdm2->element(j3, j4, j0, j7);
+                              if (j4 == j6)                         e3->at(ist, ist)->element(j0, j1, j5, j2, j3, j7) += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j4 == j5)                         e3->at(ist, ist)->element(j0, j1, j3, j2, j6, j7) += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j6)                         e3->at(ist, ist)->element(j0, j1, j3, j4, j5, j7) += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j6 && j4 == j5)             e2->at(ist, ist)->element(j0, j1, j3, j7)         += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j5)                         e3->at(ist, ist)->element(j0, j1, j3, j4, j6, j7) += 2.0 *  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j5 && j4 == j6)             e2->at(ist, ist)->element(j0, j1, j3, j7)         += 2.0 *  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j3)                         e3->at(ist, ist)->element(j0, j1, j5, j4, j6, j7) += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j3 && j4 == j6)             e2->at(ist, ist)->element(j0, j1, j5, j7)         += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j3 && j4 == j5)             e2->at(ist, ist)->element(j0, j1, j6, j7)         += 2.0 *  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j6)                         e3->at(ist, ist)->element(j3, j4, j5, j2, j0, j7) += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j6 && j4 == j5)             e2->at(ist, ist)->element(j3, j2, j0, j7)         += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j6 && j2 == j3)             e2->at(ist, ist)->element(j5, j4, j0, j7)         += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j6 && j2 == j3 && j4 == j5) e1->at(ist, ist)->element(j0, j7)                 += 2.0 *  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j5)                         e3->at(ist, ist)->element(j0, j2, j3, j4, j6, j7) += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j5 && j4 == j6)             e2->at(ist, ist)->element(j0, j2, j3, j7)         += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j3 && j1 == j5)             e2->at(ist, ist)->element(j0, j4, j6, j7)         += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j3 && j1 == j5 && j4 == j6) e1->at(ist, ist)->element(j0, j7)                 += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j3)                         e3->at(ist, ist)->element(j0, j4, j5, j2, j6, j7) += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j3 && j4 == j6)             e2->at(ist, ist)->element(j5, j2, j0, j7)         += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j3 && j4 == j5)             e2->at(ist, ist)->element(j0, j2, j6, j7)         += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j6 && j1 == j3)             e2->at(ist, ist)->element(j0, j4, j5, j7)         += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j2 == j6 && j1 == j3 && j4 == j5) e1->at(ist, ist)->element(j0, j7)                 += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j3 && j2 == j5)             e2->at(ist, ist)->element(j0, j4, j6, j7)         += 2.0 *  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j4 == j6 && j2 == j5 && j1 == j3) e1->at(ist, ist)->element(j0, j7)                 += 2.0 *  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j6 && j2 == j5)             e2->at(ist, ist)->element(j3, j4, j0, j7)         += 2.0 *  2.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                              if (j1 == j5 && j2 == j6)             e2->at(ist, ist)->element(j3, j4, j0, j7)         += 2.0 * -1.0 * Rmat->element(j0, j1, j5, j2, j6, j7) * fockact_->element(j3, j4);
+                            }
+                          }
+                        }
+                }
+            }
+          }
           break;
         case Excitations::aibj:
           {
