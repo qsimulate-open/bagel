@@ -81,20 +81,20 @@ class Denom_SSSR : public Denom<DataType> {
 
     void set_sblock(const std::string tag, const int jst, const int ist, const btas::TensorView2<DataType> o) override {
       assert(jst == ist && o.size() == shalf_.at(tag)[ist]->size());
-      std::copy_n(&*o.begin(), o.size(), shalf_.at(tag)[ist]->data()); 
+      std::copy_n(&*o.begin(), o.size(), shalf_.at(tag)[ist]->data());
     }
     void set_wblock(const std::string tag, const int jst, const int ist, const btas::TensorView2<DataType> o) override {
       assert(jst == ist && o.size() == work_.at(tag)[ist]->size());
-      std::copy_n(&*o.begin(), o.size(), work_.at(tag)[ist]->data()); 
+      std::copy_n(&*o.begin(), o.size(), work_.at(tag)[ist]->data());
     }
 
   public:
     Denom_SSSR(std::shared_ptr<const MatType> fock, const int nstates, const double thresh_overlap);
 
     const ViewType shalf(const std::string tag, const int ist) const { return *(shalf_.at(tag)[ist]); }
-    void compute() override; 
+    void compute() override;
     double denom(const std::string& tag, const int ist, const size_t i) const override { return denom_.at(tag)[ist](i); }
-}; 
+};
 
 
 template<typename DataType>
@@ -113,11 +113,11 @@ class Denom_MSMR : public Denom<DataType> {
 
     void set_sblock(const std::string tag, const int jst, const int ist, const btas::TensorView2<DataType> o) override {
       const size_t dim = dim_.at(tag);
-      shalf_.at(tag)->copy_block(jst*dim, ist*dim, dim, dim, o); 
+      shalf_.at(tag)->copy_block(jst*dim, ist*dim, dim, dim, o);
     }
     void set_wblock(const std::string tag, const int jst, const int ist, const btas::TensorView2<DataType> o) override {
       const size_t dim = dim_.at(tag);
-      work_.at(tag)->copy_block(jst*dim, ist*dim, dim, dim, o); 
+      work_.at(tag)->copy_block(jst*dim, ist*dim, dim, dim, o);
     }
 
   public:
@@ -129,7 +129,7 @@ class Denom_MSMR : public Denom<DataType> {
     }
     void compute() override; 
     double denom(const std::string& tag, const int ist, const size_t i) const override { return denom_.at(tag)(i); }
-}; 
+};
 
 extern template class Denom<double>;
 extern template class Denom<std::complex<double>>;
