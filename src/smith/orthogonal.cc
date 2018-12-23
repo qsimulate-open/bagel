@@ -81,10 +81,7 @@ vector<double> f, vector<double> e0, shared_ptr<const Matrix> fact, shared_ptr<c
     }
   } else {
     for (int iext = Excitations::arbs; iext != Excitations::aibj; ++iext) {
-      size_t ndim = 0;
-      for (int istate = 0; istate != nstates_; ++istate) {
-        ndim += d->shalf(to_denom_.at(iext), istate).ndim();
-      }
+      const size_t ndim = d->shalf(to_denom_.at(iext), 0).ndim();
       const int maxtile = max(((int)(ndim / 255) + 1), info->maxtile());
       interm_.push_back(IndexRange(ndim, maxtile, keyoffset));
       keyoffset += interm_[iext].nblock();
@@ -587,21 +584,12 @@ void Orthogonal_Basis::set_denom(shared_ptr<const Denom<double>> d) {
 
 
 void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<double>> t, int istate) {
-  if (sssr_) {
-    transform_to_orthogonal_sssr(t, istate);
-  } else {
-    transform_to_orthogonal_msmr(t, istate);
-  }
-}
-
-
-void Orthogonal_Basis::transform_to_orthogonal_sssr(shared_ptr<const MultiTensor_<double>> t, int istate) {
   // we put the transformed data in data_[istate].
   data_[istate]->zero();
   for (int ist = 0; ist != nstates_; ++ist) {
     if (!t->at(ist)) continue;
     for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
-      const int dataindex = iext + istate * Excitations::total;
+      const int dataindex = sssr_ ? iext + istate * Excitations::total : iext;
       shared_ptr<const Tensor_<double>> tensor = t->at(ist);
       const MatView ishalf = (iext != Excitations::aibj) ? shalf(iext, ist) : shalf(0, ist);
       switch(iext) {
@@ -824,7 +812,7 @@ void Orthogonal_Basis::transform_to_orthogonal_sssr(shared_ptr<const MultiTensor
               for (auto& i2 : closed_)
                 for (auto& i1 : virt_)
                   for (auto& i0 : closed_) {
-                    if (!data_[istate]->at(iext)->is_local(i0, i1, i2, i3)) continue;
+                    if (!data_[istate]->at(pos)->is_local(i0, i1, i2, i3)) continue;
                     unique_ptr<double[]> data0 = t->at(ist)->get_block(i0, i1, i2, i3);
                     const unique_ptr<double[]> data1 = t->at(ist)->get_block(i0, i3, i2, i1);
                     sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
@@ -839,310 +827,293 @@ void Orthogonal_Basis::transform_to_orthogonal_sssr(shared_ptr<const MultiTensor
 }
 
 
-void Orthogonal_Basis::transform_to_orthogonal_msmr(shared_ptr<const MultiTensor_<double>> t, int istate) {
-}
-
-
 shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const int istate) const {
-  shared_ptr<MultiTensor_<double>> out;
-  if (sssr_) {
-    out = transform_to_redundant_sssr(istate);
-  } else {
-    out = transform_to_redundant_msmr(istate);
-  }
-  return out;
-}
-
-
-shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant_sssr(const int istate) const {
   // we put the transformed data in out.
   auto out = make_shared<MultiTensor_<double>>(nstates_);
-  (*out)[istate] = init_amplitude();
-
-  for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
-    const int dataindex = iext + istate * Excitations::total;
-    shared_ptr<Tensor_<double>> tensor = out->at(istate);
-    shared_ptr<const Tensor_<double>> dtensor = data_[istate]->at(iext);
-    const MatView ishalf = (iext != Excitations::aibj) ? shalf(iext, istate) : shalf(0, istate);
-    switch(iext) {
-      case Excitations::arbs:
-        for (auto& i2 : active_)
+  for (int ist = 0; ist != nstates_; ++ist) {
+    if (sssr_ && istate != ist) continue;
+    (*out)[ist] = init_amplitude();
+    for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
+      const int dataindex = sssr_ ? iext + istate * Excitations::total : iext;
+      shared_ptr<Tensor_<double>> tensor = out->at(ist);
+      shared_ptr<const Tensor_<double>> dtensor = data_[istate]->at(iext);
+      const MatView ishalf = (iext != Excitations::aibj) ? shalf(iext, ist) : shalf(0, ist);
+      switch(iext) {
+        case Excitations::arbs:
+          for (auto& i2 : active_)
+            for (auto& i0 : active_) {
+              auto create_transp = [this](const MatView shalf, const Index& I0, const Index& I2, const Index& I0o) {
+                unique_ptr<double[]> out(new double[I0.size()*I2.size()*I0o.size()]);
+                for (int j2 = I2.offset(), k = 0; j2 != I2.offset()+I2.size(); ++j2)
+                  for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
+                    copy_n(shalf.element_ptr(I0o.offset(),(j0-nclosed_)+(j2-nclosed_)*nact_),
+                           I0o.size(), out.get()+I0o.size()*k);
+                return move(out);
+              };
+              for (auto& i0o : interm_[dataindex]) {
+                unique_ptr<double[]> transp = create_transp(ishalf, i0, i2, i0o);
+                for (auto& i3 : virt_)
+                  for (auto& i1 : virt_) {
+                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                    const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                    unique_ptr<double[]> interm = dtensor->get_block(i0o, i1, i3);
+                    const size_t interm_size = dtensor->get_size(i0o, i1, i3);
+                    if (imag_) {
+                      const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i1, i3);
+                      for (size_t i = 0; i != interm_size; ++i) {
+                        interm[i] *= denom[i];
+                      }
+                    }
+                    unique_ptr<double[]> data0(new double[blocksize]);
+                    btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), i0o.size(),
+                                                sqrt(0.5), transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size());
+                    unique_ptr<double[]> data1(new double[blocksize]);
+                    sort_indices<0,2,1,3,0,1,1,1>(data0.get(), data1.get(), i0.size(), i2.size(), i1.size(), i3.size());
+                    tensor->add_block(data1, i0, i1, i2, i3);
+                  }
+              }
+            }
+          break;
+        case Excitations::arbi:
           for (auto& i0 : active_) {
-            auto create_transp = [this](const MatView shalf, const Index& I0, const Index& I2, const Index& I0o) {
-              unique_ptr<double[]> out(new double[I0.size()*I2.size()*I0o.size()]);
-              for (int j2 = I2.offset(), k = 0; j2 != I2.offset()+I2.size(); ++j2)
-                for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
-                  copy_n(shalf.element_ptr(I0o.offset(),(j0-nclosed_)+(j2-nclosed_)*nact_),
-                         I0o.size(), out.get()+I0o.size()*k);
+            auto create_transp = [this](const MatView shalf, const Index& I0, const Index& I0o) {
+              unique_ptr<double[]> out(new double[I0.size()*I0o.size()]);
+              for (int j0 = I0.offset(), k = 0; j0 != I0.offset()+I0.size(); ++j0, ++k)
+                copy_n(shalf.element_ptr(I0o.offset(), j0-nclosed_), I0o.size(), out.get()+I0o.size()*k);
               return move(out);
             };
             for (auto& i0o : interm_[dataindex]) {
-              unique_ptr<double[]> transp = create_transp(ishalf, i0, i2, i0o);
+              unique_ptr<double[]> transp = create_transp(ishalf, i0, i0o);
               for (auto& i3 : virt_)
-                for (auto& i1 : virt_) {
-                  if (!tensor->is_local(i0, i1, i2, i3)) continue;
-                  const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                  unique_ptr<double[]> interm = dtensor->get_block(i0o, i1, i3);
-                  const size_t interm_size = dtensor->get_size(i0o, i1, i3);
-                  if (imag_) {
-                    const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i1, i3);
-                    for (size_t i = 0; i != interm_size; ++i) {
-                      interm[i] *= denom[i];
+                for (auto& i2 : closed_)
+                  for (auto& i1 : virt_) {
+                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                    const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                    unique_ptr<double[]> interm = dtensor->get_block(i0o, i1, i2, i3);
+                    const size_t interm_size = dtensor->get_size(i0o, i1, i2, i3);
+                    if (imag_) {
+                      const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i1, i2, i3);
+                      for (size_t i = 0; i != interm_size; ++i) {
+                        interm[i] *= denom[i];
+                      }
                     }
+                    unique_ptr<double[]> data0(new double[blocksize]);
+                    btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size(), i1.size()*i2.size()*i3.size(), i0o.size(),
+                                                1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size());
+                    tensor->add_block(data0, i0, i1, i2, i3);
                   }
-                  unique_ptr<double[]> data0(new double[blocksize]);
-                  btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), i0o.size(),
-                                              sqrt(0.5), transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size());
-                  unique_ptr<double[]> data1(new double[blocksize]);
-                  sort_indices<0,2,1,3,0,1,1,1>(data0.get(), data1.get(), i0.size(), i2.size(), i1.size(), i3.size());
-                  tensor->add_block(data1, i0, i1, i2, i3);
-                }
             }
           }
-        break;
-      case Excitations::arbi:
-        for (auto& i0 : active_) {
-          auto create_transp = [this](const MatView shalf, const Index& I0, const Index& I0o) {
-            unique_ptr<double[]> out(new double[I0.size()*I0o.size()]);
-            for (int j0 = I0.offset(), k = 0; j0 != I0.offset()+I0.size(); ++j0, ++k)
-              copy_n(shalf.element_ptr(I0o.offset(), j0-nclosed_), I0o.size(), out.get()+I0o.size()*k);
-            return move(out);
-          };
-          for (auto& i0o : interm_[dataindex]) {
-            unique_ptr<double[]> transp = create_transp(ishalf, i0, i0o);
-            for (auto& i3 : virt_)
+          break;
+        case Excitations::airj:
+          for (auto& i3 : active_) {
+            auto create_transp = [this](const MatView shalf, const Index& I3, const Index& I0o) {
+              unique_ptr<double[]> out(new double[I3.size()*I0o.size()]);
+              for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3, ++k)
+                copy_n(shalf.element_ptr(I0o.offset(),j3-nclosed_), I0o.size(), out.get()+I0o.size()*k);
+              return move(out);
+            };
+            for (auto& i0o : interm_[dataindex]) {
+              unique_ptr<double[]> transp = create_transp(ishalf, i3, i0o);
               for (auto& i2 : closed_)
-                for (auto& i1 : virt_) {
-                  if (!tensor->is_local(i0, i1, i2, i3)) continue;
-                  const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                  unique_ptr<double[]> interm = dtensor->get_block(i0o, i1, i2, i3);
-                  const size_t interm_size = dtensor->get_size(i0o, i1, i2, i3);
-                  if (imag_) {
-                    const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i1, i2, i3);
-                    for (size_t i = 0; i != interm_size; ++i) {
-                      interm[i] *= denom[i];
+                for (auto& i1 : virt_)
+                  for (auto& i0 : closed_) {
+                    if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
+                    const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                    unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i1, i2);
+                    const size_t interm_size = dtensor->get_size(i0o, i0, i1, i2);
+                    if (imag_) {
+                      const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o,i0, i1, i2);
+                      for (size_t i = 0; i != interm_size; ++i) {
+                        interm[i] *= denom[i];
+                      }
                     }
+                    unique_ptr<double[]> interm2(new double[interm_size]);
+                    sort_indices<1,2,3,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i1.size(), i2.size());
+                    unique_ptr<double[]> data0(new double[blocksize]);
+                    btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size()*i2.size(), i3.size(), i0o.size(),
+                                                1.0, interm2.get(), i0.size()*i1.size()*i2.size(), transp.get(), i0o.size(), 0.0, data0.get(), i0.size()*i1.size()*i2.size());
+                    tensor->add_block(data0, i0, i1, i2, i3);
                   }
-                  unique_ptr<double[]> data0(new double[blocksize]);
-                  btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size(), i1.size()*i2.size()*i3.size(), i0o.size(),
-                                              1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size());
-                  tensor->add_block(data0, i0, i1, i2, i3);
-                }
+            }
           }
-        }
-        break;
-      case Excitations::airj:
-        for (auto& i3 : active_) {
-          auto create_transp = [this](const MatView shalf, const Index& I3, const Index& I0o) {
-            unique_ptr<double[]> out(new double[I3.size()*I0o.size()]);
-            for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3, ++k)
-              copy_n(shalf.element_ptr(I0o.offset(),j3-nclosed_), I0o.size(), out.get()+I0o.size()*k);
-            return move(out);
-          };
-          for (auto& i0o : interm_[dataindex]) {
-            unique_ptr<double[]> transp = create_transp(ishalf, i3, i0o);
+          break;
+        case Excitations::risj:
+          for (auto& i3 : active_)
+            for (auto& i1 : active_) {
+              auto create_transp = [this](const MatView shalf, const Index& I1, const Index& I3, const Index& I0o) {
+                unique_ptr<double[]> out(new double[I1.size()*I3.size()*I0o.size()]);
+                for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+                  for (int j1 = I1.offset(); j1 != I1.offset()+I1.size(); ++j1, ++k)
+                    copy_n(shalf.element_ptr(I0o.offset(),(j1-nclosed_)+(j3-nclosed_)*nact_),
+                           I0o.size(), out.get()+I0o.size()*k);
+                return move(out);
+              };
+              for (auto& i0o : interm_[dataindex]) {
+                unique_ptr<double[]> transp = create_transp(ishalf, i1, i3, i0o);
+                for (auto& i2 : closed_)
+                  for (auto& i0 : closed_) {
+                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                    const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                    unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i2);
+                    const size_t interm_size = dtensor->get_size(i0o, i0, i2);
+                    if (imag_) {
+                      const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i0, i2);
+                      for (size_t i = 0; i != interm_size; ++i) {
+                        interm[i] *= denom[i];
+                      }
+                    }
+                    unique_ptr<double[]> interm2(new double[interm_size]);
+                    sort_indices<1,2,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i2.size());
+                    unique_ptr<double[]> data0(new double[blocksize]);
+                    btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), i0o.size(),
+                                                sqrt(0.5), interm2.get(), i0.size()*i2.size(), transp.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size());
+                    unique_ptr<double[]> data1(new double[blocksize]);
+                    sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
+                    tensor->add_block(data1, i0, i1, i2, i3);
+                  }
+              }
+            }
+          break;
+        case Excitations::airs:
+          for (auto& i3 : active_)
+            for (auto& i2 : active_) {
+              auto create_transp = [this](const MatView shalf, const Index& I2, const Index& I3, const Index& I0o) {
+                unique_ptr<double[]> out(new double[I2.size()*I3.size()*I0o.size()*2]);
+                for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+                  for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2, ++k) {
+                    copy_n(shalf.element_ptr(I0o.offset(), (j2-nclosed_)+(j3-nclosed_)*nact_),
+                           I0o.size(), out.get()+I0o.size()*k);
+                    copy_n(shalf.element_ptr(I0o.offset(), (j2-nclosed_)+(j3-nclosed_)*nact_ + nact_*nact_),
+                           I0o.size(), out.get()+I0o.size()*(k+I2.size()*I3.size()));
+                  }
+                return move(out);
+              };
+              for (auto& i0o : interm_[dataindex]) {
+                unique_ptr<double[]> transp = create_transp(ishalf, i2, i3, i0o);
+                for (auto& i1 : virt_)
+                  for (auto& i0 : closed_) {
+                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                    const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                    unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i1);
+                    const size_t interm_size = dtensor->get_size(i0o, i0, i1);
+                    if (imag_) {
+                      const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i0, i1);
+                      for (size_t i = 0; i != interm_size; ++i) {
+                        interm[i] *= denom[i];
+                      }
+                    }
+                    unique_ptr<double[]> interm2(new double[dtensor->get_size(i0o, i0, i1)]);
+                    sort_indices<1,2,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i1.size());
+                    unique_ptr<double[]> data0(new double[blocksize*2]);
+                    btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size(), i2.size()*i3.size()*2, i0o.size(),
+                                                1.0, interm2.get(), i0.size()*i1.size(), transp.get(), i0o.size(), 0.0, data0.get(), i0.size()*i1.size());
+                    unique_ptr<double[]> data1(new double[blocksize]);
+                    unique_ptr<double[]> data2(new double[blocksize]);
+                    copy_n(data0.get(), blocksize, data1.get());
+                    sort_indices<2,1,0,3,0,1,1,1>(data0.get()+blocksize, data2.get(), i0.size(), i1.size(), i2.size(), i3.size());
+                    tensor->add_block(data1, i0, i1, i2, i3);
+                    tensor->add_block(data2, i2, i1, i0, i3);
+                  }
+              }
+            }
+          break;
+        case Excitations::arst:
+          for (auto& i3 : active_)
+            for (auto& i2 : active_)
+              for (auto& i0 : active_) {
+                auto create_transp = [this](const MatView shalf, const Index& I0, const Index& I2, const Index& I3, const Index& I0o) {
+                  unique_ptr<double[]> out(new double[I0.size()*I2.size()*I3.size()*I0o.size()]);
+                  for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+                    for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2)
+                      for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
+                        copy_n(shalf.element_ptr(I0o.offset(),j0-nclosed_+nact_*(j2-nclosed_+nact_*(j3-nclosed_))),
+                               I0o.size(), out.get()+I0o.size()*k);
+                  return move(out);
+                };
+                for (auto& i0o : interm_[dataindex]) {
+                  unique_ptr<double[]> transp = create_transp(ishalf, i0, i2, i3, i0o);
+                  for (auto& i1 : virt_) {
+                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                    const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                    unique_ptr<double[]> interm = dtensor->get_block(i0o, i1);
+                    const size_t interm_size = dtensor->get_size(i0o, i1);
+                    if (imag_) {
+                      const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i1);
+                      for (size_t i = 0; i != interm_size; ++i) {
+                        interm[i] *= denom[i];
+                      }
+                    }
+                    unique_ptr<double[]> data0(new double[blocksize]);
+                    btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i2.size()*i3.size(), i1.size(), i0o.size(),
+                                                1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size()*i3.size());
+                    unique_ptr<double[]> data1(new double[blocksize]);
+                    sort_indices<0,3,1,2,0,1,1,1>(data0.get(), data1.get(), i0.size(), i2.size(), i3.size(), i1.size());
+                    tensor->add_block(data1, i0, i1, i2, i3);
+                  }
+                }
+              }
+          break;
+        case Excitations::rist:
+          for (auto& i3 : active_)
+            for (auto& i1 : active_)
+              for (auto& i0 : active_) {
+                auto create_transp = [this](const MatView shalf, const Index& I0, const Index& I1, const Index& I3, const Index& I0o) {
+                  unique_ptr<double[]> out(new double[I0.size()*I1.size()*I3.size()*I0o.size()]);
+                  for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+                    for (int j1 = I1.offset(); j1 != I1.offset()+I1.size(); ++j1)
+                      for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
+                        copy_n(shalf.element_ptr(I0o.offset(),j0-nclosed_+nact_*(j1-nclosed_+nact_*(j3-nclosed_))),
+                               I0o.size(), out.get()+I0o.size()*k);
+                  return move(out);
+                };
+                for (auto& i0o : interm_[dataindex]) {
+                  unique_ptr<double[]> transp = create_transp(ishalf, i0, i1, i3, i0o);
+                  for (auto& i2 : closed_) {
+                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                    const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                    unique_ptr<double[]> interm = dtensor->get_block(i0o, i2);
+                    const size_t interm_size = dtensor->get_size(i0o, i2);
+                    if (imag_) {
+                      const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i2);
+                      for (size_t i = 0; i != interm_size; ++i) {
+                        interm[i] *= denom[i];
+                      }
+                    }
+                    unique_ptr<double[]> data0(new double[blocksize]);
+                    btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i1.size()*i3.size(), i2.size(), i0o.size(),
+                                                1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i1.size()*i3.size());
+                    unique_ptr<double[]> data1(new double[blocksize]);
+                    sort_indices<0,1,3,2,0,1,1,1>(data0.get(), data1.get(), i0.size(), i1.size(), i3.size(), i2.size());
+                    tensor->add_block(data1, i0, i1, i2, i3);
+                  }
+                }
+              }
+          break;
+        case Excitations::aibj:
+          const int pos = sssr_ ? iext : iext + ist;
+          for (auto& i3 : virt_)
             for (auto& i2 : closed_)
               for (auto& i1 : virt_)
                 for (auto& i0 : closed_) {
-                  if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
-                  const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                  unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i1, i2);
-                  const size_t interm_size = dtensor->get_size(i0o, i0, i1, i2);
-                  if (imag_) {
-                    const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o,i0, i1, i2);
-                    for (size_t i = 0; i != interm_size; ++i) {
-                      interm[i] *= denom[i];
-                    }
-                  }
-                  unique_ptr<double[]> interm2(new double[interm_size]);
-                  sort_indices<1,2,3,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i1.size(), i2.size());
-                  unique_ptr<double[]> data0(new double[blocksize]);
-                  btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size()*i2.size(), i3.size(), i0o.size(),
-                                              1.0, interm2.get(), i0.size()*i1.size()*i2.size(), transp.get(), i0o.size(), 0.0, data0.get(), i0.size()*i1.size()*i2.size());
-                  tensor->add_block(data0, i0, i1, i2, i3);
-                }
-          }
-        }
-        break;
-      case Excitations::risj:
-        for (auto& i3 : active_)
-          for (auto& i1 : active_) {
-            auto create_transp = [this](const MatView shalf, const Index& I1, const Index& I3, const Index& I0o) {
-              unique_ptr<double[]> out(new double[I1.size()*I3.size()*I0o.size()]);
-              for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
-                for (int j1 = I1.offset(); j1 != I1.offset()+I1.size(); ++j1, ++k)
-                  copy_n(shalf.element_ptr(I0o.offset(),(j1-nclosed_)+(j3-nclosed_)*nact_),
-                         I0o.size(), out.get()+I0o.size()*k);
-              return move(out);
-            };
-            for (auto& i0o : interm_[dataindex]) {
-              unique_ptr<double[]> transp = create_transp(ishalf, i1, i3, i0o);
-              for (auto& i2 : closed_)
-                for (auto& i0 : closed_) {
                   if (!tensor->is_local(i0, i1, i2, i3)) continue;
-                  const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                  unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i2);
-                  const size_t interm_size = dtensor->get_size(i0o, i0, i2);
+                  unique_ptr<double[]> data0 = data_[istate]->at(pos)->get_block(i0, i1, i2, i3);
                   if (imag_) {
-                    const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i0, i2);
-                    for (size_t i = 0; i != interm_size; ++i) {
-                      interm[i] *= denom[i];
+                    const unique_ptr<double[]> denom = denom_[istate]->at(pos)->get_block(i0, i1, i2, i3);
+                    const size_t blocksize = data_[istate]->at(pos)->get_size(i0, i1, i2, i3);
+                    for (size_t i = 0; i != blocksize; ++i) {
+                      data0[i] *= denom[i];
                     }
                   }
-                  unique_ptr<double[]> interm2(new double[interm_size]);
-                  sort_indices<1,2,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i2.size());
-                  unique_ptr<double[]> data0(new double[blocksize]);
-                  btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), i0o.size(),
-                                              sqrt(0.5), interm2.get(), i0.size()*i2.size(), transp.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size());
-                  unique_ptr<double[]> data1(new double[blocksize]);
-                  sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
-                  tensor->add_block(data1, i0, i1, i2, i3);
+                  out->at(ist)->add_block(data0, i0, i1, i2, i3);
                 }
-            }
-          }
-        break;
-      case Excitations::airs:
-        for (auto& i3 : active_)
-          for (auto& i2 : active_) {
-            auto create_transp = [this](const MatView shalf, const Index& I2, const Index& I3, const Index& I0o) {
-              unique_ptr<double[]> out(new double[I2.size()*I3.size()*I0o.size()*2]);
-              for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
-                for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2, ++k) {
-                  copy_n(shalf.element_ptr(I0o.offset(), (j2-nclosed_)+(j3-nclosed_)*nact_),
-                         I0o.size(), out.get()+I0o.size()*k);
-                  copy_n(shalf.element_ptr(I0o.offset(), (j2-nclosed_)+(j3-nclosed_)*nact_ + nact_*nact_),
-                         I0o.size(), out.get()+I0o.size()*(k+I2.size()*I3.size()));
-                }
-              return move(out);
-            };
-            for (auto& i0o : interm_[dataindex]) {
-              unique_ptr<double[]> transp = create_transp(ishalf, i2, i3, i0o);
-              for (auto& i1 : virt_)
-                for (auto& i0 : closed_) {
-                  if (!tensor->is_local(i0, i1, i2, i3)) continue;
-                  const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                  unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i1);
-                  const size_t interm_size = dtensor->get_size(i0o, i0, i1);
-                  if (imag_) {
-                    const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i0, i1);
-                    for (size_t i = 0; i != interm_size; ++i) {
-                      interm[i] *= denom[i];
-                    }
-                  }
-                  unique_ptr<double[]> interm2(new double[dtensor->get_size(i0o, i0, i1)]);
-                  sort_indices<1,2,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i1.size());
-                  unique_ptr<double[]> data0(new double[blocksize*2]);
-                  btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size(), i2.size()*i3.size()*2, i0o.size(),
-                                              1.0, interm2.get(), i0.size()*i1.size(), transp.get(), i0o.size(), 0.0, data0.get(), i0.size()*i1.size());
-                  unique_ptr<double[]> data1(new double[blocksize]);
-                  unique_ptr<double[]> data2(new double[blocksize]);
-                  copy_n(data0.get(), blocksize, data1.get());
-                  sort_indices<2,1,0,3,0,1,1,1>(data0.get()+blocksize, data2.get(), i0.size(), i1.size(), i2.size(), i3.size());
-                  tensor->add_block(data1, i0, i1, i2, i3);
-                  tensor->add_block(data2, i2, i1, i0, i3);
-                }
-            }
-          }
-        break;
-      case Excitations::arst:
-        for (auto& i3 : active_)
-          for (auto& i2 : active_)
-            for (auto& i0 : active_) {
-              auto create_transp = [this](const MatView shalf, const Index& I0, const Index& I2, const Index& I3, const Index& I0o) {
-                unique_ptr<double[]> out(new double[I0.size()*I2.size()*I3.size()*I0o.size()]);
-                for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
-                  for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2)
-                    for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
-                      copy_n(shalf.element_ptr(I0o.offset(),j0-nclosed_+nact_*(j2-nclosed_+nact_*(j3-nclosed_))),
-                             I0o.size(), out.get()+I0o.size()*k);
-                return move(out);
-              };
-              for (auto& i0o : interm_[dataindex]) {
-                unique_ptr<double[]> transp = create_transp(ishalf, i0, i2, i3, i0o);
-                for (auto& i1 : virt_) {
-                  if (!tensor->is_local(i0, i1, i2, i3)) continue;
-                  const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                  unique_ptr<double[]> interm = dtensor->get_block(i0o, i1);
-                  const size_t interm_size = dtensor->get_size(i0o, i1);
-                  if (imag_) {
-                    const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i1);
-                    for (size_t i = 0; i != interm_size; ++i) {
-                      interm[i] *= denom[i];
-                    }
-                  }
-                  unique_ptr<double[]> data0(new double[blocksize]);
-                  btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i2.size()*i3.size(), i1.size(), i0o.size(),
-                                              1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size()*i3.size());
-                  unique_ptr<double[]> data1(new double[blocksize]);
-                  sort_indices<0,3,1,2,0,1,1,1>(data0.get(), data1.get(), i0.size(), i2.size(), i3.size(), i1.size());
-                  tensor->add_block(data1, i0, i1, i2, i3);
-                }
-              }
-            }
-        break;
-      case Excitations::rist:
-        for (auto& i3 : active_)
-          for (auto& i1 : active_)
-            for (auto& i0 : active_) {
-              auto create_transp = [this](const MatView shalf, const Index& I0, const Index& I1, const Index& I3, const Index& I0o) {
-                unique_ptr<double[]> out(new double[I0.size()*I1.size()*I3.size()*I0o.size()]);
-                for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
-                  for (int j1 = I1.offset(); j1 != I1.offset()+I1.size(); ++j1)
-                    for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
-                      copy_n(shalf.element_ptr(I0o.offset(),j0-nclosed_+nact_*(j1-nclosed_+nact_*(j3-nclosed_))),
-                             I0o.size(), out.get()+I0o.size()*k);
-                return move(out);
-              };
-              for (auto& i0o : interm_[dataindex]) {
-                unique_ptr<double[]> transp = create_transp(ishalf, i0, i1, i3, i0o);
-                for (auto& i2 : closed_) {
-                  if (!tensor->is_local(i0, i1, i2, i3)) continue;
-                  const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                  unique_ptr<double[]> interm = dtensor->get_block(i0o, i2);
-                  const size_t interm_size = dtensor->get_size(i0o, i2);
-                  if (imag_) {
-                    const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i2);
-                    for (size_t i = 0; i != interm_size; ++i) {
-                      interm[i] *= denom[i];
-                    }
-                  }
-                  unique_ptr<double[]> data0(new double[blocksize]);
-                  btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i1.size()*i3.size(), i2.size(), i0o.size(),
-                                              1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i1.size()*i3.size());
-                  unique_ptr<double[]> data1(new double[blocksize]);
-                  sort_indices<0,1,3,2,0,1,1,1>(data0.get(), data1.get(), i0.size(), i1.size(), i3.size(), i2.size());
-                  tensor->add_block(data1, i0, i1, i2, i3);
-                }
-              }
-            }
-        break;
-      case Excitations::aibj:
-        for (auto& i3 : virt_)
-          for (auto& i2 : closed_)
-            for (auto& i1 : virt_)
-              for (auto& i0 : closed_) {
-                if (!tensor->is_local(i0, i1, i2, i3)) continue;
-                unique_ptr<double[]> data0 = data_[istate]->at(iext)->get_block(i0, i1, i2, i3);
-                if (imag_) {
-                  const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0,i1, i2, i3);
-                  const size_t blocksize = data_[istate]->at(iext)->get_size(i0, i1, i2, i3);
-                  for (size_t i = 0; i != blocksize; ++i) {
-                    data0[i] *= denom[i];
-                  }
-                }
-                out->at(istate)->add_block(data0, i0, i1, i2, i3);
-              }
-        break;
+          break;
+      }
     }
   }
   mpi__->barrier();
 
   return out;
-}
-
-
-shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant_msmr(const int istate) const {
-  return shared_ptr<MultiTensor_<double>>();
 }
 
 

@@ -2202,7 +2202,42 @@ tuple<shared_ptr<Matrix>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<
 
   return tie(dshift, e1, e2, e3, e4, nimag);
 #else
-  return tuple<shared_ptr<Matrix>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>();
+  const size_t nact = info_->nact();
+  const int nstates = nact ? info_->ciwfn()->nstates() : 1;
+  const size_t nclosed = info_->nclosed();
+  const size_t ncore = info_->ncore();
+  const size_t nclo = nclosed - ncore;
+
+  Timer timer(1);
+
+  shared_ptr<Matrix> dshift = den2_->clone();
+  auto e1 = make_shared<VecRDM<1>>();
+  auto e2 = make_shared<VecRDM<2>>();
+  auto e3 = make_shared<VecRDM<3>>();
+  auto e4 = make_shared<VecRDM<3>>();
+  vector<double> nimag;
+  nimag.resize(nstates);
+
+  for (int i = 0; i != nstates; ++i)
+    nimag[i] = 0.0;
+
+  if (nact) {
+    for (size_t is = 0; is != nstates; ++is)
+      for (size_t js = 0; js != nstates; ++js)
+        if (!info_->sssr() || is == js) {
+          auto e1temp = make_shared<RDM<1>>(nact);
+          auto e2temp = make_shared<RDM<2>>(nact);
+          auto e3temp = make_shared<RDM<3>>(nact);
+          auto e4temp = make_shared<RDM<3>>(nact);
+
+          e1->emplace(is, js, e1temp);
+          e2->emplace(is, js, e2temp);
+          e3->emplace(is, js, e3temp);
+          e4->emplace(is, js, e4temp);
+        }
+  }
+
+  return tie(dshift, e1, e2, e3, e4, nimag);
 #endif
 }
 

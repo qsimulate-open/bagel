@@ -92,12 +92,6 @@ class Orthogonal_Basis {
     std::shared_ptr<Tensor_<double>> init_amplitude() const;
     void loop_over(std::function<void(const Index&, const Index&, const Index&, const Index&)>) const;
 
-    // constraction scheme dependent implementations
-    void transform_to_orthogonal_sssr(std::shared_ptr<const MultiTensor_<double>> t, const int istate);
-    void transform_to_orthogonal_msmr(std::shared_ptr<const MultiTensor_<double>> t, const int istate);
-    std::shared_ptr<MultiTensor_<double>> transform_to_redundant_sssr(const int istate) const;
-    std::shared_ptr<MultiTensor_<double>> transform_to_redundant_msmr(const int istate) const;
-
   public:
     // Orthogonal basis: construct from scratch (using denom)
     Orthogonal_Basis(std::shared_ptr<const SMITH_Info<double>> i, const IndexRange c, const IndexRange a, const IndexRange v, std::vector<double> f, std::vector<double> e0,
