@@ -127,7 +127,7 @@ class Denom_MSMR : public Denom<DataType> {
       const size_t dim = dim_.at(tag);
       return shalf_.at(tag)->slice(ist*dim, (ist+1)*dim);
     }
-    void compute() override; 
+    void compute() override;
     double denom(const std::string& tag, const int ist, const size_t i) const override { return denom_.at(tag)(i); }
 };
 

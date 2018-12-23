@@ -75,7 +75,7 @@ Denom_SSSR<DataType>::Denom_SSSR(shared_ptr<const MatType> fock, const int nstat
   work_["xxh"] = vector<shared_ptr<MatType>>();
   work_["xhh"] = vector<shared_ptr<MatType>>();
 
-  for (int i = 0; i != nstates; ++i) { 
+  for (int i = 0; i != nstates; ++i) {
     denom_["x"].emplace_back(dim_.at("x"));
     denom_["h"].emplace_back(dim_.at("h"));
     denom_["xx"].emplace_back(dim_.at("xx"));
@@ -343,7 +343,7 @@ void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<
     }
 
   } { // xxh
-    const size_t dim = dim_.at("xxh"); 
+    const size_t dim = dim_.at("xxh");
     shared_ptr<RDM<3,DataType>> ovl = rdm3->copy();
     for (int i5 = 0; i5 != nact; ++i5)
       for (int i0 = 0; i0 != nact; ++i0)
