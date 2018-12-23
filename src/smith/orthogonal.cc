@@ -603,7 +603,7 @@ void Orthogonal_Basis::transform_to_orthogonal_sssr(shared_ptr<const MultiTensor
     for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
       const int dataindex = iext + istate * Excitations::total;
       shared_ptr<const Tensor_<double>> tensor = t->at(ist);
-      const MatView ishalf = (iext != Excitations::aibj) ? d_->shalf(to_denom_.at(iext), ist) : d_->shalf(to_denom_.at(0), ist);
+      const MatView ishalf = (iext != Excitations::aibj) ? shalf(iext, ist) : shalf(0, ist);
       switch(iext) {
         case Excitations::arbs:
           for (auto& i2 : active_)
@@ -863,7 +863,7 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant_sssr(c
     const int dataindex = iext + istate * Excitations::total;
     shared_ptr<Tensor_<double>> tensor = out->at(istate);
     shared_ptr<const Tensor_<double>> dtensor = data_[istate]->at(iext);
-    const MatView ishalf = (iext != Excitations::aibj) ? d_->shalf(to_denom_.at(iext), istate) : d_->shalf(to_denom_.at(0), istate);
+    const MatView ishalf = (iext != Excitations::aibj) ? shalf(iext, istate) : shalf(0, istate);
     switch(iext) {
       case Excitations::arbs:
         for (auto& i2 : active_)

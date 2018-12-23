@@ -165,6 +165,12 @@ class MSCASPT2 {
     void do_rdm_deriv(double factor);
 
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
+
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
+      make_d2_imag_sssr() const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
+      make_d2_imag_msmr() const;
+
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
       make_d2_imag() const;
 

@@ -107,7 +107,7 @@ class Orthogonal_Basis {
 
     IndexRange& virt() { return virt_; }
     IndexRange& closed() { return closed_; }
-    IndexRange& interm(const int iext) { return interm_[iext]; }
+    IndexRange& interm(const int dataindex) { return interm_[dataindex]; }
 
     // transform to orthogonal
     void transform_to_orthogonal(std::shared_ptr<const MultiTensor_<double>> t, const int istate);
@@ -125,6 +125,9 @@ class Orthogonal_Basis {
     std::shared_ptr<MultiTensor_<double>> data(const size_t i) const { return data_[i]; }
     std::shared_ptr<MultiTensor_<double>> denom(const size_t i) const { return denom_[i]; }
     std::shared_ptr<MultiTensor_<double>> get_contravariant(const int istate, const bool weight = false) const;
+
+    const MatView shalf(const int iext, const int ist) const { return d_->shalf(to_denom_.at(iext), ist); }
+    const double phi(const int iext, const int ist, const size_t i) const { return d_->denom(to_denom_.at(iext), ist, i); }
 
     bool is_residual() const { return (basis_type_ == Basis_Type::residual); }
     bool is_amplitude() const { return (basis_type_ == Basis_Type::amplitude); }
