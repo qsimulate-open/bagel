@@ -51,8 +51,6 @@ vector<double> f, vector<double> e0, shared_ptr<const Matrix> fact, shared_ptr<c
   imag_ = info->shift_imag();
   shift_ = info->shift();
 
-  datasize_ = sssr_ ? Excitations::total * nstates_ : Excitations::total + nstates_ - 1;
-
   to_denom_[Excitations::arbs] = "xx";
   to_denom_[Excitations::arbi] = "x";
   to_denom_[Excitations::airj] = "h";

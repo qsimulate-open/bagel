@@ -69,9 +69,6 @@ class Orthogonal_Basis {
     size_t norb_;
     size_t nstates_;
 
-    // number of vectors in data. (sssr) Nstate X 8, (msmr) 7 + Nstate
-    size_t datasize_;
-
     bool sssr_;
     bool imag_;
     double shift_;
