@@ -207,7 +207,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<
           const shared_ptr<Tensor_<double>> t = t_orthogonal_->data(istate)->at(iext);
           const shared_ptr<Tensor_<double>> d = t_orthogonal_->denom(istate)->at(iext);
 
-          const size_t interm_size = t_orthogonal_->shalf(iext, istate).ndim();
           const size_t dataindex = info_->sssr() ? iext + istate * Excitations::total : iext;
           shared_ptr<Matrix> smallz = info_->sssr() ? smallzall->at(istate) : smallzall->at(0);
           shared_ptr<Matrix> largey = info_->sssr() ? largeyall->at(istate) : largeyall->at(0);
