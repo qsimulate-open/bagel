@@ -118,7 +118,7 @@ class Orthogonal_Basis {
     std::shared_ptr<MultiTensor_<double>> get_contravariant(const int istate, const bool weight = false) const;
 
     const MatView shalf(const int iext, const int ist) const { return d_->shalf(to_denom_.at(iext), ist); }
-    const double phi(const int iext, const int ist, const size_t i) const { return d_->denom(to_denom_.at(iext), ist, i); }
+    double phi(const int iext, const int ist, const size_t i) const { return d_->denom(to_denom_.at(iext), ist, i); }
 
     bool is_residual() const { return (basis_type_ == Basis_Type::residual); }
     bool is_amplitude() const { return (basis_type_ == Basis_Type::amplitude); }
