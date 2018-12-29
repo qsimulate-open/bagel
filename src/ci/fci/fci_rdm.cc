@@ -138,7 +138,7 @@ FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec>
     auto rdm1t = btas::group(*rdm1,0,2);
     btas::contract(1.0, dketv, {0,1}, *cibra_data, {0}, 0.0, rdm1t, {1});
 
-    auto dbrav = dbra == dket ? dketv : btas::group(*dbra,0,2);
+    auto dbrav = btas::group(*dbra,0,2);
     auto rdm2t = group(group(*rdm2, 2,4), 0,2);
     btas::contract(1.0, dbrav, {1,0}, dketv, {1,2}, 0.0, rdm2t, {0,2});
   }
