@@ -125,7 +125,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
 FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
 
   const int nri = cibra->asize()*cibra->lenb();
-  const int ij  = norb_*norb_;
 
   // 1RDM c^dagger <I|\hat{E}|0>
   // 2RDM \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
@@ -135,20 +134,13 @@ FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec>
     auto cibra_data = make_shared<VectorB>(nri);
     copy_n(cibra->data(), nri, cibra_data->data());
 
-    auto dket_data = make_shared<Matrix>(nri, ij);
-    for (int i = 0; i != ij; ++i)
-      copy_n(dket->data(i)->data(), nri, dket_data->element_ptr(0, i));
+    auto dketv = btas::group(*dket,0,2);
     auto rdm1t = btas::group(*rdm1,0,2);
-    btas::contract(1.0, *dket_data, {0,1}, *cibra_data, {0}, 0.0, rdm1t, {1});
+    btas::contract(1.0, dketv, {0,1}, *cibra_data, {0}, 0.0, rdm1t, {1});
 
-    auto dbra_data = dket_data;
-    if (dbra != dket) {
-      dbra_data = make_shared<Matrix>(nri, ij);
-      for (int i = 0; i != ij; ++i)
-        copy_n(dbra->data(i)->data(), nri, dbra_data->element_ptr(0, i));
-    }
+    auto dbrav = dbra == dket ? dketv : btas::group(*dbra,0,2);
     auto rdm2t = group(group(*rdm2, 2,4), 0,2);
-    btas::contract(1.0, *dbra_data, {1,0}, *dket_data, {1,2}, 0.0, rdm2t, {0,2});
+    btas::contract(1.0, dbrav, {1,0}, dketv, {1,2}, 0.0, rdm2t, {0,2});
   }
 
   // sorting... a bit stupid but cheap anyway
