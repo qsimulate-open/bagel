@@ -195,6 +195,12 @@ Optional Keywords (Universal)
    |    ``false``: use fixed maximum stepsize.
    | **Default:** true (algorithm is RFO); false (otherwise).
 
+.. topic:: ``molden``
+
+   | **Description:** Generate a Molden file at each geometry step.
+   | **Datatype:** bool
+   | **Default:** false (do not generate).
+
 Optional Keywords (Conical Intersection Optimization)
 -----------------------------------------------------
 

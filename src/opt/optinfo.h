@@ -154,6 +154,8 @@ class OptInfo : public GradInfo {
     bool explicit_bond_;
     std::vector<std::shared_ptr<const OptExpBonds>> bonds_;
 
+    bool molden_;
+
   public:
     OptInfo(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom) : GradInfo(idat, /*opt=*/true) {
       opttype_ = std::make_shared<OptType>(to_lower(idat->get<std::string>("opttype", "energy")));
@@ -175,6 +177,8 @@ class OptInfo : public GradInfo {
         }
         std::cout << std::endl << "  * Added " << bonds_.size() << " bonds between the non-bonded atoms" << std::endl;
       }
+
+      molden_ = idat->get<bool>("molden", false);
 
       qmmm_ = idat->get<bool>("qmmm", false);
       if (qmmm_)
@@ -250,6 +254,8 @@ class OptInfo : public GradInfo {
 
     bool explicit_bond() const { return explicit_bond_; }
     std::vector<std::shared_ptr<const OptExpBonds>> bonds() const { return bonds_; }
+
+    bool molden() const { return molden_; }
 };
 
 }
