@@ -153,26 +153,28 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   if (ncore_ || imag_ || additional_den) {
     assert(ncore_ < nclosed);
     zcore = make_shared<Matrix>(nmobasis, nmobasis);
-    for (int i = 0; i != ncore_; ++i)
-      for (int j = ncore_; j != nclosed; ++j) {
-        zcore->element(j, i) = - (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / (fock_->element(j,j) - fock_->element(i,i));
-        assert(abs(fock_->element(i, j)) < 1.0e-8);
-      }
 
-    // additional constraints for diagonal fock
-    for (int i = ncore_; i != nclosed; ++i) {
-      for (int j = ncore_; j != nclosed; ++j) {
-        if (i == j) continue;
-        const double fdiff = fock_->element(j,j) - fock_->element(i,i);
-        zcore->element(j, i) = fabs(fdiff) < 1.0e-8 ? 0.0 : - .5 * (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / fdiff;
+    if (imag_) {
+      for (int i = 0; i != nclosed; ++i) {
+        for (int j = 0; j != nclosed; ++j) {
+          if (i == j) continue;
+          const double fdiff = fock_->element(j,j) - fock_->element(i,i);
+          zcore->element(j, i) = fabs(fdiff) < 1.0e-8 ? 0.0 : - .5 * (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / fdiff;
+        }
       }
-    }
-    for (int i = nocca; i != nocca + nvirt; ++i) {
-      for (int j = nocca; j != nocca + nvirt; ++j) {
-        if (i == j) continue;
-        const double fdiff = fock_->element(j,j) - fock_->element(i,i);
-        zcore->element(j, i) = fabs(fdiff) < 1.0e-8 ? 0.0 : - .5 * (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / fdiff;
+      for (int i = nocca; i != nocca + nvirt; ++i) {
+        for (int j = nocca; j != nocca + nvirt; ++j) {
+          if (i == j) continue;
+          const double fdiff = fock_->element(j,j) - fock_->element(i,i);
+          zcore->element(j, i) = fabs(fdiff) < 1.0e-8 ? 0.0 : - .5 * (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / fdiff;
+        }
       }
+    } else {
+      for (int i = 0; i != ncore_; ++i)
+        for (int j = ncore_; j != nclosed; ++j) {
+          zcore->element(j, i) = - (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / (fock_->element(j,j) - fock_->element(i,i));
+          assert(abs(fock_->element(i, j)) < 1.0e-8);
+        }
     }
 
     zcore->symmetrize();
