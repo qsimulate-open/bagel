@@ -102,16 +102,3 @@ void MoldenIn::compute_transforms() {
   }
 }
 
-vector<double> MoldenIn::transform_cart(vector<double> carts, int ang_l) {
-   vector<vector<pair<int,double>>> mtuv = lmtuv_.at(ang_l);
-
-   vector<double> out;
-   for (auto& im : mtuv) {
-     double value = 0.0;
-     for (auto& ituv : im)
-        value += (ituv.second) * carts.at(ituv.first);
-     out.push_back(value);
-   }
-
-   return out;
-}

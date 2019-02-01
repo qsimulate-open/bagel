@@ -67,25 +67,6 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 }
 
 
-Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const PTree> itree) : geom_(g), hcore_(make_shared<Hcore>(geom_)) {
-  // Note that other informations are not available...
-  // Then read molden
-  const string molden_file = itree->get<string>("molden_file", "");
-  assert(!molden_file.empty());
-  MoldenIn mfs(molden_file, geom_->spherical());
-  mfs.read();
-  if (mfs.has_mo()) {
-    auto c = make_shared<Coeff>(geom_);
-    auto e = make_shared<VectorB>(c->mdim());
-    auto o = make_shared<VectorB>(c->mdim());
-    mfs >> tie(c, g, e, o);
-    coeff_ = c;
-    eig_ = *e;
-    occup_ = *o;
-  }
-}
-
-
 tuple<shared_ptr<const RDM<1>>,shared_ptr<const RDM<2>>> Reference::rdm12(const int ist, const int jst, const bool recompute) const {
   shared_ptr<const RDM<1>> r1;
   shared_ptr<const RDM<2>> r2;
@@ -253,6 +234,12 @@ void Reference::set_eigB(const VectorB& eigB) {
 void Reference::set_occup(const VectorB& occup) {
   occup_ = occup;
   mpi__->broadcast(occup_.data(), occup_.size(), 0);
+}
+
+
+void Reference::set_occupB(const VectorB& occupB) {
+  occupB_ = occupB;
+  mpi__->broadcast(occupB_.data(), occupB_.size(), 0);
 }
 
 

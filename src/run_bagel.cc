@@ -33,6 +33,7 @@
 #include <src/asd/construct_asd.h>
 #include <src/asd/orbital/construct_asd_orbopt.h>
 #include <src/asd/dmrg/rasd.h>
+#include <src/wfn/molden_to_ref.h>
 #include <src/asd/multisite/multisite.h>
 #include <src/util/archive.h>
 #include <src/util/io/moldenout.h>
@@ -88,7 +89,7 @@ void bagel::impl::run_bagel_(shared_ptr<const PTree> idata) {
         ref.reset();
       if (ref) ref = ref->project_coeff(geom);
       if (!itree->get<string>("molden_file", "").empty())
-        ref = make_shared<Reference>(geom, itree);
+        ref = molden_to_ref(geom, itree);
     } else {
       if (!geom) {
         if (title != "continue" && !(title == "relsmith" && itree->get<string>("method", "") == "continue") && title != "load_ref")

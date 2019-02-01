@@ -32,24 +32,50 @@
 
 namespace bagel {
 
-  class MoldenIO : public FileIO {
-     protected:
-        std::shared_ptr<const Molecule> mol_;
-        std::shared_ptr<const Reference> ref_;
+class MoldenIO : public FileIO {
+  protected:
+    std::shared_ptr<const Molecule> mol_;
+    std::shared_ptr<const Reference> ref_;
 
-        std::vector<std::vector<int>> m2b_cart_;
-        std::vector<std::vector<int>> m2b_sph_;
-        std::vector<std::vector<int>> b2m_cart_;
-        std::vector<std::vector<int>> b2m_sph_;
-        std::vector<std::vector<double>> scaling_;
+    std::vector<std::vector<int>> m2b_cart_;
+    std::vector<std::vector<int>> m2b_sph_;
+    std::vector<std::vector<int>> b2m_cart_;
+    std::vector<std::vector<int>> b2m_sph_;
+    std::vector<std::vector<double>> scaling_;
 
-        void const_scales();
-        void const_maps();
+    void const_scales();
+    void const_maps();
 
-        double denormalize(const int l, const double alpha);
+    double denormalize(const int l, const double alpha);
 
-     public:
-        MoldenIO(std::string filename);
-  };
+  public:
+    MoldenIO(std::string filename);
+};
+
+namespace molden_impl {
+// some implementation utilities
+struct complex4 {
+  std::complex<double> data[4];
+
+  complex4() { }
+  template<typename T> complex4(const T a) { data[0] = a; data[1] = a; data[2] = a; data[3] = a; } 
+  
+  complex4 operator=(const complex4& a) { data[0] = a.data[0]; data[1] = a.data[1]; data[2] = a.data[2]; data[3] = a.data[3]; return *this; }
+  void operator+=(const complex4& a) { data[0] += a.data[0]; data[1] += a.data[1]; data[2] += a.data[2]; data[3] += a.data[3]; }
+  void operator-=(const complex4& a) { data[0] -= a.data[0]; data[1] -= a.data[1]; data[2] -= a.data[2]; data[3] -= a.data[3]; }
+
+  template<typename T> complex4 operator=(const T a) { data[0] = a; data[1] = a; data[2] = a; data[3] = a; return *this; }
+  template<typename T> void operator*=(const T& a) { data[0] *= a; data[1] *= a; data[2] *= a; data[3] *= a; }
+  template<typename T> void operator/=(const T& a) { data[0] /= a; data[1] /= a; data[2] /= a; data[3] /= a; }
+  template<typename T> complex4 operator*(const T& a) const { complex4 out(*this); out *= a; return out; }
+  template<typename T> complex4 operator/(const T& a) const { complex4 out(*this); out /= a; return out; }
+};
+static std::ostream& operator<<(std::ostream& os, const complex4& a) {
+  os << std::setw(44) << a.data[0] << " " << std::setw(44) << a.data[1] << " " << std::setw(44) << a.data[2] << " " << std::setw(44) << a.data[3];
+  return os;
+}
+
+}
+
 }
 #endif

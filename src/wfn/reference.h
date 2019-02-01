@@ -61,6 +61,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     VectorB eig_;
     VectorB eigB_;
     VectorB occup_;
+    VectorB occupB_;
 
     int nclosed_;
     int nact_;
@@ -99,15 +100,15 @@ class Reference : public std::enable_shared_from_this<Reference> {
     Reference(const Reference& o, std::shared_ptr<const Coeff> c = nullptr) :
       Reference(o.geom(), c ? c : o.coeff(), o.nclosed(), o.nact(), o.nvirt(), o.energy(), o.rdm1(), o.rdm2(), o.rdm1_av(), o.rdm2_av(), o.ciwfn()) { }
 
-    // construct from a molden file
-    Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const PTree> itree);
+    // constructing a skelton
+    Reference(std::shared_ptr<const Geometry> g) : geom_(g), hcore_(std::make_shared<Hcore>(g)) { }
 
     virtual ~Reference() { }
 
     std::shared_ptr<const Geometry> geom() const { return geom_; }
     const std::vector<double> schwarz() const { return geom_->schwarz(); }
     virtual std::shared_ptr<const Hcore> hcore() const { return hcore_; }
-    virtual std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+    std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     void set_coeff(std::shared_ptr<const Matrix> matrix) { coeff_ = std::make_shared<const Coeff>(*matrix); }
     void set_nocc(const int a, const int b) { noccA_ = a; noccB_ = b; }
@@ -115,9 +116,11 @@ class Reference : public std::enable_shared_from_this<Reference> {
     void set_eig(const VectorB& eig);
     void set_eigB(const VectorB& eig);
     void set_occup(const VectorB& occup);
+    void set_occupB(const VectorB& occupB);
     const VectorB& eig() const { return eig_; }
     const VectorB& eigB() const { return eigB_; }
     const VectorB& occup() const { return occup_; }
+    const VectorB& occupB() const { return occupB_; }
 
     int nclosed() const { return nclosed_; }
     int nact() const { return nact_; }

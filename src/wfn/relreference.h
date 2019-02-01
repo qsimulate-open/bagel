@@ -73,9 +73,12 @@ class RelReference : public Reference {
                  std::shared_ptr<const RelCIWfn> ci = nullptr)
      : RelReference(g, c, std::vector<double>(1, en), nneg, nclo, nact, nvirt, ga, br, kram, rdm1_av, rdm2_av, ci) { }
 
-    std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
+    // skelton
+    RelReference(std::shared_ptr<const Geometry> g) : Reference(g) { }
+
     std::shared_ptr<const ZCoeff_Striped> relcoeff() const { return relcoeff_->electronic_part(); }
     std::shared_ptr<const ZCoeff_Striped> relcoeff_full() const { return relcoeff_; }
+    void set_relcoeff(std::shared_ptr<const ZCoeff_Striped> c) { relcoeff_ = c; } 
 
     bool gaunt() const { return gaunt_; }
     bool breit() const { return breit_; }

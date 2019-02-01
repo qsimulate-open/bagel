@@ -53,9 +53,11 @@ class ZReference : public Reference {
     ZReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff> c, const double en, const int nocc, const int nact, const int nvirt) :
       ZReference(g, c, std::vector<double>(1, en), nocc, nact, nvirt) { }
 
-    std::shared_ptr<const Coeff> coeff() const override { return nullptr; }
-    //std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("ZReference::coeff() should not be called"); }
+    // constructing a skelton
+    ZReference(std::shared_ptr<const Geometry> g) : Reference(g) { }
+
     std::shared_ptr<const ZCoeff> zcoeff() const { return zcoeff_; }
+    void set_zcoeff(std::shared_ptr<const ZMatrix> matrix) { zcoeff_ = std::make_shared<const ZCoeff>(*matrix); }
 
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin, const bool check_geom_change = true) const override;
 
