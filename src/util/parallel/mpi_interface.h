@@ -51,7 +51,7 @@ class MPI_Interface {
 #ifdef HAVE_MPI_H
     MPI_Comm mpi_comm_;
     std::map<int, std::vector<MPI_Request>> request_;
-    std::vector<MPI_Comm> mpi_comm_old_;
+    std::vector<std::pair<MPI_Comm,std::array<int,5>>> mpi_comm_old_;
 #endif
 #ifdef HAVE_SCALAPACK
     std::vector<int> pmap_;

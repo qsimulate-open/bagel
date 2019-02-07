@@ -66,7 +66,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
     const int nproc = npass > 1 ? 1 : mpi__->size();
     const int ncomm = mpi__->size() / nproc;
     const int icomm = mpi__->rank() / nproc;
-    mpi__->split(nproc);
+    mpi__->split(ncomm);
 
     for (int ipass = 0; ipass != npass; ++ipass) {
       if (ipass % ncomm == icomm && ncomm != icomm) {
