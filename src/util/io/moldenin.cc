@@ -22,11 +22,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <regex>
 #include <streambuf>
 #include <src/util/io/moldenin.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
+
+#if defined(__GNUC__) && ((__GNUC__ == 4 && __GNUC_MINOR__ >= 9) || __GNUC__ > 4)
+#include <regex>
+#else
+#include <boost/regex.hpp>
+using boost::regex;
+using boost::regex_search;
+using boost::regex_replace;
+using boost::cmatch;
+#endif
 
 using namespace bagel;
 using namespace std;
