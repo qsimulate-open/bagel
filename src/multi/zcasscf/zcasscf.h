@@ -83,7 +83,11 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<ZMatrix> compute_active_fock(const ZMatView acoeff, std::shared_ptr<const ZMatrix> rdm1, const bool coulomb_only = false) const;
 
     // Canonicalize the orbitals
-    std::shared_ptr<const ZCoeff_Block> semi_canonical_orb(const bool kramers) const;
+    std::tuple<std::shared_ptr<const ZCoeff_Block>,VectorB,VectorB,VectorB,VectorB> semi_canonical_orb(const bool kramers) const;
+    VectorB eig_;
+    VectorB eigB_;
+    VectorB occup_;
+    VectorB occupB_;
 
     // energy
     std::vector<double> energy_;

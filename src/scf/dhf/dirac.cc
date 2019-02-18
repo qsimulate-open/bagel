@@ -219,12 +219,24 @@ shared_ptr<const Reference> Dirac::conv_to_ref() const {
   // coeff is occ, virt, nneg
   auto c = make_shared<ZCoeff_Striped>(*coeff_, nele_/2, nele_%2, (npos-nele_)/2, nneg_, /*move_neg*/true);
   auto out = make_shared<RelReference>(geom_, c, energy_, nneg_, nele_/2, nele_%2, (npos-nele_)/2, gaunt_, breit_);
+
+  // assuming closed-shell
   vector<double> eigp(eig_.begin()+nneg_, eig_.end());
   vector<double> eigm(eig_.begin(), eig_.begin()+nneg_);
-  VectorB eig(eig_.size());
-  copy(eigp.begin(), eigp.end(), eig.begin());
-  copy(eigm.begin(), eigm.end(), eig.begin()+eigp.size());
+  eigp.insert(eigp.end(), eigm.begin(), eigm.end());
+  VectorB eig(eig_.size()/2);
+  VectorB eigB(eig_.size()/2);
+  for (int i = 0; i != eig_.size()/2; ++i) {
+    eig[i] = eigp[i*2]; 
+    eigB[i] = eigp[i*2+1]; 
+  }
   out->set_eig(eig);
+  out->set_eigB(eigB);
+
+  VectorB occup(eig.size());
+  fill_n(occup.data(), nele_/2, 1.0);
+  out->set_occup(occup);
+  out->set_occupB(occup);
   return out;
 }
 

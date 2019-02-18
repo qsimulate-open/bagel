@@ -76,7 +76,7 @@ void ZCASNoopt_base::compute() {
   energy_ = fci_->energy();
 
   if (canonical_)
-    coeff_ = semi_canonical_orb(kramers());
+    tie(coeff_,eig_,eigB_,occup_,occupB_) = semi_canonical_orb(kramers());
 
   // TODO When the Property class is implemented, this should be one
   shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");

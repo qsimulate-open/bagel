@@ -227,8 +227,10 @@ std::shared_ptr<Matrix> CASSCF::compute_active_fock(const MatView acoeff, shared
 
 tuple<shared_ptr<const Coeff>,VectorB,VectorB> CASSCF::semi_canonical_orb() const {
   auto rdm1mat = make_shared<Matrix>(nact_, nact_);
+  shared_ptr<const Matrix> rdm1copy; 
   if (nact_) {
     copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
+    rdm1copy = rdm1mat->copy();
     rdm1mat->sqrt();
     rdm1mat->scale(1.0/sqrt(2.0));
   }
@@ -272,7 +274,7 @@ tuple<shared_ptr<const Coeff>,VectorB,VectorB> CASSCF::semi_canonical_orb() cons
   // finally calculate the occupation numbers for active orbitals (diagonal elements of transformed 1RDM)  
   {
     shared_ptr<const Matrix> atrans = trans.get_submatrix(nclosed_, nclosed_, nact_, nact_);
-    const Matrix transrdm = *atrans * *rdm1mat ^ *atrans; 
+    const Matrix transrdm = *atrans * *rdm1copy ^ *atrans; 
     for (int i = 0; i != nact_; ++i)
       occup[i+nclosed_] = transrdm(i, i);
   }

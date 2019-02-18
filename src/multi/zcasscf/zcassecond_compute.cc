@@ -193,8 +193,8 @@ void ZCASSecond_base::compute() {
 #endif
   }
 
-  if (max_iter_ > 0 && canonical_) {
-    coeff_ = semi_canonical_orb(kramers());
+  if (max_iter_ > 0) {
+    tie(coeff_,eig_,eigB_,occup_,occupB_) = semi_canonical_orb(kramers());
     if (dfpcmo_) {
       auto scoeff = make_shared<ZCoeff_Striped>(*coeff_->striped_format(), nneg_/2, 0, 0, (nclosed_+nact_+nvirtnr_)*2, true);
       const ZMatrix fock = *fci_->jop()->core_fock() + *compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), fci_->rdm1_av());
@@ -202,6 +202,11 @@ void ZCASSecond_base::compute() {
       DFPCMO dfpcmo(scoeff, eig, energy_[0], (nclosed_+nact_+nvirtnr_)*2, nneg_, scoeff->ndim());
       dfpcmo.print();
     }
+  } else {
+    eig_ = VectorB(coeff_->mdim());
+    eigB_ = VectorB(coeff_->mdim());
+    occup_ = VectorB(coeff_->mdim());
+    occupB_ = VectorB(coeff_->mdim());
   }
 
   // update construct Jop from scratch
