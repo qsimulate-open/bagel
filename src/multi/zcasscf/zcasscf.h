@@ -73,7 +73,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void init();
     virtual void init_mat1e() = 0;
     virtual void init_coeff() = 0;
-    void select_active();
 
     // hides some outputs
     mutable std::shared_ptr<Muffle> muffle_;

@@ -147,8 +147,6 @@ void ZCASSCF::init() {
 
   // initialize coefficient
   init_coeff();
-  // select active orbitals if "active" is set
-  select_active();
 
   const int idel = geom_->nbasis()*2 - nbasis_;
   if (idel)
@@ -165,21 +163,6 @@ void ZCASSCF::init() {
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
-}
-
-
-void ZCASSCF::select_active() {
-  // specify active orbitals and move into the active space
-  shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
-  if (iactive) {
-    shared_ptr<const ZCoeff_Striped> scoeff = coeff_->striped_format();
-    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-    set<int> active_indices;
-    for (auto& i : *iactive)
-      active_indices.insert(lexical_cast<int>(i->data()) - 1);
-    scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_);
-    coeff_ = scoeff->block_format();
-  }
 }
 
 
