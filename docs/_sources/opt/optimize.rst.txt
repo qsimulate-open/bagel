@@ -25,6 +25,7 @@ using which mixed quantum mechanics/molecular mechanics (QM/MM) optimization can
 To perform this, the ``TINKER`` input files (keyword file ``tinkin.key`` and initial coordinate file ``tinkin.xyz``)
 should be provided in ``tinker1`` and ``tinker2`` subdirectories, respectively.
 The ``testgrad`` program in the ``TINKER`` package should be installed in ``$PATH``.
+Note that the use of the internal coordinate is not supported in the QM/MM case, or more generally when there are external charges.
 
 The output contains the gradient evaluation progress at the first step of the optimization, and the status of the optimization.
 The other information, including the quantum chemistry calculations at the optimization steps, are deposited in the file ``opt.log``.
@@ -125,7 +126,7 @@ Optional Keywords (Universal)
    | **Values:**
    |    ``true``: use internal coordinates.
    |    ``false``: use Cartesian coordinates.
-   | **Default:** true.
+   | **Default:** true, except when QM/MM is used (false).
    | **Recommendation:** use default when you have a single molecule. If bond-breaking process is in consideration, use "false".
 
 .. topic:: ``redundant``

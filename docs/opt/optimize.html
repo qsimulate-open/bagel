@@ -9,11 +9,14 @@
     <title>Molecular geometry optimization &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Interface to dynamics codes" href="../grad/dynamics.html" />
     <link rel="prev" title="Nuclear gradient and derivative coupling" href="../grad/force.html" /> 
@@ -58,7 +61,8 @@ from the saddle point can be calculated using the second order algorithm, withou
 using which mixed quantum mechanics/molecular mechanics (QM/MM) optimization can be performed.
 To perform this, the <code class="docutils literal notranslate"><span class="pre">TINKER</span></code> input files (keyword file <code class="docutils literal notranslate"><span class="pre">tinkin.key</span></code> and initial coordinate file <code class="docutils literal notranslate"><span class="pre">tinkin.xyz</span></code>)
 should be provided in <code class="docutils literal notranslate"><span class="pre">tinker1</span></code> and <code class="docutils literal notranslate"><span class="pre">tinker2</span></code> subdirectories, respectively.
-The <code class="docutils literal notranslate"><span class="pre">testgrad</span></code> program in the <code class="docutils literal notranslate"><span class="pre">TINKER</span></code> package should be installed in <code class="docutils literal notranslate"><span class="pre">$PATH</span></code>.</p>
+The <code class="docutils literal notranslate"><span class="pre">testgrad</span></code> program in the <code class="docutils literal notranslate"><span class="pre">TINKER</span></code> package should be installed in <code class="docutils literal notranslate"><span class="pre">$PATH</span></code>.
+Note that the use of the internal coordinate is not supported in the QM/MM case, or more generally when there are external charges.</p>
 <p>The output contains the gradient evaluation progress at the first step of the optimization, and the status of the optimization.
 The other information, including the quantum chemistry calculations at the optimization steps, are deposited in the file <code class="docutils literal notranslate"><span class="pre">opt.log</span></code>.
 The history of the optimization and the final geometry are also saved in the <code class="docutils literal notranslate"><span class="pre">MOLDEN</span></code> files <code class="docutils literal notranslate"><span class="pre">opt_history.molden</span></code> and <code class="docutils literal notranslate"><span class="pre">opt.molden</span></code>,
@@ -191,7 +195,7 @@ and can be read by <code class="docutils literal notranslate"><span class="pre">
 <div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: use internal coordinates.</div>
 <div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: use Cartesian coordinates.</div>
 </div>
-<div class="line"><strong>Default:</strong> true.</div>
+<div class="line"><strong>Default:</strong> true, except when QM/MM is used (false).</div>
 <div class="line"><strong>Recommendation:</strong> use default when you have a single molecule. If bond-breaking process is in consideration, use “false”.</div>
 </div>
 </div>
@@ -533,7 +537,7 @@ In this example, we optimize the ground state.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
+<h3><a href="../index.html">Table of Contents</a></h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
