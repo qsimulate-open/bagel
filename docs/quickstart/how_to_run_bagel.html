@@ -4,29 +4,23 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>How to run BAGEL &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Molecule specification" href="../molecule/molecule-toc.html" />
     <link rel="prev" title="Installation" href="installation_guide.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -52,19 +46,19 @@
 <div class="section" id="command">
 <h2>Command<a class="headerlink" href="#command" title="Permalink to this headline">¶</a></h2>
 <p>BAGEL runs by</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ BAGEL input.json
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ BAGEL input.json
 </pre></div>
 </div>
 <p>Normally you will want to run in parallel using mpirun.
 BAGEL sends output to the standard I/O stream, so you have to pipe the output in order to save it as a file:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ mpirun BAGEL input.json &gt; output.out
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mpirun BAGEL input.json &gt; output.out
 </pre></div>
 </div>
 </div>
 <div class="section" id="environment-variables">
 <h2>Environment variables<a class="headerlink" href="#environment-variables" title="Permalink to this headline">¶</a></h2>
 <p>The folowing commands can be used to control the number of threads used by each MPI process of BAGEL:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ export BAGEL_NUM_THREADS=16
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ export BAGEL_NUM_THREADS=16
 $ export MKL_NUM_THREADS=16
 </pre></div>
 </div>
@@ -72,7 +66,7 @@ $ export MKL_NUM_THREADS=16
 It is generally recommended to set this variable such that BAGEL_NUM_THREADS times the number of MPI processes
 equals the number of available cores on your machine.</p>
 <p>When you run BAGEL with Intel MPI using a large number (&gt;16) of processes, you have to set:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ export I_MPI_SCALABLE_OPTIMIZATION=off
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ export I_MPI_SCALABLE_OPTIMIZATION=off
 </pre></div>
 </div>
 <p>owing to the problem in Intel’s MPI scalable optimization.</p>
@@ -80,7 +74,7 @@ equals the number of available cores on your machine.</p>
 <div class="section" id="test-input-and-output">
 <h2>Test input and output<a class="headerlink" href="#test-input-and-output" title="Permalink to this headline">¶</a></h2>
 <p>This is an example input file for a simple Hartree–Fock calculation:</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -101,7 +95,7 @@ equals the number of available cores on your machine.</p>
 </pre></div>
 </div>
 <p>from which you should get an output file as follows:</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">===============================================================</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="o">===============================================================</span>
   <span class="nx">BAGEL</span> <span class="o">-</span> <span class="nx">Freshly</span> <span class="nx">leavened</span> <span class="nx">quantum</span> <span class="nx">chemistry</span>
 <span class="o">===============================================================</span>
 
@@ -218,7 +212,7 @@ equals the number of available cores on your machine.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
+<h3><a href="../index.html">Table of Contents</a></h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="quickstart.html">First steps with BAGEL</a></li>
@@ -246,12 +240,14 @@ equals the number of available cores on your machine.</p>
                         title="next chapter">Molecule specification</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

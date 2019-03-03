@@ -34,8 +34,30 @@ class MoldenOut : public MoldenIO {
       std::ofstream ofs_;
 
       void write_geom();
+      void write_aos();
       void write_mos();
+      void write_mos_complex();
+      void write_mos_relativistic();
       void write_freq();
+
+      template<typename Type>
+      void write_mo_one(std::ostream& ss, const Type* data) {
+        const bool is_spherical = mol_->spherical();
+        const int width = std::is_same<Type,double>::value ? 22 : 44;
+        int j = 0;
+        for (auto& iatom : mol_->atoms()) {
+          for (auto& ishell : iatom->shells()) {
+            for (int icont = 0; icont != ishell->num_contracted(); ++icont) {
+              std::vector<int> corder = (is_spherical ? b2m_sph_.at(ishell->angular_number()) : b2m_cart_.at(ishell->angular_number()));
+              std::vector<double> scales = (is_spherical ? std::vector<double>(corder.size(), 1.0) : scaling_.at(ishell->angular_number()));
+              for (auto& iorder : corder) {
+                ss << std::fixed << std::setw(4) << ++j << " " << std::setw(width) << std::setprecision(16) << data[iorder] / scales.at(iorder) << std::endl;
+              }
+              data += corder.size();
+            }
+          }
+        }
+      }
 
    public:
       MoldenOut(std::string filename);

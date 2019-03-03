@@ -111,6 +111,16 @@ class MSCASPT2 {
     std::shared_ptr<Matrix> rdm2fderiv_;
     std::shared_ptr<Matrix> rdm3fderiv_;
 
+    // in orthogonal basis
+    std::shared_ptr<Orthogonal_Basis> l_orthogonal_;
+    std::shared_ptr<Orthogonal_Basis> t_orthogonal_;
+    std::vector<double> nimag_;
+
+    std::shared_ptr<VecRDM<1>> etensor1_;
+    std::shared_ptr<VecRDM<2>> etensor2_;
+    std::shared_ptr<VecRDM<3>> etensor3_;
+    std::shared_ptr<VecRDM<3>> etensor4_;
+
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma31_();
     std::shared_ptr<FutureTensor> Gamma34_();
@@ -154,6 +164,10 @@ class MSCASPT2 {
     void add_total(double factor);
     void do_rdm_deriv(double factor);
 
+    std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
+      make_d2_imag() const;
+
     // same function as that implemented in SpinFreeMethod
     void set_rdm(const int ist, const int jst) {
       rdm0_ = rdm0all_->at(jst, ist);
@@ -161,7 +175,9 @@ class MSCASPT2 {
       rdm2_ = rdm2all_->at(jst, ist);
       rdm3_ = rdm3all_->at(jst, ist);
       rdm4f_ = rdm4fall_->at(jst, ist);
-      rdm4_ = rdm4all_->at(jst, ist);
+      if (info_->rdm4_eval())
+        rdm4_ = rdm4all_->at(jst, ist);
+
       mpi__->barrier();
     }
 
@@ -178,6 +194,7 @@ class MSCASPT2 {
     std::shared_ptr<const Matrix> vden1() const { return vden1_; }
     std::shared_ptr<Dvec> ci_deriv() const { return ci_deriv_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
+    std::vector<double> nimag() const { return nimag_; }
 };
 
 }

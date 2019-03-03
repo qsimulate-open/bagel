@@ -4,29 +4,23 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>ASD-DMRG &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Description" href="multisite.html" />
     <link rel="prev" title="ASD orbital optimization" href="asd_orbopt.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -66,42 +60,42 @@
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">method</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">method</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Method to compute active subspaces.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Value:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">ras</span></code>: use restricted active space configuration interaction method</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">ras</span></code>: use restricted active space configuration interaction method</div>
 </div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ras</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ras</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Specify restricted active space method settings.</div>
 <div class="line"><strong>Recommendation:</strong> See <a class="reference internal" href="../ci/rasci.html#rasci"><span class="std std-ref">Restricted active space configuration interaction (RASCI)</span></a> for details.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">restricted</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">restricted</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Specify occupation restriction in active space.</div>
 <div class="line"><strong>Recommendation:</strong> See sample input for details.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">spaces</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">spaces</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Specify important single site states with the following keys:</div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">charge</span></code>, <code class="docutils literal"><span class="pre">spin</span></code>, <code class="docutils literal"><span class="pre">nstate</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">charge</span></code>, <code class="docutils literal notranslate"><span class="pre">spin</span></code>, <code class="docutils literal notranslate"><span class="pre">nstate</span></code></div>
 </div>
 <div class="line"><strong>Recommendation:</strong> See sample input for details.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nstates</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nstates</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of target states.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -109,21 +103,21 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ntrunc</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ntrunc</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of dmrg states to keep.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Threshold for convergence in Davidson diagonalization.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of iterations for Davidson diagonalization.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -131,7 +125,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">perturb</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">perturb</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Initial perturbation value.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
@@ -140,7 +134,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">perturb_thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">perturb_thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Threshold for energy convergence when perturbation is applied.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
@@ -149,7 +143,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">perturb_min</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">perturb_min</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Minimum perturbation to be applied.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
@@ -163,7 +157,7 @@
 <p>Here is a sample calculation of Helium trimer aggregate with ASD-DMRG.</p>
 <div class="section" id="sample-input">
 <h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -281,7 +275,7 @@ density matrix renormalization group algorithm</td>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
+<h3><a href="../index.html">Table of Contents</a></h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
@@ -309,12 +303,14 @@ density matrix renormalization group algorithm</td>
                         title="next chapter">Description</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

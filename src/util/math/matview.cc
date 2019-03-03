@@ -110,5 +110,5 @@ std::unique_ptr<DataType[]> MatView_<DataType>::getlocal() const {
 #endif
 
 
-template class MatView_<double>;
-template class MatView_<complex<double>>;
+template class bagel::MatView_<double>;
+template class bagel::MatView_<complex<double>>;

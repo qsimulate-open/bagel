@@ -56,7 +56,8 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
     auto cas = make_shared<CASNoopt>(inp, geom, ref);
     cas->compute();
     ref_ = cas->conv_to_ref();
-    fci_ = cas->fci();
+    if (ref_->nact())
+      fci_ = cas->fci();
     thresh_ = cas->thresh();
   }
 
@@ -274,12 +275,9 @@ template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared_ptr<const GradInfo> gradinfo) {
 #ifdef COMPILE_SMITH
   const int istate = gradinfo->target_state();
-  const int jstate = gradinfo->target_state2();
+  const int jstate = (jobtitle == "nacme") ? gradinfo->target_state2() : istate;
 
-  if (jobtitle == "nacme")
-    task_->compute_gradient(istate, jstate, gradinfo->nacmtype());
-  else
-    task_->compute_gradient(istate, istate);
+  task_->compute_gradient(istate, jstate, gradinfo->nacmtype(), !gradinfo->cider_eval());
 
   Timer timer;
 
@@ -333,6 +331,10 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
     dipole.compute();
   }
 
+  if (!gradinfo->cider_eval()) {
+    return make_shared<GradFile>(geom_->natom());
+  }
+
   // compute Yrs
   shared_ptr<const DFHalfDist> half   = ref->geom()->df()->compute_half_transform(ocoeff);
   shared_ptr<const DFHalfDist> halfj  = half->apply_J();
@@ -362,7 +364,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
     civec->data(0)->element(0,0) = 1.0;
     civector = civec;
   }
-  auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, coeff);
+  auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, task_->smith()->algo()->info()->shift_imag(), coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
   tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), gradinfo->maxziter(), task_->dcheck(), /*xms*/!!task_->dcheck());
@@ -373,10 +375,9 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
   // form Zd + dZ^+
   shared_ptr<const Matrix> d0sa = nact ? ref->rdm1_mat()->resize(nmobasis, nmobasis) : d0ms;
   auto dm = make_shared<Matrix>(*zmat * *d0sa + (*d0sa ^ *zmat));
-
   auto dtot = make_shared<Matrix>(*d0ms + *d11 + *d1 + *dm);
   if (smallz)
-    dtot->add_block(1.0, 0, 0, nocc, nocc, smallz);
+    *dtot += *smallz;
 
   // form zdensity
   shared_ptr<const RDM<1>> zrdm1;
@@ -416,7 +417,6 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
 
     qxmatao = make_shared<Matrix>(*coeff * *qxmat ^ *coeff);
   }
-
 
   // two-body part
   // first make occ-occ part (copy-and-paste from src/casscf/supercigrad.cc)
@@ -498,7 +498,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
   separable_pair(d0sa->get_submatrix(0,0,nocc,nocc), d1);
 
   if (smallz)
-    separable_pair(smallz, d0sa);
+    separable_pair(d0sa->get_submatrix(0,0,nocc,nocc), smallz);
 
   // back transform the rest
   shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);

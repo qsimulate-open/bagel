@@ -29,6 +29,7 @@
 #include <src/smith/moint.h>
 #include <src/smith/spinfreebase.h>
 #include <src/smith/smith_util.h>
+#include <src/mat1e/cap.h>
 
 using namespace std;
 using namespace bagel;
@@ -111,6 +112,9 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     rotate_xms();
     eref_->print("Reference energies in XMS basis");
   }
+
+  // Reference properties if requested
+  reference_prop();
 
   // rdms.
   if (info_->ciwfn()) {
@@ -216,6 +220,52 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
 
 
 template<>
+void SpinFreeMethod<double>::reference_prop() const {
+  const int nstates = info_->ciwfn()->nstates();
+  const array<double,3> cap = info_->geom()->cap();
+
+  const bool dothis = !::isnan(cap[0]);
+  if (dothis) {
+    auto acoeff = info_->coeff()->slice(info_->nclosed(), info_->nocc());
+    auto ccoeff = info_->coeff()->slice(0, info_->nclosed());
+
+    map<pair<int,int>, shared_ptr<const RDM<1>>> rdmmap;
+    for (int i = 0; i != nstates; ++i)
+      for (int j = 0; j <= i; ++j) {
+        auto rdm = info_->rdm12(j, i);
+        rdmmap.emplace(make_pair(j,i), get<0>(rdm));
+      }
+
+    auto compute_local = [&,this](const Matrix& mat1e, const string title) {
+      Matrix propmat(nstates, nstates);
+      if (info_->nclosed()) {
+        auto cvec = (ccoeff % mat1e * ccoeff).diag();
+        const double csum = accumulate(cvec.begin(), cvec.end(), 0.0);
+        for (int i = 0; i != nstates; ++i)
+          propmat(i, i) += csum * 2.0;
+      }
+      auto amat = acoeff % mat1e * acoeff;
+      for (int i = 0; i != nstates; ++i)
+        for (int j = 0; j <= i; ++j)
+          propmat(j, i) = propmat(i, j) = blas::dot_product(rdmmap.at(make_pair(j,i))->data(), info_->nact()*info_->nact(), amat.data());
+      propmat.print(title);
+    };
+
+    // here comes a list of properties to be printed
+    CAP cap(info_->geom());
+    cap.compute();
+    compute_local(cap, "CAP");
+  }
+}
+
+
+template<>
+void SpinFreeMethod<complex<double>>::reference_prop() const {
+  // not implemented yet
+}
+
+
+template<>
 void SpinFreeMethod<double>::feed_rdm_denom() {
   const int nclo = info_->nclosed();
   const int nstates = info_->ciwfn()->nstates();
@@ -232,7 +282,11 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
   }
 
   assert(fockact_);
-  auto denom = make_shared<Denom<double>>(fockact_, nstates, info_->thresh_overlap());
+  shared_ptr<Denom<double>> denom;
+  if (info_->sssr())
+    denom = make_shared<Denom_SSSR<double>>(fockact_, nstates, info_->thresh_overlap());
+  else
+    denom = make_shared<Denom_MSMR<double>>(fockact_, nstates, info_->thresh_overlap());
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
@@ -304,7 +358,11 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
   }
 
   assert(fockact_);
-  auto denom = make_shared<Denom<complex<double>>>(fockact_, nstates, info_->thresh_overlap());
+  shared_ptr<Denom<complex<double>>> denom;
+  if (info_->sssr())
+    denom = make_shared<Denom_SSSR<complex<double>>>(fockact_, nstates, info_->thresh_overlap());
+  else
+    denom = make_shared<Denom_MSMR<complex<double>>>(fockact_, nstates, info_->thresh_overlap());
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
@@ -713,8 +771,8 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
-template class SpinFreeMethod<double>;
-template class SpinFreeMethod<complex<double>>;
+template class bagel::SMITH::SpinFreeMethod<double>;
+template class bagel::SMITH::SpinFreeMethod<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #endif

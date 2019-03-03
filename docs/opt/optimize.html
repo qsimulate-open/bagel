@@ -4,29 +4,23 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Molecular geometry optimization &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Interface to dynamics codes" href="../grad/dynamics.html" />
     <link rel="prev" title="Nuclear gradient and derivative coupling" href="../grad/force.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -63,76 +57,77 @@ The minimum distance conical intersection (MDCI) can be also optimized by replac
 with the distance vector to the reference geometry.
 In addition, the minimum energy path to the reactants and products
 from the saddle point can be calculated using the second order algorithm, without mass weighting.</p>
-<p>The optimizer in BAGEL has been interfaced with an external molecular mechanics program, <code class="docutils literal"><span class="pre">TINKER</span></code>,
+<p>The optimizer in BAGEL has been interfaced with an external molecular mechanics program, <code class="docutils literal notranslate"><span class="pre">TINKER</span></code>,
 using which mixed quantum mechanics/molecular mechanics (QM/MM) optimization can be performed.
-To perform this, the <code class="docutils literal"><span class="pre">TINKER</span></code> input files (keyword file <code class="docutils literal"><span class="pre">tinkin.key</span></code> and initial coordinate file <code class="docutils literal"><span class="pre">tinkin.xyz</span></code>)
-should be provided in <code class="docutils literal"><span class="pre">tinker1</span></code> and <code class="docutils literal"><span class="pre">tinker2</span></code> subdirectories, respectively.
-The <code class="docutils literal"><span class="pre">testgrad</span></code> program in the <code class="docutils literal"><span class="pre">TINKER</span></code> package should be installed in <code class="docutils literal"><span class="pre">$PATH</span></code>.</p>
+To perform this, the <code class="docutils literal notranslate"><span class="pre">TINKER</span></code> input files (keyword file <code class="docutils literal notranslate"><span class="pre">tinkin.key</span></code> and initial coordinate file <code class="docutils literal notranslate"><span class="pre">tinkin.xyz</span></code>)
+should be provided in <code class="docutils literal notranslate"><span class="pre">tinker1</span></code> and <code class="docutils literal notranslate"><span class="pre">tinker2</span></code> subdirectories, respectively.
+The <code class="docutils literal notranslate"><span class="pre">testgrad</span></code> program in the <code class="docutils literal notranslate"><span class="pre">TINKER</span></code> package should be installed in <code class="docutils literal notranslate"><span class="pre">$PATH</span></code>.
+Note that the use of the internal coordinate is not supported in the QM/MM case, or more generally when there are external charges.</p>
 <p>The output contains the gradient evaluation progress at the first step of the optimization, and the status of the optimization.
-The other information, including the quantum chemistry calculations at the optimization steps, are deposited in the file <code class="docutils literal"><span class="pre">opt.log</span></code>.
-The history of the optimization and the final geometry are also saved in the <code class="docutils literal"><span class="pre">MOLDEN</span></code> files <code class="docutils literal"><span class="pre">opt_history.molden</span></code> and <code class="docutils literal"><span class="pre">opt.molden</span></code>,
-and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span></code>.</p>
+The other information, including the quantum chemistry calculations at the optimization steps, are deposited in the file <code class="docutils literal notranslate"><span class="pre">opt.log</span></code>.
+The history of the optimization and the final geometry are also saved in the <code class="docutils literal notranslate"><span class="pre">MOLDEN</span></code> files <code class="docutils literal notranslate"><span class="pre">opt_history.molden</span></code> and <code class="docutils literal notranslate"><span class="pre">opt.molden</span></code>,
+and can be read by <code class="docutils literal notranslate"><span class="pre">MOLDEN</span></code>.</p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="required-keywords">
 <h3>Required Keywords<a class="headerlink" href="#required-keywords" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">title</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">title</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Request geometry optimization.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong> (optimize)</div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">optimize</span></code>: Optimize geometry.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">optimize</span></code>: Optimize geometry.</div>
 </div>
 <div class="line"><strong>Default:</strong> N/A</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">opttype</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">opttype</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Type of the optimization calculations.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">energy</span></code>: find the most stable geometry.</div>
-<div class="line"><code class="docutils literal"><span class="pre">conical</span></code> or <code class="docutils literal"><span class="pre">meci</span></code>: find the minimum energy conical intersections, according to gradient projection method.</div>
-<div class="line"><code class="docutils literal"><span class="pre">mdci</span></code>: find the minimum distance conical intersections, according to modified gradient projection method.</div>
-<div class="line"><code class="docutils literal"><span class="pre">transition</span></code>: find the transition state geometry (saddle point on the PES).</div>
-<div class="line"><code class="docutils literal"><span class="pre">mep</span></code>: find the minimum energy path using the second-order algorithm, starting from the transition state geometry.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">energy</span></code>: find the most stable geometry.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">conical</span></code> or <code class="docutils literal notranslate"><span class="pre">meci</span></code>: find the minimum energy conical intersections, according to gradient projection method.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">mdci</span></code>: find the minimum distance conical intersections, according to modified gradient projection method.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">transition</span></code>: find the transition state geometry (saddle point on the PES).</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">mep</span></code>: find the minimum energy path using the second-order algorithm, starting from the transition state geometry.</div>
 </div>
 <div class="line"><strong>Default:</strong> energy.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">target</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">target</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The target state to optimize.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">0</span></code>: the ground state.</div>
-<div class="line"><code class="docutils literal"><span class="pre">1</span></code>: the first excited state, and so on.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">0</span></code>: the ground state.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">1</span></code>: the first excited state, and so on.</div>
 </div>
 <div class="line"><strong>Default:</strong> 0</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">target2</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">target2</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The second target state to optimize in the conical intersection optimization.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">0</span></code>: the ground state.</div>
-<div class="line"><code class="docutils literal"><span class="pre">1</span></code>: the first excited state, and so on.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">0</span></code>: the ground state.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">1</span></code>: the first excited state, and so on.</div>
 </div>
 <div class="line"><strong>Default:</strong> 1</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">method</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">method</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The method array allows the user to specify one or more methods to be used in the Hessian calculation. See section on input structure for more information.</div>
 </div>
@@ -141,7 +136,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="section" id="convergence-criteria">
 <h3>Convergence Criteria<a class="headerlink" href="#convergence-criteria" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxgrad</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxgrad</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum component of the gradient in Hartree / Bohr.</div>
 <div class="line"><strong>Datatype:</strong> double precision.</div>
@@ -149,7 +144,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxdisp</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxdisp</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum component of the displacement in Bohr.</div>
 <div class="line"><strong>Datatype:</strong> double precision.</div>
@@ -157,7 +152,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxchange</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxchange</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The energy change in Hartree.</div>
 <div class="line"><strong>Datatype:</strong> double precision.</div>
@@ -168,22 +163,22 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="section" id="optional-keywords-universal">
 <h3>Optional Keywords (Universal)<a class="headerlink" href="#optional-keywords-universal" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">algorithm</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">algorithm</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Algorithm for the optimization calculations.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">ef</span></code>: Eigenvector-following (EF) algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">rfo</span></code>: Rational functional optimization algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">nr</span></code>: Newton–Raphson algorithm.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">ef</span></code>: Eigenvector-following (EF) algorithm.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">rfo</span></code>: Rational functional optimization algorithm.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">nr</span></code>: Newton–Raphson algorithm.</div>
 </div>
 <div class="line"><strong>Default:</strong> ef.</div>
 <div class="line"><strong>Recommendation:</strong> use either “ef” or “rfo”.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxstep</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxstep</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum step. The unit is in the specifed coordinate.</div>
 <div class="line"><strong>Datatype:</strong> double precision.</div>
@@ -191,35 +186,35 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">internal</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">internal</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Use internal coordinate or not.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: use internal coordinates.</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use Cartesian coordinates.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: use internal coordinates.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: use Cartesian coordinates.</div>
 </div>
-<div class="line"><strong>Default:</strong> true.</div>
+<div class="line"><strong>Default:</strong> true, except when QM/MM is used (false).</div>
 <div class="line"><strong>Recommendation:</strong> use default when you have a single molecule. If bond-breaking process is in consideration, use “false”.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">redundant</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">redundant</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Use redunant internal coordinate or delocalized internal coordinate.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: use redundant internal coordinate.</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use delocalized internal coordinate.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: use redundant internal coordinate.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: use delocalized internal coordinate.</div>
 </div>
 <div class="line"><strong>Default:</strong> false.</div>
 <div class="line"><strong>Recommendation:</strong> use default.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of iteration for optimization.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -227,7 +222,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxziter</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxziter</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of Z-vector iterations for gradient evaluation. Applies to SA-CASSCF, CASPT2, and MP2 calculations.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -236,20 +231,20 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">numerical</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">numerical</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Use numerical gradient.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: use numerical gradient.</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use analytical gradient.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: use numerical gradient.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: use analytical gradient.</div>
 </div>
 <div class="line"><strong>Default:</strong> false.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">numerical_dx</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">numerical_dx</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Delta x for numerical gradient.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -257,66 +252,74 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">hess_update</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">hess_update</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Hessian updating scheme.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">flowchart</span></code>: use flowchart update. This automatically decides according to the shape of PES.</div>
-<div class="line"><code class="docutils literal"><span class="pre">bfgs</span></code>: use BFGS scheme.</div>
-<div class="line"><code class="docutils literal"><span class="pre">psb</span></code>: use PSB scheme.</div>
-<div class="line"><code class="docutils literal"><span class="pre">sr1</span></code>: use SR1 scheme.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">flowchart</span></code>: use flowchart update. This automatically decides according to the shape of PES.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">bfgs</span></code>: use BFGS scheme.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">psb</span></code>: use PSB scheme.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">sr1</span></code>: use SR1 scheme.</div>
 </div>
 <div class="line"><strong>Default:</strong> flowchart.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">hess_approx</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">hess_approx</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Use approximate Hessian for the initial step of the optimization.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: use approximate Hessian.</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: calculate numerical Hessian first, and start the optimization using the Hessian.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: use approximate Hessian.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: calculate numerical Hessian first, and start the optimization using the Hessian.</div>
 </div>
 <div class="line"><strong>Default:</strong> true.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">adaptive</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">adaptive</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Use adaptive stepsize in RFO algorithm.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: use adaptive maximum stepsize.</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use fixed maximum stepsize.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: use adaptive maximum stepsize.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: use fixed maximum stepsize.</div>
 </div>
 <div class="line"><strong>Default:</strong> true (algorithm is RFO); false (otherwise).</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">molden</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Generate a Molden file at each geometry step.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> false (do not generate).</div>
 </div>
 </div>
 </div>
 <div class="section" id="optional-keywords-conical-intersection-optimization">
 <h3>Optional Keywords (Conical Intersection Optimization)<a class="headerlink" href="#optional-keywords-conical-intersection-optimization" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nacmtype</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nacmtype</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Type of non-adiabatic coupling matrix element to be used.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">full</span></code>: use full nonadiabatic coupling.</div>
-<div class="line"><code class="docutils literal"><span class="pre">interstate</span></code>: use interstate coupling.</div>
-<div class="line"><code class="docutils literal"><span class="pre">etf</span></code>: use nonadiabatic coupling with built-in electronic translational factor (ETF).</div>
-<div class="line"><code class="docutils literal"><span class="pre">noweight</span></code>: use interstate coupling without weighting it by energy gap.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">full</span></code>: use full nonadiabatic coupling.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">interstate</span></code>: use interstate coupling.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">etf</span></code>: use nonadiabatic coupling with built-in electronic translational factor (ETF).</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">noweight</span></code>: use interstate coupling without weighting it by energy gap.</div>
 </div>
 <div class="line"><strong>Default:</strong> noweight.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thielc3</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thielc3</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Thiel’s C_3 parameter, which is multiplied to the full gradient.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -324,7 +327,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thielc4</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thielc4</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Thiel’s C_4 parameter, which is multiplied to the gradient difference.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -332,37 +335,37 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">mdci_reference_geometry</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">mdci_reference_geometry</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Specify reference geometry used in MDCI optimization.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: specify reference geometry in the <code class="docutils literal"><span class="pre">refgeom</span></code> block.</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: the first geometry for optimization is considered as the reference geometry.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: specify reference geometry in the <code class="docutils literal notranslate"><span class="pre">refgeom</span></code> block.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: the first geometry for optimization is considered as the reference geometry.</div>
 </div>
 <div class="line"><strong>Default:</strong> false</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">refgeom</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">refgeom</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong> Reference geometry for MDCI optimization. The format is the same as the <code class="docutils literal"><span class="pre">molecule</span></code> block.</div>
+<div class="line"><strong>Description:</strong> Reference geometry for MDCI optimization. The format is the same as the <code class="docutils literal notranslate"><span class="pre">molecule</span></code> block.</div>
 </div>
 </div>
 </div>
 <div class="section" id="optional-keywords-minimum-energy-path">
 <h3>Optional Keywords (Minimum Energy Path)<a class="headerlink" href="#optional-keywords-minimum-energy-path" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">mep_direction</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">mep_direction</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Direction of the MEP calculation.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">1</span></code>: use the direction of the lowest eigenvector.</div>
-<div class="line"><code class="docutils literal"><span class="pre">0</span></code>: use gradient.</div>
-<div class="line"><code class="docutils literal"><span class="pre">-1</span></code>: use the opposite direction of the lowest eigenvector.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">1</span></code>: use the direction of the lowest eigenvector.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">0</span></code>: use gradient.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">-1</span></code>: use the opposite direction of the lowest eigenvector.</div>
 </div>
 <div class="line"><strong>Default:</strong> 1</div>
 <div class="line"><strong>Recommendation:</strong> run two calculations with “1” and “-1” to get the full path.</div>
@@ -372,26 +375,26 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="section" id="optional-keywords-qm-mm">
 <h3>Optional Keywords (QM/MM)<a class="headerlink" href="#optional-keywords-qm-mm" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">qmmm</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">qmmm</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Do QM/MM energy optimization.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: do QM/MM optimization.</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: do gas phase optimization.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: do QM/MM optimization.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: do gas phase optimization.</div>
 </div>
 <div class="line"><strong>Default:</strong> false</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">qmmm_program</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">qmmm_program</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Molecular mechanics program to do QM/MM.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">tinker</span></code>: do QM/MM optimization with TINKER.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">tinker</span></code>: do QM/MM optimization with TINKER.</div>
 </div>
 <div class="line"><strong>Default:</strong> tinker.</div>
 </div>
@@ -407,7 +410,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </div>
 <div class="section" id="sample-input">
 <h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span> <span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span> <span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
  <span class="p">{</span>
    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -454,10 +457,10 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </div>
 <p>Using the same molecule block, a geometry optimization with XMS-CASPT2 can be performed.
 In this particular example as is often the case, the active keyword is used to select the orbitals for the active space that includes 4 electrons and 3 orbitals.
-Three sets of  <span class="math">\(\pi\)</span> and <span class="math">\(\pi^*\)</span> orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair).
+Three sets of  <span class="math notranslate nohighlight">\(\pi\)</span> and <span class="math notranslate nohighlight">\(\pi^*\)</span> orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair).
 The casscf orbitals are state-averaged over three states. Since a multistate calculation is performed, the user must specify which state is to be optimized (the target).
 In this example, we optimize the ground state.</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;casscf&quot;</span><span class="p">,</span>
   <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
   <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">46</span><span class="p">,</span>
@@ -534,7 +537,7 @@ In this example, we optimize the ground state.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
+<h3><a href="../index.html">Table of Contents</a></h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
@@ -562,12 +565,14 @@ In this example, we optimize the ground state.</p>
                         title="next chapter">Interface to dynamics codes</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

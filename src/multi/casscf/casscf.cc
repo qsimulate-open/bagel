@@ -225,10 +225,12 @@ std::shared_ptr<Matrix> CASSCF::compute_active_fock(const MatView acoeff, shared
 }
 
 
-shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
+tuple<shared_ptr<const Coeff>,VectorB,VectorB> CASSCF::semi_canonical_orb() const {
   auto rdm1mat = make_shared<Matrix>(nact_, nact_);
+  shared_ptr<const Matrix> rdm1copy; 
   if (nact_) {
     copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
+    rdm1copy = rdm1mat->copy();
     rdm1mat->sqrt();
     rdm1mat->scale(1.0/sqrt(2.0));
   }
@@ -236,29 +238,49 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   auto acoeff = coeff_->slice(nclosed_, nocc_);
   auto vcoeff = coeff_->slice(nocc_, nmo_);
 
-  VectorB eig(coeff_->mdim());
   Fock<1> fock;
   if (nact_)
     fock = Fock<1>(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
   else
     fock = Fock<1>(geom_, ref_->hcore(), nullptr, coeff_->slice_copy(0, nclosed_), false, /*rhf*/true);
 
+  VectorB eig(coeff_->mdim());
+  VectorB occup(coeff_->mdim());
+  // calculate the transformation matrix to (semi-)canonical orbitals
   Matrix trans(nmo_, nmo_);
   trans.unit();
   if (nclosed_) {
     Matrix ofock = ocoeff % fock * ocoeff;
-    ofock.diagonalize(eig);
+    VectorB tmp(nclosed_);
+    ofock.diagonalize(tmp);
     trans.copy_block(0, 0, nclosed_, nclosed_, ofock);
+    copy_n(tmp.data(), nclosed_, eig.data());
+    fill_n(occup.data(), nclosed_, 2.0);
   }
   if (nact_ && canonical_) {
     Matrix afock = acoeff % fock * acoeff;
-    afock.diagonalize(eig);
+    VectorB tmp(nact_);
+    afock.diagonalize(tmp);
     trans.copy_block(nclosed_, nclosed_, nact_, nact_, afock);
+    copy_n(tmp.data(), nact_, eig.data()+nclosed_); 
   }
-  Matrix vfock = vcoeff % fock * vcoeff;
-  vfock.diagonalize(eig);
-  trans.copy_block(nocc_, nocc_, nvirt_, nvirt_, vfock);
-  return make_shared<Coeff>(*coeff_ * trans);
+  {
+    Matrix vfock = vcoeff % fock * vcoeff;
+    VectorB tmp(nvirt_);
+    vfock.diagonalize(tmp);
+    trans.copy_block(nocc_, nocc_, nvirt_, nvirt_, vfock);
+    copy_n(tmp.data(), nvirt_, eig.data()+nclosed_+nact_);
+  }
+  // finally calculate the occupation numbers for active orbitals (diagonal elements of transformed 1RDM)  
+  {
+    shared_ptr<const Matrix> atrans = trans.get_submatrix(nclosed_, nclosed_, nact_, nact_);
+    const Matrix transrdm = *atrans * *rdm1copy ^ *atrans; 
+    for (int i = 0; i != nact_; ++i)
+      occup[i+nclosed_] = transrdm(i, i);
+  }
+
+  auto coeffout = make_shared<Coeff>(*coeff_ * trans);
+  return make_tuple(coeffout, move(eig), move(occup));
 }
 
 
@@ -282,7 +304,10 @@ shared_ptr<const Matrix> CASSCF::spin_density() const {
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   const bool noci = !nact_ || external_rdm_ == "noref";
-  return noci ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_)
-              : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
-                                       fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+  auto ref = noci ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_)
+                  : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
+                                           fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+  ref->set_eig(eig_);
+  ref->set_occup(occup_);
+  return ref;
 }

@@ -84,26 +84,27 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
     for (int jst = 0; jst != nst; ++jst) {
       if (!t->at(jst) || !r->at(ist)) continue;
 
+      {
+      const ViewType ishalf = denom_->shalf("xx", ist);
+      const ViewType jshalf = denom_->shalf("xx", jst);
       for (auto& i2 : active_) {
       for (auto& i0 : active_) {
         // trans is the transformation matrix
-        assert(denom_->shalf_xx());
-        const size_t interm_size = denom_->shalf_xx()->ndim();
+        const size_t interm_size = ishalf.ndim();
         const int nact = info_->nact() * fac2;
         const int nclo = info_->nclosed() * fac2;
-        auto create_transp = [&nclo,&nact,&interm_size, this](const int i, const Index& I0, const Index& I2) {
+        auto create_transp = [&nclo,&nact,&interm_size, this](const ViewType shalf, const Index& I0, const Index& I2) {
           unique_ptr<DataType[]> out(new DataType[I0.size()*I2.size()*interm_size]);
           for (int j2 = I2.offset(), k = 0; j2 != I2.offset()+I2.size(); ++j2)
             for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
-              copy_n(denom_->shalf_xx()->element_ptr(0,(j0-nclo)+(j2-nclo)*nact + i*nact*nact),
-                     interm_size, out.get()+interm_size*k);
+              copy_n(shalf.element_ptr(0, (j0-nclo)+(j2-nclo)*nact), interm_size, out.get()+interm_size*k);
           return move(out);
         };
-        unique_ptr<DataType[]> transp = create_transp(ist, i0, i2);
+        unique_ptr<DataType[]> transp = create_transp(ishalf, i0, i2);
 
         for (auto& i2t : active_) {
         for (auto& i0t : active_) {
-          unique_ptr<DataType[]> transp2 = create_transp(jst, i0t, i2t);
+          unique_ptr<DataType[]> transp2 = create_transp(jshalf, i0t, i2t);
 
           for (auto& i3 : virt_) {
             for (auto& i1 : virt_) {
@@ -128,7 +129,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j02 = 0; j02 != interm_size; ++j02, ++iall)
-                    interm[iall] /= min(-0.1, e0_ - (denom_->denom_xx(j02) + eig_[j3] + eig_[j1]));
+                    interm[iall] /= min(-0.1, e0_ - (denom_->denom("xx", ist, j02) + eig_[j3] + eig_[j1]));
 
               // move back to non-orthogonal basis
               // factor of 0.5 due to the factor in the overlap
@@ -146,23 +147,26 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         }
       }
       }
+      }
 
+      {
+      const ViewType ishalf = denom_->shalf("x", ist);
+      const ViewType jshalf = denom_->shalf("x", jst);
       for (auto& i0 : active_) {
         // trans is the transformation matrix
-        assert(denom_->shalf_x());
-        const size_t interm_size = denom_->shalf_x()->ndim();
+        const size_t interm_size = ishalf.ndim();
         const int nact = info_->nact() * fac2;
         const int nclo = info_->nclosed() * fac2;
-        auto create_transp = [&nclo,&nact,&interm_size, this](const int i, const Index& I0) {
+        auto create_transp = [&nclo,&nact,&interm_size, this](const ViewType shalf, const Index& I0) {
           unique_ptr<DataType[]> out(new DataType[I0.size()*interm_size]);
           for (int j0 = I0.offset(), k = 0; j0 != I0.offset()+I0.size(); ++j0, ++k)
-            copy_n(denom_->shalf_x()->element_ptr(0,j0-nclo + i*nact), interm_size, out.get()+interm_size*k);
+            copy_n(shalf.element_ptr(0,j0-nclo), interm_size, out.get()+interm_size*k);
           return move(out);
         };
-        unique_ptr<DataType[]> transp = create_transp(ist, i0);
+        unique_ptr<DataType[]> transp = create_transp(ishalf, i0);
 
         for (auto& i0t : active_) {
-          unique_ptr<DataType[]> transp2 = create_transp(jst, i0t);
+          unique_ptr<DataType[]> transp2 = create_transp(jshalf, i0t);
 
           for (auto& i3 : virt_) {
             for (auto& i2 : closed_) {
@@ -193,7 +197,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = 0; j0 != interm_size; ++j0, ++iall)
-                        interm[iall] /= min(-0.1, e0_ - (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]));
+                        interm[iall] /= min(-0.1, e0_ - (denom_->denom("x", ist, j0) + eig_[j3] - eig_[j2] + eig_[j1]));
 
                 // move back to non-orthogonal basis
                 unique_ptr<DataType[]> data3(new DataType[blocksizet]);
@@ -206,23 +210,26 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           }
         }
       }
+      }
 
+      {
+      const ViewType ishalf = denom_->shalf("h", ist);
+      const ViewType jshalf = denom_->shalf("h", jst);
       for (auto& i3 : active_) {
         // trans is the transformation matrix
-        assert(denom_->shalf_h());
-        const size_t interm_size = denom_->shalf_x()->ndim();
+        const size_t interm_size = ishalf.ndim();
         const int nact = info_->nact() * fac2;
         const int nclo = info_->nclosed() * fac2;
-        auto create_transp = [&nclo,&nact,&interm_size, this](const int i, const Index& I3) {
+        auto create_transp = [&nclo,&nact,&interm_size, this](const ViewType shalf, const Index& I3) {
           unique_ptr<DataType[]> out(new DataType[I3.size()*interm_size]);
           for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3, ++k)
-            copy_n(denom_->shalf_h()->element_ptr(0,j3-nclo + i*nact), interm_size, out.get()+interm_size*k);
+            copy_n(shalf.element_ptr(0,j3-nclo), interm_size, out.get()+interm_size*k);
           return move(out);
         };
-        unique_ptr<DataType[]> transp = create_transp(ist, i3);
+        unique_ptr<DataType[]> transp = create_transp(ishalf, i3);
 
         for (auto& i3t : active_) {
-          unique_ptr<DataType[]> transp2 = create_transp(jst, i3t);
+          unique_ptr<DataType[]> transp2 = create_transp(jshalf, i3t);
           blas::conj_n(transp2.get(), i3t.size()*interm_size);
 
           for (auto& i2 : closed_) {
@@ -254,7 +261,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                        interm[iall] /= min(-0.1, e0_ - (denom_->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0]));
+                        interm[iall] /= min(-0.1, e0_ - (denom_->denom("h", ist, j3) - eig_[j2] + eig_[j1] - eig_[j0]));
 
                 // move back to non-orthogonal basis
                 unique_ptr<DataType[]> data3(new DataType[blocksizet]);
@@ -267,26 +274,28 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           }
         }
       }
+      }
 
+      {
+      const ViewType ishalf = denom_->shalf("hh", ist);
+      const ViewType jshalf = denom_->shalf("hh", jst);
       for (auto& i3 : active_) {
       for (auto& i1 : active_) {
-        assert(denom_->shalf_hh());
-        const size_t interm_size = denom_->shalf_hh()->ndim();
+        const size_t interm_size = ishalf.ndim();
         const int nact = info_->nact() * fac2;
         const int nclo = info_->nclosed() * fac2;
-        auto create_transp = [&nclo,&nact,&interm_size, this](const int i, const Index& I1, const Index& I3) {
+        auto create_transp = [&nclo,&nact,&interm_size, this](const ViewType shalf, const Index& I1, const Index& I3) {
           unique_ptr<DataType[]> out(new DataType[I1.size()*I3.size()*interm_size]);
           for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
             for (int j1 = I1.offset(); j1 != I1.offset()+I1.size(); ++j1, ++k)
-              copy_n(denom_->shalf_hh()->element_ptr(0,(j1-nclo)+(j3-nclo)*nact + i*nact*nact),
-                     interm_size, out.get()+interm_size*k);
+              copy_n(shalf.element_ptr(0,(j1-nclo)+(j3-nclo)*nact), interm_size, out.get()+interm_size*k);
           return move(out);
         };
-        unique_ptr<DataType[]> transp = create_transp(ist, i1, i3);
+        unique_ptr<DataType[]> transp = create_transp(ishalf, i1, i3);
 
         for (auto& i3t : active_) {
         for (auto& i1t : active_) {
-          unique_ptr<DataType[]> transp2 = create_transp(jst, i1t, i3t);
+          unique_ptr<DataType[]> transp2 = create_transp(jshalf, i1t, i3t);
           blas::conj_n(transp2.get(), i1t.size()*i3t.size()*interm_size);
 
           for (auto& i2 : closed_) {
@@ -312,7 +321,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               for (int j13 = 0; j13 != interm_size; ++j13)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                    interm[iall] /= min(-0.1, e0_ - (denom_->denom_hh(j13) - eig_[j2] - eig_[j0]));
+                    interm[iall] /= min(-0.1, e0_ - (denom_->denom("hh", ist, j13) - eig_[j2] - eig_[j0]));
 
               // move back to non-orthogonal basis
               // factor of 0.5 due to the factor in the overlap
@@ -329,30 +338,31 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         }
       }
       }
+      }
 
+      {
+      const ViewType ishalf = denom_->shalf("xh", ist);
+      const ViewType jshalf = denom_->shalf("xh", jst);
       for (auto& i3 : active_) {
       for (auto& i2 : active_) {
       if (is_same<DataType,double>::value) {
-        assert(denom_->shalf_xh());
-        const size_t interm_size = denom_->shalf_xh()->ndim();
+        const size_t interm_size = ishalf.ndim();
         const int nact = info_->nact() * fac2;
         const int nclo = info_->nclosed() * fac2;
-        auto create_transp = [&nclo,&nact,&interm_size, this](const int i, const Index& I2, const Index& I3) {
+        auto create_transp = [&nclo,&nact,&interm_size, this](const ViewType shalf, const Index& I2, const Index& I3) {
           unique_ptr<DataType[]> out(new DataType[I2.size()*I3.size()*interm_size*2]);
           for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
             for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2, ++k) {
-              copy_n(denom_->shalf_xh()->element_ptr(0, (j2-nclo)+(j3-nclo)*nact + 2*i*nact*nact),
-                     interm_size, out.get()+interm_size*k);
-              copy_n(denom_->shalf_xh()->element_ptr(0, (j2-nclo)+(j3-nclo)*nact + (2*i+1)*nact*nact),
-                     interm_size, out.get()+interm_size*(k+I2.size()*I3.size()));
+              copy_n(shalf.element_ptr(0, (j2-nclo)+(j3-nclo)*nact), interm_size, out.get()+interm_size*k);
+              copy_n(shalf.element_ptr(0, (j2-nclo)+(j3-nclo)*nact + nact*nact), interm_size, out.get()+interm_size*(k+I2.size()*I3.size()));
             }
           return move(out);
         };
-        unique_ptr<DataType[]> transp = create_transp(ist, i2, i3);
+        unique_ptr<DataType[]> transp = create_transp(ishalf, i2, i3);
 
         for (auto& i3t : active_) {
         for (auto& i2t : active_) {
-          unique_ptr<DataType[]> transp2 = create_transp(jst, i2t, i3t);
+          unique_ptr<DataType[]> transp2 = create_transp(jshalf, i2t, i3t);
           blas::conj_n(transp2.get(), i2t.size()*i3t.size()*interm_size*2);
 
           for (auto& i1 : virt_) {
@@ -381,7 +391,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               for (int j23 = 0; j23 != interm_size; ++j23)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                    interm[iall] /= min(-0.1, e0_ - (denom_->denom_xh(j23) + eig_[j1] - eig_[j0]));
+                    interm[iall] /= min(-0.1, e0_ - (denom_->denom("xh", ist, j23) + eig_[j1] - eig_[j0]));
 
               // move back to non-orthogonal basis
               btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size(), i2t.size()*i3t.size()*2, interm_size,
@@ -399,23 +409,21 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         }
         }
       } else {
-        assert(denom_->shalf_xh());
-        const size_t interm_size = denom_->shalf_xh()->ndim();
+        const size_t interm_size = ishalf.ndim();
         const int nact = info_->nact() * fac2;
         const int nclo = info_->nclosed() * fac2;
-        auto create_transp = [&,this](const int i, const Index& I2, const Index& I3) {
+        auto create_transp = [&,this](const ViewType shalf, const Index& I2, const Index& I3) {
           unique_ptr<DataType[]> out(new DataType[I2.size()*I3.size()*interm_size]);
           for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
             for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2, ++k)
-              copy_n(denom_->shalf_xh()->element_ptr(0, (j2-nclo)+(j3-nclo)*nact + i*nact*nact),
-                     interm_size, out.get()+interm_size*k);
+              copy_n(shalf.element_ptr(0, (j2-nclo)+(j3-nclo)*nact), interm_size, out.get()+interm_size*k);
           return move(out);
         };
-        unique_ptr<DataType[]> transp = create_transp(ist, i2, i3);
+        unique_ptr<DataType[]> transp = create_transp(ishalf, i2, i3);
 
         for (auto& i3t : active_) {
         for (auto& i2t : active_) {
-          unique_ptr<DataType[]> transp2 = create_transp(jst, i2t, i3t);
+          unique_ptr<DataType[]> transp2 = create_transp(jshalf, i2t, i3t);
           blas::conj_n(transp2.get(), i2t.size()*i3t.size()*interm_size);
 
           for (auto& i1 : virt_) {
@@ -441,7 +449,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               for (int j23 = 0; j23 != interm_size; ++j23)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                    interm[iall] /= min(-0.1, e0_ - (denom_->denom_xh(j23) + eig_[j1] - eig_[j0]));
+                    interm[iall] /= min(-0.1, e0_ - (denom_->denom("xh", ist, j23) + eig_[j1] - eig_[j0]));
 
               // move back to non-orthogonal basis
               btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size(), i2t.size()*i3t.size(), interm_size,
@@ -458,29 +466,31 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
       }
       }
       }
+      }
 
+      {
+      const ViewType ishalf = denom_->shalf("xxh", ist);
+      const ViewType jshalf = denom_->shalf("xxh", jst);
       for (auto& i3 : active_) {
       for (auto& i2 : active_) {
       for (auto& i0 : active_) {
-        assert(denom_->shalf_xxh());
-        const size_t interm_size = denom_->shalf_xxh()->ndim();
+        const size_t interm_size = ishalf.ndim();
         const int nact = info_->nact() * fac2;
         const int nclo = info_->nclosed() * fac2;
-        auto create_transp = [&nclo,&nact,&interm_size, this](const int i, const Index& I0, const Index& I2, const Index& I3) {
+        auto create_transp = [&nclo,&nact,&interm_size, this](const ViewType shalf, const Index& I0, const Index& I2, const Index& I3) {
           unique_ptr<DataType[]> out(new DataType[I0.size()*I2.size()*I3.size()*interm_size]);
           for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
             for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2)
               for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
-                copy_n(denom_->shalf_xxh()->element_ptr(0,j0-nclo+nact*(j2-nclo+nact*(j3-nclo)) + i*nact*nact*nact),
-                       interm_size, out.get()+interm_size*k);
+                copy_n(shalf.element_ptr(0,j0-nclo+nact*(j2-nclo+nact*(j3-nclo))), interm_size, out.get()+interm_size*k);
           return move(out);
         };
-        unique_ptr<DataType[]> transp = create_transp(ist, i0, i2, i3);
+        unique_ptr<DataType[]> transp = create_transp(ishalf, i0, i2, i3);
 
         for (auto& i3t : active_) {
         for (auto& i2t : active_) {
         for (auto& i0t : active_) {
-          unique_ptr<DataType[]> transp2 = create_transp(jst, i0t, i2t, i3t);
+          unique_ptr<DataType[]> transp2 = create_transp(jshalf, i0t, i2t, i3t);
           blas::conj_n(transp2.get(), i0t.size()*i2t.size()*i3t.size()*interm_size);
 
           for (auto& i1 : virt_) {
@@ -504,7 +514,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
             size_t iall = 0;
             for (int j123 = 0; j123 != interm_size; ++j123)
               for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ++iall)
-                interm[iall] /= min(-0.1, e0_ - (denom_->denom_xxh(j123) + eig_[j1]));
+                interm[iall] /= min(-0.1, e0_ - (denom_->denom("xxh", ist, j123) + eig_[j1]));
 
             // move back to non-orthogonal basis
             btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i1.size(), i0t.size()*i2t.size()*i3t.size(), interm_size,
@@ -521,29 +531,31 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
       }
       }
       }
+      }
 
+      {
+      const ViewType ishalf = denom_->shalf("xhh", ist);
+      const ViewType jshalf = denom_->shalf("xhh", jst);
       for (auto& i3 : active_) {
       for (auto& i1 : active_) {
       for (auto& i0 : active_) {
-        assert(denom_->shalf_xhh());
-        const size_t interm_size = denom_->shalf_xhh()->ndim();
+        const size_t interm_size = ishalf.ndim();
         const int nact = info_->nact() * fac2;
         const int nclo = info_->nclosed() * fac2;
-        auto create_transp = [&nclo,&nact,&interm_size, this](const int i, const Index& I0, const Index& I1, const Index& I3) {
+        auto create_transp = [&nclo,&nact,&interm_size, this](const ViewType shalf, const Index& I0, const Index& I1, const Index& I3) {
           unique_ptr<DataType[]> out(new DataType[I0.size()*I1.size()*I3.size()*interm_size]);
           for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
             for (int j1 = I1.offset(); j1 != I1.offset()+I1.size(); ++j1)
               for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
-                copy_n(denom_->shalf_xhh()->element_ptr(0,j0-nclo+nact*(j1-nclo+nact*(j3-nclo)) + i*nact*nact*nact),
-                       interm_size, out.get()+interm_size*k);
+                copy_n(shalf.element_ptr(0,j0-nclo+nact*(j1-nclo+nact*(j3-nclo))), interm_size, out.get()+interm_size*k);
           return move(out);
         };
-        unique_ptr<DataType[]> transp = create_transp(ist, i0, i1, i3);
+        unique_ptr<DataType[]> transp = create_transp(ishalf, i0, i1, i3);
 
         for (auto& i3t : active_) {
         for (auto& i1t : active_) {
         for (auto& i0t : active_) {
-          unique_ptr<DataType[]> transp2 = create_transp(jst, i0t, i1t, i3t);
+          unique_ptr<DataType[]> transp2 = create_transp(jshalf, i0t, i1t, i3t);
           blas::conj_n(transp2.get(), i0t.size()*i1t.size()*i3t.size()*interm_size);
 
           for (auto& i2 : closed_) {
@@ -567,7 +579,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
             size_t iall = 0;
             for (int j013 = 0; j013 != interm_size; ++j013)
               for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2, ++iall)
-                interm[iall] /= min(-0.1, e0_ - (denom_->denom_xhh(j013) - eig_[j2]));
+                interm[iall] /= min(-0.1, e0_ - (denom_->denom("xhh", ist, j013) - eig_[j2]));
 
             // move back to non-orthogonal basis
             btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i2.size(), i0t.size()*i1t.size()*i3t.size(), interm_size,
@@ -581,6 +593,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         }
         }
         }
+      }
       }
       }
       }

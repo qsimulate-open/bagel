@@ -64,7 +64,13 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
     const size_t rsize = nclosed*nocc*nvirtual*nvirtual + nclosed*nclosed*nact*(nvirtual+nact) + nact2*(norb*nvirtual+nact*nclosed);
     cout << "    * Approximate memory requirement for SMITH calulation per MPI process:" << endl;
     cout << "      o Storage requirement for T-amplitude, lambda, and residual is ";
-    cout << setprecision(2) << rsize*(info->sssr() ? nstate : nstate*nstate) * (info->grad() ? 5 : 3) * 8.e-9 / mpi__->size() << " GB" << endl;
+    if (info->orthogonal_basis()) {
+      // T-amp (r, o), Lambda (r, o), Residual (r, o)
+      cout << setprecision(2) << rsize*(info->sssr() ? nstate : nstate*nstate) * (info->grad() ? 6 : 4) * 8.e-9 / mpi__->size() << " GB" << endl;
+    } else {
+      // T-amp (r), Lambda (r), Residual (r)
+      cout << setprecision(2) << rsize*(info->sssr() ? nstate : nstate*nstate) * (info->grad() ? 3 : 2) * 8.e-9 / mpi__->size() << " GB" << endl;
+    }
     cout << "      o Storage requirement for MO integrals is ";
     cout << setprecision(2) << (norb*norb*2 + nocc*nocc*(nact+nvirtual)*(nact+nvirtual)) * 8.e-9 / mpi__->size() << " GB" << endl;
     if (info->grad()) {

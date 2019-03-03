@@ -62,5 +62,5 @@ shared_ptr<const ZMatrix> MP2Cache_<complex<double>>::operator()(const int i) co
 }
 
 /// specialization ///
-template class MP2Cache_<double>;
-template class MP2Cache_<complex<double>>;
+template class bagel::MP2Cache_<double>;
+template class bagel::MP2Cache_<complex<double>>;

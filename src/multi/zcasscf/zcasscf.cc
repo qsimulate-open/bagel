@@ -147,8 +147,6 @@ void ZCASSCF::init() {
 
   // initialize coefficient
   init_coeff();
-  // select active orbitals if "active" is set
-  select_active();
 
   const int idel = geom_->nbasis()*2 - nbasis_;
   if (idel)
@@ -165,21 +163,6 @@ void ZCASSCF::init() {
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
-}
-
-
-void ZCASSCF::select_active() {
-  // specify active orbitals and move into the active space
-  shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
-  if (iactive) {
-    shared_ptr<const ZCoeff_Striped> scoeff = coeff_->striped_format();
-    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-    set<int> active_indices;
-    for (auto& i : *iactive)
-      active_indices.insert(lexical_cast<int>(i->data()) - 1);
-    scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_);
-    coeff_ = scoeff->block_format();
-  }
 }
 
 
@@ -205,9 +188,14 @@ void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, cons
 
 shared_ptr<const Reference> ZCASSCF::conv_to_ref_(const bool kramers) const {
   const bool noci = !nact_ || external_rdm_ == "noref";
-  return noci ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirtnr_, gaunt_, breit_, kramers)
-              : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirtnr_, gaunt_, breit_, kramers,
-                                          fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+  auto ref = noci ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirtnr_, gaunt_, breit_, kramers)
+                  : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirtnr_, gaunt_, breit_, kramers,
+                                              fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+  ref->set_eig(eig_);
+  ref->set_eigB(eigB_);
+  ref->set_occup(occup_);
+  ref->set_occupB(occupB_);
+  return ref;
 }
 
 
@@ -273,7 +261,7 @@ void ZCASSCF::zero_positronic_elements(shared_ptr<ZRotFile> rot) {
 }
 
 
-shared_ptr<const ZCoeff_Block> ZCASSCF::semi_canonical_orb(const bool kramers) const {
+tuple<shared_ptr<const ZCoeff_Block>,VectorB,VectorB,VectorB,VectorB> ZCASSCF::semi_canonical_orb(const bool kramers) const {
   const ZMatrix fock = *fci_->jop()->core_fock()
                      + *compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), fci_->rdm1_av());
   auto ocoeff = coeff_->slice(0, nclosed_*2);
@@ -283,41 +271,96 @@ shared_ptr<const ZCoeff_Block> ZCASSCF::semi_canonical_orb(const bool kramers) c
 
   ZMatrix trans(coeff_->mdim(), coeff_->mdim());
   trans.unit();
-  VectorB eig(coeff_->mdim());
+
+  VectorB eA(coeff_->mdim()/2);
+  VectorB eB(coeff_->mdim()/2);
+  VectorB oA(coeff_->mdim()/2);
+  VectorB oB(coeff_->mdim()/2);
+  fill_n(oA.data(), nclosed_, 1.0);
+  fill_n(oB.data(), nclosed_, 1.0);
 
   if (kramers) {
     if (nclosed_) {
+      VectorB tmp(ocoeff.mdim());
       QuatMatrix ofock(ocoeff % fock * ocoeff);
-      ofock.diagonalize(eig);
+      ofock.diagonalize(tmp);
       trans.copy_block(0, 0, nclosed_*2, nclosed_*2, ofock);
+      copy_n(tmp.data(), nclosed_, eA.data());
     }
     if (nact_ && canonical_) {
+      VectorB tmp(acoeff.mdim());
       QuatMatrix afock = acoeff % fock * acoeff;
-      afock.diagonalize(eig);
+      afock.diagonalize(tmp);
       trans.copy_block(nclosed_*2, nclosed_*2, nact_*2, nact_*2, afock);
+      copy_n(tmp.data(), tmp.size(), eA.data()+nclosed_);
+    } else if (nact_) {
+      VectorB tmp(acoeff.mdim());
+      QuatMatrix rdm1(*fci_->rdm1_av());
+      rdm1.scale(-1.0);
+      rdm1.add_diag(1.0);
+      rdm1.diagonalize(tmp);
+      for (int i = 0; i != nact_; ++i) {
+        oA[i+nclosed_] = 1.0-tmp[i];
+        oB[i+nclosed_] = 1.0-tmp[i];
+      }
     }
+    VectorB tmp(vcoeff.mdim());
     QuatMatrix vfock = vcoeff % fock * vcoeff;
-    vfock.diagonalize(eig);
+    vfock.diagonalize(tmp);
     trans.copy_block(nocc_*2, nocc_*2, nvirt_*2, nvirtnr_, vfock.slice(nvirt_-nvirtnr_, nvirt_));
     trans.copy_block(nocc_*2, nocc_*2+nvirtnr_, nvirt_*2, nvirt_-nvirtnr_, vfock.slice(0, nvirt_-nvirtnr_));
     trans.copy_block(nocc_*2, nocc_*2+nvirt_, nvirt_*2, nvirtnr_, vfock.slice(nvirt_*2-nvirtnr_, nvirt_*2));
     trans.copy_block(nocc_*2, nocc_*2+nvirt_+nvirtnr_, nvirt_*2, nvirt_-nvirtnr_, vfock.slice(nvirt_, nvirt_*2-nvirtnr_));
+    copy_n(tmp.data()+nvirt_-nvirtnr_, nvirtnr_, eA.data()+nclosed_+nact_);
+    copy_n(tmp.data(), nvirt_-nvirtnr_, eA.data()+nclosed_+nact_+nvirtnr_);
+
+    copy_n(eA.data(), eA.size(), eB.data());
   } else {
     if (nclosed_) {
+      VectorB tmp(ocoeff.mdim());
       ZMatrix ofock(ocoeff % fock * ocoeff);
-      ofock.diagonalize(eig);
+      ofock.diagonalize(tmp);
       trans.copy_block(0, 0, nclosed_*2, nclosed_*2, ofock);
+      for (int i = 0; i != tmp.size()/2; ++i) {
+        eA[i] = tmp(i*2);
+        eB[i] = tmp(i*2+1);
+      }
     }
     if (nact_ && canonical_) {
+      VectorB tmp(acoeff.mdim());
       ZMatrix afock = acoeff % fock * acoeff;
-      afock.diagonalize(eig);
+      afock.diagonalize(tmp);
       trans.copy_block(nclosed_*2, nclosed_*2, nact_*2, nact_*2, afock);
+      for (int i = 0; i != tmp.size()/2; ++i) {
+        eA[i+nclosed_] = tmp(i*2);
+        eB[i+nclosed_] = tmp(i*2+1);
+      }
+    } else if (nact_) {
+      VectorB tmp(acoeff.mdim());
+      ZMatrix rdm1(*fci_->rdm1_av());
+      rdm1.scale(-1.0);
+      rdm1.add_diag(1.0);
+      rdm1.diagonalize(tmp);
+      for (int i = 0; i != nact_; ++i) {
+        oA[i+nclosed_] = 1.0-tmp[i*2];
+        oB[i+nclosed_] = 1.0-tmp[i*2+1];
+      }
     }
+    VectorB tmp(vcoeff.mdim());
     ZMatrix vfock = vcoeff % fock * vcoeff;
-    vfock.diagonalize(eig);
+    vfock.diagonalize(tmp);
     trans.copy_block(nocc_*2, nocc_*2, nvirt_*2, nvirtnr_*2, vfock.slice((nvirt_-nvirtnr_)*2, nvirt_*2));
     trans.copy_block(nocc_*2, nocc_*2+nvirtnr_*2, nvirt_*2, (nvirt_-nvirtnr_)*2, vfock.slice(0, (nvirt_-nvirtnr_)*2));
+    for (int i = 0; i != nvirtnr_; ++i) {
+      eA[i+nocc_] = tmp((nvirt_-nvirtnr_)*2 + i*2);
+      eB[i+nocc_] = tmp((nvirt_-nvirtnr_)*2 + i*2+1);
+    }
+    for (int i = 0; i != nvirt_-nvirtnr_; ++i) {
+      eA[i+nocc_+nvirtnr_] = tmp(i*2);
+      eB[i+nocc_+nvirtnr_] = tmp(i*2+1);
+    }
   }
 
-  return make_shared<ZCoeff_Block>(*coeff_ * trans, nclosed_, nact_, nvirtnr_, nneg_);
+  auto c = make_shared<ZCoeff_Block>(*coeff_ * trans, nclosed_, nact_, nvirtnr_, nneg_);
+  return make_tuple(c, eA, eB, oA, oB);
 }

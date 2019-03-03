@@ -144,6 +144,13 @@ void Opt::print_iteration(const int iter, const double residual, const double pa
     print_iteration_energy(iter, residual, time);
   }
   print_history_molden();
+
+  if (optinfo_->molden()) {
+    stringstream ss; ss << "geom" << iter << ".molden";
+    MoldenOut m(ss.str());
+    m << prev_ref_->geom();
+    m << prev_ref_;
+  }
 }
 
 

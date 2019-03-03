@@ -4,29 +4,23 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>ASD orbital optimization &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="ASD-DMRG" href="asd_dmrg.html" />
     <link rel="prev" title="Description" href="dimer.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -51,7 +45,7 @@
 <span id="asd-orbopt"></span><h1>ASD orbital optimization<a class="headerlink" href="#asd-orbital-optimization" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>Active space decomposition with orbital optimization is implemented. Set <code class="docutils literal"><span class="pre">&quot;title&quot;</span> <span class="pre">=</span> <span class="pre">&quot;asd_orbopt&quot;</span></code> to start the input section. The two fragments of the molecule can be covalently linked, but the bridging orbitals cannot be active. Orbital rotations between active subspaces are included to partition the total active space into subspaces. The two active subspaces should be well separated. The calculation starts with dimer construction which is slightly different from that in <a class="reference internal" href="dimer_asd.html#dimer-asd"><span class="std std-ref">Dimer ASD</span></a>.</p>
+<p>Active space decomposition with orbital optimization is implemented. Set <code class="docutils literal notranslate"><span class="pre">&quot;title&quot;</span> <span class="pre">=</span> <span class="pre">&quot;asd_orbopt&quot;</span></code> to start the input section. The two fragments of the molecule can be covalently linked, but the bridging orbitals cannot be active. Orbital rotations between active subspaces are included to partition the total active space into subspaces. The two active subspaces should be well separated. The calculation starts with dimer construction which is slightly different from that in <a class="reference internal" href="dimer_asd.html#dimer-asd"><span class="std std-ref">Dimer ASD</span></a>.</p>
 </div>
 <div class="section" id="dimer-construction">
 <h2>Dimer Construction<a class="headerlink" href="#dimer-construction" title="Permalink to this headline">¶</a></h2>
@@ -68,7 +62,7 @@
 <div class="section" id="required-keywords">
 <h3>Required Keywords<a class="headerlink" href="#required-keywords" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">algorithm</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">algorithm</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> ‘bfgs’ orbital optimization algorithm is implemented.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
@@ -76,7 +70,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of orbital optimization iterations.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -84,14 +78,14 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">asd</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">asd</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong> <code class="docutils literal"><span class="pre">asd</span></code> block specifies asd options.</div>
+<div class="line"><strong>Description:</strong> <code class="docutils literal notranslate"><span class="pre">asd</span></code> block specifies asd options.</div>
 <div class="line"><strong>Recommendation:</strong> See <a class="reference internal" href="dimer_asd.html#dimer-asd"><span class="std std-ref">Dimer ASD</span></a> for details.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">gradient_thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">gradient_thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Threshold for calculating gradient.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
@@ -100,7 +94,7 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">rotation_thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">rotation_thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Threshold for orbital rotation.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
@@ -109,16 +103,16 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">energy_thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">energy_thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Convergence threshold for calculating energy.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
-<div class="line"><strong>Default:</strong> <span class="math">\(1.0\times 10^{-6}\)</span></div>
+<div class="line"><strong>Default:</strong> <span class="math notranslate nohighlight">\(1.0\times 10^{-6}\)</span></div>
 <div class="line"><strong>Recommendation:</strong> Use default.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">semi-canonicalize</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">semi-canonicalize</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Whether to semi-canonicalize localized orbitals.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -154,7 +148,7 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
+<h3><a href="../index.html">Table of Contents</a></h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
@@ -182,12 +176,14 @@
                         title="next chapter">ASD-DMRG</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

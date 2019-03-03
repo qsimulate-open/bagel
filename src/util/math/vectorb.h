@@ -145,7 +145,14 @@ class Vector_ : public btas::Tensor1<DataType> {
     }
 
     size_t size() const { return this->extent(0); }
+    double norm() const { return std::sqrt(detail::real(btas::dotc(*this, *this))); }
     double rms() const { return std::sqrt(detail::real(btas::dotc(*this, *this))/size()); }
+    DataType dot_product(std::shared_ptr<const Vector_<DataType>> o) const { return blas::dot_product(data(), size(), o->data()); }
+    DataType dot_product(const Vector_<DataType>& o) const { return blas::dot_product(data(), size(), o.data()); }
+    void zero() { this->fill(0.0); }
+    void scale(const DataType& a) { blas::scale_n(a, data(), size()); }
+    void ax_plus_y(const DataType a, std::shared_ptr<const Vector_<DataType>> o) { btas::axpy(a, *o, *this); }
+    void ax_plus_y(const DataType a, const Vector_<DataType>& o) { btas::axpy(a, o, *this); }
 
     Vector_<DataType>& operator=(const Vector_<DataType>& o) { btas::Tensor1<DataType>::operator=(o);            return *this; }
     Vector_<DataType>& operator=(Vector_<DataType>&& o)      { btas::Tensor1<DataType>::operator=(std::move(o)); return *this; }
@@ -164,6 +171,14 @@ class Vector_ : public btas::Tensor1<DataType> {
       auto iter = out->begin();
       for (auto& i : *this) *iter++ = std::imag(i);
       return out;
+    }
+
+    void print(const std::string tag = "") const {
+      if (tag != "")
+        std::cout << std::endl << "  ++ " << tag << " ++" << std::endl << std::endl;
+
+      for (int i = 0; i != size(); ++i)
+        std::cout << std::setw(6) << i << std::setw(20) << std::setprecision(10) << *(data()+i) << std::endl;
     }
 
     void allreduce() {

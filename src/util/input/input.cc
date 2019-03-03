@@ -72,6 +72,15 @@ PTree::PTree(const string& input) {
 }
 
 
+PTree::PTree(stringstream& input) {
+  try {
+    boost::property_tree::json_parser::read_json(input, data_);
+  } catch (boost::property_tree::json_parser_error& e) {
+    throw runtime_error("Failed to recognize the input string as a stringify'ed json object");
+  }
+}
+
+
 //Dereference operator - return the current node's data.
 const shared_ptr<const PTree> PTreeIterator::operator*() { return make_shared<const PTree>(current->second, current->first); }
 const shared_ptr<const PTree> PTreeReverseIterator::operator*() { return make_shared<const PTree>(current->second, current->first); }

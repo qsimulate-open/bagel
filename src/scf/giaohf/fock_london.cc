@@ -245,8 +245,8 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const ZMatView ocoeff, c
 }
 
 
-template class Fock_London<0>;
-template class Fock_London<1>;
+template class bagel::Fock_London<0>;
+template class bagel::Fock_London<1>;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Fock_London<0>)
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Fock_London<1>)

@@ -4,29 +4,23 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Complete active space self-consistent field (CASSCF) &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Relativistic complete active space self-consistent field (RelCASSCF)" href="zcasscf.html" />
     <link rel="prev" title="Multiconfiguration self-consistent field" href="multi.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -57,12 +51,12 @@ a Hartree–Fock calculation is performed by default prior to CASSCF. For the Ha
 <p>A two-step second-order algorithm is implemented in BAGEL. At each macroiteration,
 the CI coefficient is optimized by FCI calculations and the orbitals are updated. Microiterations are used for iteratively solving augmented Hessian problems for orbital updates.</p>
 <p>The CASSCF algorithm in BAGEL is very robust. If it fails to converge, it is highly likely that your active space is wrong, or your guess orbitals are wrong.</p>
-<p>Title: <code class="docutils literal"><span class="pre">casscf</span></code></p>
+<p>Title: <code class="docutils literal notranslate"><span class="pre">casscf</span></code></p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nstate</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nstate</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of states included in the state averaging.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -70,7 +64,7 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nact</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nact</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of active orbitals.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -78,7 +72,7 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nclosed</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nclosed</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of closed orbitals.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -86,7 +80,7 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">active</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">active</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Specify active orbitals. Note that the orbital index starts from 1.</div>
 <div class="line"><strong>Datatype:</strong> vector&lt;int&gt;</div>
@@ -98,7 +92,7 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">charge</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">charge</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>:  Molecular charge.</div>
 <div class="line"><strong>Datatype</strong>: int</div>
@@ -106,7 +100,7 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nspin</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nspin</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The number associated with the spin states: 0 for singlet, 1 for doublet, 2 for triplet, etc.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -114,34 +108,34 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">algorithm</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">algorithm</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Orbital optimization algorithm.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">second</span></code>: second-order algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">noopt</span></code>: no orbital optimization.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">second</span></code>: second-order algorithm.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">noopt</span></code>: no orbital optimization.</div>
 </div>
-<div class="line"><strong>Default:</strong> <code class="docutils literal"><span class="pre">second</span></code></div>
+<div class="line"><strong>Default:</strong> <code class="docutils literal notranslate"><span class="pre">second</span></code></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">fci_algorithm</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">fci_algorithm</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> FCI algorithm employed in each macroiteration.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">knowles</span></code>, <code class="docutils literal"><span class="pre">handy</span></code>, <code class="docutils literal"><span class="pre">kh</span></code>: Knowles–Handy Algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">harrison</span></code>, <code class="docutils literal"><span class="pre">zarrabian</span></code>, <code class="docutils literal"><span class="pre">hz</span></code>: Harrison–Zarrabian Algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">parallel</span></code>, <code class="docutils literal"><span class="pre">dist</span></code>: Parallel FCI algorithm.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">knowles</span></code>, <code class="docutils literal notranslate"><span class="pre">handy</span></code>, <code class="docutils literal notranslate"><span class="pre">kh</span></code>: Knowles–Handy Algorithm.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">harrison</span></code>, <code class="docutils literal notranslate"><span class="pre">zarrabian</span></code>, <code class="docutils literal notranslate"><span class="pre">hz</span></code>: Harrison–Zarrabian Algorithm.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">parallel</span></code>, <code class="docutils literal notranslate"><span class="pre">dist</span></code>: Parallel FCI algorithm.</div>
 </div>
-<div class="line"><strong>Default:</strong> <code class="docutils literal"><span class="pre">parallel</span></code> (when the number of active orbital is larger than 9 and number of process is larger than 8), <code class="docutils literal"><span class="pre">knowles</span></code> (otherwise)</div>
+<div class="line"><strong>Default:</strong> <code class="docutils literal notranslate"><span class="pre">parallel</span></code> (when the number of active orbital is larger than 9 and number of process is larger than 8), <code class="docutils literal notranslate"><span class="pre">knowles</span></code> (otherwise)</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Convergence threshold in macroiteration.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -149,7 +143,7 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh_micro</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh_micro</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Convergence threshold in microiteration.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -157,7 +151,7 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">conv_ignore</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">conv_ignore</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong>  If set to “true,” BAGEL will continue running even if the maximum iterations is reached without convergence.  Normally an error is thrown and the program terminates.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -165,7 +159,7 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">restart_cas</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">restart_cas</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong>  If set to “true”, after each macroiteration the orbitals will be written to a binary archive with filename “casscf_&lt;iter&gt;.archive”.
 They can be read back in using the “load_ref” module.</div>
@@ -174,7 +168,7 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">natocc</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">natocc</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: If set to “true,” occupation numbers of natural orbitals within the active space will be printed to casscf.log after each macroiteration.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -182,7 +176,7 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">canonical</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">canonical</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: If set to “true,” optimized orbitals will be transformed to semi-canonical orbitals.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -190,7 +184,7 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of macroiteration.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -199,7 +193,7 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter_micro</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter_micro</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of microiteration.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -207,20 +201,20 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter_fci</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter_fci</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Maximum number of iterations in CI coefficient optimization</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Default</strong>: copied from <code class="docutils literal"><span class="pre">maxiter</span></code></div>
+<div class="line"><strong>Default</strong>: copied from <code class="docutils literal notranslate"><span class="pre">maxiter</span></code></div>
 </div>
 </div>
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<p>Two-state CASSCF calculation of benzene. The active space of (6e,6o), which comprises three <span class="math">\(\pi\)</span> and three <span class="math">\(\pi^*\)</span> orbitals, is used.</p>
+<p>Two-state CASSCF calculation of benzene. The active space of (6e,6o), which comprises three <span class="math notranslate nohighlight">\(\pi\)</span> and three <span class="math notranslate nohighlight">\(\pi^*\)</span> orbitals, is used.</p>
 <div class="section" id="sample-input">
 <h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -255,7 +249,7 @@ They can be read back in using the “load_ref” module.</div>
 </pre></div>
 </div>
 <p>the out of which is shown below. Note that the specified active orbitals are printed in the output.</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">---------------------------</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="o">---------------------------</span>
     <span class="nx">CASSCF</span> <span class="nx">calculation</span>
 <span class="o">---------------------------</span>
 
@@ -344,7 +338,7 @@ They can be read back in using the “load_ref” module.</div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
+<h3><a href="../index.html">Table of Contents</a></h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
@@ -372,12 +366,14 @@ They can be read back in using the “load_ref” module.</div>
                         title="next chapter">Relativistic complete active space self-consistent field (RelCASSCF)</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

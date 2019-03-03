@@ -313,7 +313,7 @@ void Dimer::set_active(const shared_ptr<const PTree> idata, const bool localize_
   }
 
   nvirt_ = {nexternA - nactA, nexternB - nactB};
-  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nexternA+nexternB - (nclosed+nact));
+  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nexternA+nexternB - nact);
 }
 
 

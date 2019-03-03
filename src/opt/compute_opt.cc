@@ -49,16 +49,19 @@ void Opt::compute_optimize() {
 
     displ = displ_;
 
-    if (optinfo()->internal()) {
+    if (optinfo()->internal() && iter != 1) {
       if (optinfo()->redundant())
         displ = displ->transform(bmat_red_[1], false);
       else
         displ = iterate_displ();
     }
 
-    prev_displ_.push_back(displ);
-    current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>());
-    current_->print_atoms();
+    if (iter != 1) {
+      prev_displ_.push_back(displ);
+      current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>());
+      current_->print_atoms();
+    }
+
     if (optinfo()->internal()) {
       if (optinfo()->redundant())
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);

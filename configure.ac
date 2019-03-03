@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.69)
-AC_INIT([BAGEL], 1.1.1, [shiozaki@northwestern.edu], [], [http://www.nubakery.org])
+AC_INIT([BAGEL], 1.2.0, [shiozaki@northwestern.edu], [], [http://www.nubakery.org])
 AM_INIT_AUTOMAKE
 AM_PATH_PYTHON
 AC_CONFIG_SRCDIR([src/main.cc])
@@ -150,7 +150,6 @@ AC_CONFIG_FILES([Makefile
                  src/multi/casscf/Makefile
                  src/multi/zcasscf/Makefile
                  src/mat1e/Makefile
-                 src/periodic/Makefile
                  src/opt/Makefile
                  src/basis/Makefile])
 AC_OUTPUT

@@ -150,69 +150,75 @@ void Hess::compute() {
 void Hess::compute_finite_diff_() {
   Timer timer;
   const int natom = geom_->natom();
-
   const int ncomm = mpi__->world_size() / nproc_;
-  const int icomm = mpi__->world_rank() / nproc_;
+  const int npass = natom * 3 / ncomm + 1;
 
-  mpi__->split(nproc_);
+  for (int ipass = 0; ipass != npass; ++ipass) {
+    const int ncolor = (ipass == (npass-1)) ? (natom * 3) % ncomm : ncomm;
+    const int icomm = mpi__->world_rank() % ncolor;
+    if (ncolor != 0) {
+      mpi__->split(ncolor);
+    } else {
+      continue;
+    }
 
-  for (int i = 0, counter = 0; i != natom; ++i) {  // atom i
-    for (int j = 0; j != 3; ++j, ++counter) { //xyz
-      if (counter % ncomm == icomm && ncomm != icomm) {
-        muffle_->mute();
+    const int counter = icomm + ncomm * ipass;
+    const int i = counter / 3;
+    const int j = counter % 3;
 
-        vector<double> dipole_plus;
-        shared_ptr<const GradFile> outplus;
-        //displace +dx
-        {
-          auto displ = make_shared<XYZFile>(natom);
-          displ->element(j,i) = dx_;
-          auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
-          geom_plus->print_atoms();
+    muffle_->mute();
 
-          shared_ptr<const Reference> ref_plus;
-          if (ref_)
-            ref_plus = ref_->project_coeff(geom_plus);
+    vector<double> dipole_plus;
+    shared_ptr<const GradFile> outplus;
+    //displace +dx
+    {
+      auto displ = make_shared<XYZFile>(natom);
+      displ->element(j,i) = dx_;
+      auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+      geom_plus->print_atoms();
 
-          auto plus = make_shared<Force>(idata_, geom_plus, ref_plus);
-          outplus = plus->compute();
-          dipole_plus = plus->force_dipole();
+      shared_ptr<const Reference> ref_plus;
+      if (ref_)
+        ref_plus = ref_->project_coeff(geom_plus);
+
+      auto plus = make_shared<Force>(idata_, geom_plus, ref_plus);
+      outplus = plus->compute();
+      dipole_plus = plus->force_dipole();
+    }
+
+    // displace -dx
+    vector<double> dipole_minus;
+    shared_ptr<const GradFile> outminus;
+    {
+      auto displ = make_shared<XYZFile>(natom);
+      displ->element(j,i) = -dx_;
+      auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+      geom_minus->print_atoms();
+
+      shared_ptr<const Reference> ref_minus;
+      if (ref_)
+        ref_minus = ref_->project_coeff(geom_minus);
+
+      auto minus = make_shared<Force>(idata_, geom_minus, ref_minus);
+      outminus = minus->compute();
+      dipole_minus = minus->force_dipole();
+    }
+
+    if (mpi__->rank() == 0) {
+      for (int k = 0, step = 0; k != natom; ++k) { // atom j
+        for (int l = 0; l != 3; ++l, ++step) { //xyz
+          (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
+          (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
+          (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
         }
-
-        // displace -dx
-        vector<double> dipole_minus;
-        shared_ptr<const GradFile> outminus;
-        {
-          auto displ = make_shared<XYZFile>(natom);
-          displ->element(j,i) = -dx_;
-          auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
-          geom_minus->print_atoms();
-
-          shared_ptr<const Reference> ref_minus;
-          if (ref_)
-            ref_minus = ref_->project_coeff(geom_minus);
-
-          auto minus = make_shared<Force>(idata_, geom_minus, ref_minus);
-          outminus = minus->compute();
-          dipole_minus = minus->force_dipole();
-        }
-
-        if (mpi__->rank() == 0) {
-          for (int k = 0, step = 0; k != natom; ++k) { // atom j
-            for (int l = 0; l != 3; ++l, ++step) { //xyz
-              (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
-              (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
-              (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
-            }
-          }
-        }
-        muffle_->unmute();
-        stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << natom * 3 << ")";
-        timer.tick_print(ss.str());
       }
     }
+    muffle_->unmute();
+    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << natom * 3 << ")";
+    timer.tick_print(ss.str());
+
+    mpi__->merge();
   }
-  mpi__->merge();
 
   hess_->allreduce();
   mw_hess_->allreduce();

@@ -32,6 +32,58 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 
+void CASPT2::CASPT2::do_rdm_deriv(double factor) {
+  Timer timer(1);
+  tie(den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt) = feed_denci();
+
+  ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), 1);
+  const size_t nact  = info_->nact();
+  const size_t norb2 = nact * nact;
+  const size_t ndet = ci_deriv_->data(0)->size();
+  const size_t ijmax = info_->cimaxchunk();
+  const size_t ijnum = ndet * norb2 * norb2;
+  const size_t npass = ndet < 1000 ? 1 : ((mpi__->size() > ((ijnum-1) / ijmax + 1)) && (mpi__->size() != 1)) ? mpi__->size() : (ijnum - 1) / ijmax + 1;
+  const size_t nsize = (ndet - 1) / npass + 1;
+
+  if (npass > 1)
+    cout << "       - CI derivative contraction will be done with " << npass << " passes" << endl;
+
+  // Fock-weighted 2RDM derivative evaluated first (needed for calculating Fock-weighted 3RDM derivative)
+  rdm2fderiv_ = SpinFreeMethod<double>::feed_rdm_2fderiv(info_, fockact_, 0);
+
+  if (npass > 1)
+    timer.tick_print("Fock-weighted 2RDM derivative");
+
+  // embarrasingly parallel mode. npass > 1 -> distribute among the nodes.
+  // otherwise just do using all the nodes.
+  const int nproc = npass > 1 ? 1 : mpi__->size();
+  const int ncomm = mpi__->size() / nproc;
+  const int icomm = mpi__->rank() / nproc;
+  mpi__->split(ncomm);
+
+  for (int ipass = 0; ipass != npass; ++ipass) {
+    if (ipass % ncomm == icomm && ncomm != icomm) {
+      const size_t ioffset = ipass * nsize;
+      const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+      tie(rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
+        = SpinFreeMethod<double>::feed_rdm_deriv(info_, fockact_, 0, ioffset, isize, rdm2fderiv_);
+
+      shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_);
+      blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(0)->data());
+
+      if (npass > 1) {
+        stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
+        timer.tick_print(ss.str());
+      }
+    }
+  }
+  mpi__->merge();
+
+  if (npass > 1)
+    mpi__->allreduce(ci_deriv_->data(0)->data(), ndet);
+}
+
+
 tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<3>>> CASPT2::CASPT2::feed_denci() {
   const size_t nact  = info_->nact();
 

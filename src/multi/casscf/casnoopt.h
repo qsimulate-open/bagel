@@ -41,16 +41,24 @@ class CASNoopt : public CASSCF {
      : CASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override {
-      if (external_rdm_.empty()) {
-        fci_->compute();
-        fci_->compute_rdm12();
+      if (nact_) {
+        if (external_rdm_.empty()) {
+          fci_->compute();
+          fci_->compute_rdm12();
+        } else {
+          fci_->read_external_rdm12_av(external_rdm_);
+        }
+        energy_ = fci_->energy();
       } else {
-        fci_->read_external_rdm12_av(external_rdm_);
+        energy_ = ref_->energy();
       }
-      energy_ = fci_->energy();
 
-      if (canonical_)
-        coeff_ = semi_canonical_orb();
+      if (canonical_) {
+        auto tmp = semi_canonical_orb();
+        coeff_ = std::get<0>(tmp);
+        eig_   = std::get<1>(tmp);
+        occup_ = std::get<2>(tmp);
+      }
 
       if (do_hyperfine_ && !geom_->external() && nstate_ == 1 && external_rdm_.empty()) {
         HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
@@ -59,8 +67,16 @@ class CASNoopt : public CASSCF {
     }
 
     std::shared_ptr<const Reference> conv_to_ref() const override {
-      return std::make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
-                                         fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+      std::shared_ptr<Reference> out;
+      if (nact_) {
+        out = std::make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
+                                          fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+      } else {
+        out = std::make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
+      }
+      out->set_eig(eig_);
+      out->set_occup(occup_);
+      return out;
     }
 };
 

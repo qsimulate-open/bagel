@@ -65,8 +65,8 @@ void Fock_base_<MatType, Enable>::computebatch(const array<shared_ptr<const Shel
 }
 
 
-template class Fock_base_<Matrix>;
-template class Fock_base_<ZMatrix>;
+template class bagel::Fock_base_<Matrix>;
+template class bagel::Fock_base_<ZMatrix>;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Fock_base)
 BOOST_CLASS_EXPORT_IMPLEMENT(Fock_base_London)

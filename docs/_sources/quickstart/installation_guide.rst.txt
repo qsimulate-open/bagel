@@ -107,7 +107,7 @@ Build BAGEL
   * Configuring without MKL
 
     | If MKL is not available, the path to cblas headers may need to be included as a configure option
-           (e.g., '--with-include=-I/usr/path/to/cblas').  
+           (e.g., '--with-include=-I/usr/path/to/cblas'). One may also add "LDFLAGS=-lcblas" as an option.
       Furthermore, if relativistic calculations fail without MKL, users may consider reconfiguring and recompiling with -DZDOT_RETURN in CXXFLAGS.
   
   * Compiling on small machines

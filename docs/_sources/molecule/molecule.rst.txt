@@ -39,7 +39,7 @@ Optional keywords
    | **Datatype**: bool
    |    ``true``: use Angstrom
    |    ``false``: use Bohr
-   | **Default**: false (Angstrom)
+   | **Default**: false (Bohr)
 
 .. topic:: ``finite_nucleus``
 

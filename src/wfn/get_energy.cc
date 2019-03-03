@@ -43,7 +43,6 @@
 #include <src/multi/zcasscf/zcasnoopt.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
-#include <src/periodic/pscf.h>
 #include <src/prop/current.h>
 #include <src/prop/moprint.h>
 #include <src/wfn/get_energy.h>
@@ -134,7 +133,6 @@ get_energy(const string title, shared_ptr<const PTree> itree, shared_ptr<const G
     } else if (title == "current")  throw runtime_error("Charge currents are only available when using a GIAO basis set reference.");
     else if (title == "moprint") { auto m = make_shared<MOPrint>(itree, geom, ref);          m->compute();                         ref = m->conv_to_ref();
     } else if (title == "molecule") {
-    } else if (title == "pscf")    { auto m = make_shared<PSCF>(itree, geom, ref);             m->compute();   out = m->energy();    ref = m->conv_to_ref();
     } else throw runtime_error(to_upper(title) + " : unknown method");
 
   // now the versions to use with magnetic fields

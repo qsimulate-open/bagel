@@ -340,7 +340,7 @@ void RMAWindow<DataType>::accumulate_buffer(const DataType a, const unique_ptr<D
 }
 
 
-template class RMATask<double>;
-template class RMATask<complex<double>>;
-template class RMAWindow<double>;
-template class RMAWindow<complex<double>>;
+template class bagel::RMATask<double>;
+template class bagel::RMATask<complex<double>>;
+template class bagel::RMAWindow<double>;
+template class bagel::RMAWindow<complex<double>>;

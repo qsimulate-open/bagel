@@ -58,24 +58,12 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
   if (rdm2_av_)
     mpi__->broadcast(const_cast<double*>(rdm2_av_->data()), rdm2_av_->size(), 0);
 
+  occup_ = VectorB(nclosed_+nact_+nvirt_);
+  fill_n(occup_.data(), nclosed_, 2.0);
+
   //if (nact_ && rdm1_.empty())
   //  throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
 
-}
-
-
-Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const PTree> itree) : geom_(g), hcore_(make_shared<Hcore>(geom_)) {
-  // Note that other informations are not available...
-  // Then read molden
-  const string molden_file = itree->get<string>("molden_file", "");
-  assert(!molden_file.empty());
-  MoldenIn mfs(molden_file, geom_->spherical());
-  mfs.read();
-  if (mfs.has_mo()) {
-    auto c = make_shared<Coeff>(geom_);
-    mfs >> tie(c, g);
-    coeff_ = c;
-  }
 }
 
 
@@ -234,6 +222,24 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
 void Reference::set_eig(const VectorB& eig) {
   eig_ = eig;
   mpi__->broadcast(eig_.data(), eig_.size(), 0);
+}
+
+
+void Reference::set_eigB(const VectorB& eigB) {
+  eigB_ = eigB;
+  mpi__->broadcast(eigB_.data(), eigB_.size(), 0);
+}
+
+
+void Reference::set_occup(const VectorB& occup) {
+  occup_ = occup;
+  mpi__->broadcast(occup_.data(), occup_.size(), 0);
+}
+
+
+void Reference::set_occupB(const VectorB& occupB) {
+  occupB_ = occupB;
+  mpi__->broadcast(occupB_.data(), occupB_.size(), 0);
 }
 
 

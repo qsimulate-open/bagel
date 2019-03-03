@@ -136,7 +136,7 @@ pair<int, int> DistMatrix_base<DataType>::locate_column(const int j) { // Return
 }
 
 
-template class DistMatrix_base<double>;
-template class DistMatrix_base<complex<double>>;
+template class bagel::DistMatrix_base<double>;
+template class bagel::DistMatrix_base<complex<double>>;
 
 #endif

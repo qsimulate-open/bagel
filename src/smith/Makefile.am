@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = subdir-objects
-lib_LTLIBRARIES = libbagel_smith.la
+noinst_LTLIBRARIES = libbagel_smith.la
 libbagel_smith_la_SOURCES = smith_info.cc indexrange.cc storage.cc storagekramers.cc denom.cc tensor.cc futuretensor.cc multitensor.cc \
-spinfreebase.cc subtask.cc smith.cc caspt2.cc caspt2grad.cc caspt2grad_util.cc moint.cc diagonal.cc queue.cc \
+spinfreebase.cc subtask.cc smith.cc caspt2energy.cc caspt2grad.cc caspt2grad_util.cc moint.cc diagonal.cc queue.cc orthogonal.cc orthogonal_shift.cc\
 caspt2/CASPT2.cc caspt2/CASPT2_gamma.cc caspt2/CASPT2_normq.cc caspt2/CASPT2_sourceq.cc caspt2/CASPT2_density1q.cc caspt2/CASPT2_density2q.cc \
 caspt2/CASPT2_deciq.cc caspt2/CASPT2_residualq.cc caspt2/CASPT2_densityq.cc \
 caspt2/CASPT2_tasks1.cc caspt2/CASPT2_tasks2.cc caspt2/CASPT2_tasks3.cc caspt2/CASPT2_tasks4.cc caspt2/CASPT2_tasks5.cc \
@@ -24,7 +24,7 @@ caspt2/MSCASPT2_gen6.cc caspt2/MSCASPT2_gen7.cc caspt2/MSCASPT2_gen8.cc caspt2/M
 caspt2/MSCASPT2_gen11.cc caspt2/MSCASPT2_gen12.cc \
 caspt2/MSCASPT2_tasks1.cc caspt2/MSCASPT2_tasks2.cc caspt2/MSCASPT2_tasks3.cc caspt2/MSCASPT2_tasks4.cc caspt2/MSCASPT2_tasks5.cc \
 caspt2/MSCASPT2_tasks6.cc caspt2/MSCASPT2_tasks7.cc caspt2/MSCASPT2_tasks8.cc caspt2/MSCASPT2_tasks9.cc caspt2/MSCASPT2_tasks10.cc \
-caspt2/MSCASPT2_tasks11.cc caspt2/MSCASPT2_tasks12.cc \
+caspt2/MSCASPT2_tasks11.cc caspt2/MSCASPT2_tasks12.cc caspt2/MSCASPT2_shift.cc \
 \
 caspt2/MSCASPT2_contract.cc \
 mrci/MRCI.cc mrci/MRCI_gamma.cc mrci/MRCI_sourceq.cc mrci/MRCI_normq.cc \

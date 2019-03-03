@@ -49,6 +49,7 @@ Molecule::Molecule(const Molecule& o, shared_ptr<const Matrix> displ, const bool
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   skip_self_interaction_ = o.skip_self_interaction_;
+  cap_ = o.cap_;
 
   // first construct atoms using displacements
   int iat = 0;
@@ -844,6 +845,16 @@ shared_ptr<Molecule> Molecule::uncontract() const {
     atom.push_back(i->uncontract()->relativistic());
 
   auto mol = make_shared<Molecule>(atom, aux_atoms_);
+  mol->spherical_ = spherical_;
+  mol->aux_merged_ = aux_merged_;
+  mol->basisfile_ = basisfile_;
+  mol->auxfile_ = auxfile_;
+  mol->nuclear_repulsion_ = nuclear_repulsion_;
+  mol->external_ = external_; 
+  mol->magnetic_field_ = magnetic_field_; 
+  mol->skip_self_interaction_ = skip_self_interaction_; 
+  mol->cap_ = cap_;
+
   mol->common_init1();
 
   return mol;

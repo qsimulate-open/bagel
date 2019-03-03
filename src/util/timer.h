@@ -30,7 +30,7 @@
 #include <iomanip>
 #include <string>
 #include <algorithm>
-#include <src/util/string.h>
+#include <src/util/string_util.h>
 #include <bagel_config.h>
 
 namespace bagel {

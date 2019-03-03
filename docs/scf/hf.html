@@ -4,29 +4,23 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Hartree–Fock &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Dirac–Hartree–Fock" href="dhf.html" />
     <link rel="prev" title="Self-consistent field" href="scf.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -51,79 +45,79 @@
 <span id="hf"></span><h1>Hartree–Fock<a class="headerlink" href="#hartree-fock" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>SCF can be run by specifying the following values to the keyword <code class="docutils literal"><span class="pre">title</span></code>:</p>
+<p>SCF can be run by specifying the following values to the keyword <code class="docutils literal notranslate"><span class="pre">title</span></code>:</p>
 <ul class="simple">
-<li>Restricted HF for closed-shell systems: <code class="docutils literal"><span class="pre">rhf</span></code> or <code class="docutils literal"><span class="pre">hf</span></code></li>
-<li>Restricted open-shell HF: <code class="docutils literal"><span class="pre">rohf</span></code></li>
-<li>Unrestricted HF: <code class="docutils literal"><span class="pre">uhf</span></code></li>
-<li>Two-component HF using ECP basis sets spin-orbit SCF: <code class="docutils literal"><span class="pre">soscf</span></code></li>
+<li>Restricted HF for closed-shell systems: <code class="docutils literal notranslate"><span class="pre">rhf</span></code> or <code class="docutils literal notranslate"><span class="pre">hf</span></code></li>
+<li>Restricted open-shell HF: <code class="docutils literal notranslate"><span class="pre">rohf</span></code></li>
+<li>Unrestricted HF: <code class="docutils literal notranslate"><span class="pre">uhf</span></code></li>
+<li>Two-component HF using ECP basis sets spin-orbit SCF: <code class="docutils literal notranslate"><span class="pre">soscf</span></code></li>
 </ul>
-<p>RHF can be run with the fast multipole method (FMM). For RHF-FMM, <code class="docutils literal"><span class="pre">&quot;cfmm&quot;</span> <span class="pre">:</span> <span class="pre">&quot;true&quot;</span></code>
+<p>RHF can be run with the fast multipole method (FMM). For RHF-FMM, <code class="docutils literal notranslate"><span class="pre">&quot;cfmm&quot;</span> <span class="pre">:</span> <span class="pre">&quot;true&quot;</span></code>
 has to be specified in <a class="reference internal" href="../molecule/molecule-toc.html#molecule-toc"><span class="std std-ref">Molecule specification</span></a>.</p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <p>The default values are recommended unless mentioned otherwise.</p>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: SCF convergence threshold for the root-mean-square of the error vector.</div>
 <div class="line"><strong>Datatype</strong>: double</div>
-<div class="line"><strong>Default</strong>: <span class="math">\(1.0\times 10^{-8}\)</span></div>
+<div class="line"><strong>Default</strong>: <span class="math notranslate nohighlight">\(1.0\times 10^{-8}\)</span></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code>/<code class="docutils literal"><span class="pre">maxiter_scf</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter</span></code>/<code class="docutils literal notranslate"><span class="pre">maxiter_scf</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: number of iterations and number of SCF interations, after which the program will terminate if convergence is not reached.</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Default</strong>: <span class="math">\(100\)</span></div>
+<div class="line"><strong>Default</strong>: <span class="math notranslate nohighlight">\(100\)</span></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">diis_start</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">diis_start</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: after the specified iteration, we will begin using the DIIS algorithm to accelerate the convergence.</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Default</strong>: <span class="math">\(1\)</span></div>
+<div class="line"><strong>Default</strong>: <span class="math notranslate nohighlight">\(1\)</span></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh_overlap</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh_overlap</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Overlap threshold used to identify linear dependancies in the atomic basis set.</div>
 <div class="line"><strong>Datatype</strong>: double</div>
-<div class="line"><strong>Default</strong>: <span class="math">\(1.0\times 10^{-8}\)</span></div>
+<div class="line"><strong>Default</strong>: <span class="math notranslate nohighlight">\(1.0\times 10^{-8}\)</span></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">multipole</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">multipole</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: rank of Cartesian multipole moments to be printed out.</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Values</strong> : <span class="math">\(1, 2\)</span></div>
-<div class="line"><strong>Default</strong> : <span class="math">\(1\)</span> (dipoles)</div>
+<div class="line"><strong>Values</strong> : <span class="math notranslate nohighlight">\(1, 2\)</span></div>
+<div class="line"><strong>Default</strong> : <span class="math notranslate nohighlight">\(1\)</span> (dipoles)</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">dma</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">dma</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: options to print out multipole moments from distributed multipole analysis.</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Values</strong> : <span class="math">\(0, 1, 2, 3\)</span></div>
-<div class="line"><strong>Default</strong> : <span class="math">\(0\)</span> (not print out)</div>
+<div class="line"><strong>Values</strong> : <span class="math notranslate nohighlight">\(0, 1, 2, 3\)</span></div>
+<div class="line"><strong>Default</strong> : <span class="math notranslate nohighlight">\(0\)</span> (not print out)</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">charge</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">charge</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: molecular charge</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Default</strong> : <span class="math">\(0\)</span></div>
+<div class="line"><strong>Default</strong> : <span class="math notranslate nohighlight">\(0\)</span></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nopen</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nopen</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: number of unpaired electrons in high-spin unrestricted Hartree–Fock</div>
 <div class="line"><strong>Datatype</strong> : int</div>
@@ -131,7 +125,7 @@ has to be specified in <a class="reference internal" href="../molecule/molecule-
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">restart</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">restart</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: save an archive in each iteration to allow for restarting the calculation</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -141,33 +135,33 @@ has to be specified in <a class="reference internal" href="../molecule/molecule-
 <div class="section" id="keywords-for-rhf-fmm">
 <h3>Keywords for RHF-FMM<a class="headerlink" href="#keywords-for-rhf-fmm" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ns</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ns</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: level of descritization which controls the number of lowest-level boxes in one dimension for FMM</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Default</strong>: <span class="math">\(4\)</span></div>
+<div class="line"><strong>Default</strong>: <span class="math notranslate nohighlight">\(4\)</span></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ws</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ws</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: well-separatedness index, which is the number of boxes that must separate
 two collections of charges before they are considered distant
 and can interact through multipole expansions</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Default</strong>: <span class="math">\(0\)</span></div>
+<div class="line"><strong>Default</strong>: <span class="math notranslate nohighlight">\(0\)</span></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">lmax</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">lmax</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: order of the multipole expansions in FMM-J</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Default</strong>: <span class="math">\(10\)</span></div>
+<div class="line"><strong>Default</strong>: <span class="math notranslate nohighlight">\(10\)</span></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">exchange</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">exchange</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: whether to include far-field exchange using occ-RI-FMM</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -175,11 +169,11 @@ and can interact through multipole expansions</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">lmax_exchange</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">lmax_exchange</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: order of the multipole expansions in FMM-K</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Default</strong>: <span class="math">\(2\)</span></div>
+<div class="line"><strong>Default</strong>: <span class="math notranslate nohighlight">\(2\)</span></div>
 </div>
 </div>
 </div>
@@ -189,7 +183,7 @@ and can interact through multipole expansions</div>
 <p>Below are some examples for SCF calculations using RHF, ROHF, UHF, SOSCF, and RHF-FMM.</p>
 <div class="section" id="rhf">
 <h3>RHF<a class="headerlink" href="#rhf" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -210,11 +204,11 @@ and can interact through multipole expansions</div>
 <span class="p">]}</span>
 </pre></div>
 </div>
-<p>The converged SCF energy is <span class="math">\(-99.84772354\)</span> after <span class="math">\(11\)</span> iterations.</p>
+<p>The converged SCF energy is <span class="math notranslate nohighlight">\(-99.84772354\)</span> after <span class="math notranslate nohighlight">\(11\)</span> iterations.</p>
 </div>
 <div class="section" id="rohf">
 <h3>ROHF<a class="headerlink" href="#rohf" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -235,11 +229,11 @@ and can interact through multipole expansions</div>
 <span class="p">]}</span>
 </pre></div>
 </div>
-<p>The converged SCF energy is <span class="math">\(-38.16810629\)</span> after <span class="math">\(10\)</span> iterations.</p>
+<p>The converged SCF energy is <span class="math notranslate nohighlight">\(-38.16810629\)</span> after <span class="math notranslate nohighlight">\(10\)</span> iterations.</p>
 </div>
 <div class="section" id="uhf">
 <h3>UHF<a class="headerlink" href="#uhf" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -260,11 +254,11 @@ and can interact through multipole expansions</div>
 <span class="p">]}</span>
 </pre></div>
 </div>
-<p>The converged SCF energy is <span class="math">\(-75.28410147\)</span> after <span class="math">\(12\)</span> iterations. The expectation value of <span class="math">\(S^2\)</span> is <span class="math">\(0.7536\)</span>.</p>
+<p>The converged SCF energy is <span class="math notranslate nohighlight">\(-75.28410147\)</span> after <span class="math notranslate nohighlight">\(12\)</span> iterations. The expectation value of <span class="math notranslate nohighlight">\(S^2\)</span> is <span class="math notranslate nohighlight">\(0.7536\)</span>.</p>
 </div>
 <div class="section" id="soscf">
 <h3>SOSCF<a class="headerlink" href="#soscf" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -291,7 +285,7 @@ and can interact through multipole expansions</div>
 <div class="align-center figure">
 <a class="reference internal image-reference" href="../_images/hf-graphene.png"><img alt="alternate text" src="../_images/hf-graphene.png" style="width: 30%;" /></a>
 </div>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -437,8 +431,8 @@ and can interact through multipole expansions</div>
 <span class="p">]}</span>
 </pre></div>
 </div>
-<p>The converged SCF energy is <span class="math">\(-3629.48403990\)</span> after <span class="math">\(11\)</span> iterations, and the far-field
-exchange contribution is <span class="math">\(7.736\)</span> milli-hartree.</p>
+<p>The converged SCF energy is <span class="math notranslate nohighlight">\(-3629.48403990\)</span> after <span class="math notranslate nohighlight">\(11\)</span> iterations, and the far-field
+exchange contribution is <span class="math notranslate nohighlight">\(7.736\)</span> milli-hartree.</p>
 </div>
 </div>
 <div class="section" id="references">
@@ -500,7 +494,7 @@ Chem. Phys. Lett. <strong>230</strong>, 8 (1994).</td>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
+<h3><a href="../index.html">Table of Contents</a></h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
@@ -528,12 +522,14 @@ Chem. Phys. Lett. <strong>230</strong>, 8 (1994).</td>
                         title="next chapter">Dirac–Hartree–Fock</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

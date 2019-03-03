@@ -31,11 +31,12 @@ using namespace bagel;
 using namespace btas;
 
 CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<const Dvec> civ, shared_ptr<const DFHalfDist> h,
-                   shared_ptr<const Reference> r, shared_ptr<FCI_base> f, const int ncore, shared_ptr<const Matrix> coeff)
-: grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_native_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
+                   shared_ptr<const Reference> r, shared_ptr<FCI_base> f, const int ncore, const bool imag, shared_ptr<const Matrix> coeff)
+: grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_native_(f), ncore_(ncore), imag_(imag), coeff_(coeff ? coeff : ref_->coeff()) {
 
   // FCI object in CPCASSCF should be Knowles--Handy (due to form_sigma)
-  fci_ = make_shared<KnowlesHandy>(fci_native_->conv_to_ciwfn(), r);
+  if (ref_->nact())
+    fci_ = make_shared<KnowlesHandy>(fci_native_->conv_to_ciwfn(), r);
 
   if (ref_->nact() && coeff_ != ref_->coeff())
     fci_->update(coeff_);
@@ -77,7 +78,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>, shared_ptr<Matrix>> CPCASSCF::compu
     fock = finact;
   }
 
-  shared_ptr<Matrix> fact = qvec_->copy();
+  shared_ptr<Matrix> fact = nact ? qvec_->copy() : nullptr;
   for (int i = 0; i != nact; ++i)
     blas::ax_plus_y_n(occup[i], finact->element_ptr(0,nclosed+i), nmobasis, fact->data()+i*nmobasis);
 
@@ -149,17 +150,38 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   // frozen core contributions
   shared_ptr<Matrix> zcore, gzcore;
-  if (ncore_ || additional_den) {
+  if (ncore_ || imag_ || additional_den) {
     assert(ncore_ < nclosed);
-    zcore = make_shared<Matrix>(nocca, nocca);
-    for (int i = 0; i != ncore_; ++i)
-      for (int j = ncore_; j != nclosed; ++j) {
-        zcore->element(j, i) = - (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / (fock_->element(j,j) - fock_->element(i,i));
-        assert(abs(fock_->element(i, j)) < 1.0e-8);
+    zcore = make_shared<Matrix>(nmobasis, nmobasis);
+
+    if (imag_) {
+      for (int i = 0; i != nclosed; ++i) {
+        for (int j = 0; j != nclosed; ++j) {
+          if (i == j) continue;
+          const double fdiff = fock_->element(j,j) - fock_->element(i,i);
+          zcore->element(j, i) = fabs(fdiff) < 1.0e-8 ? 0.0 : - .5 * (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / fdiff;
+        }
       }
+      for (int i = nocca; i != nocca + nvirt; ++i) {
+        for (int j = nocca; j != nocca + nvirt; ++j) {
+          if (i == j) continue;
+          const double fdiff = fock_->element(j,j) - fock_->element(i,i);
+          zcore->element(j, i) = fabs(fdiff) < 1.0e-8 ? 0.0 : - .5 * (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / fdiff;
+        }
+      }
+    } else {
+      for (int i = 0; i != ncore_; ++i)
+        for (int j = ncore_; j != nclosed; ++j) {
+          zcore->element(j, i) = - (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / (fock_->element(j,j) - fock_->element(i,i));
+          assert(abs(fock_->element(i, j)) < 1.0e-8);
+        }
+    }
+
     zcore->symmetrize();
-    if (additional_den)
-      *zcore += *additional_den;
+    if (additional_den) {
+      zcore->add_block(1.0, 0, 0, nocca, nocca, *additional_den);
+    }
+
     shared_ptr<Matrix> rot;
 
     // find good lambda that makes zcore positive definite
@@ -167,13 +189,15 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
     for (int i = 0; i != zmaxiter; ++i) {
       shared_ptr<Matrix> rotq;
-      VectorB eig(nocca);
+      VectorB eig(nmobasis);
       if (nact) {
-        rotq = make_shared<Matrix>(*zcore * lambda + *ref_->rdm1_mat());
+        rotq = make_shared<Matrix>(*zcore * lambda);
+        for (int i = 0; i != nmobasis; ++i)
+          rotq->element(i,i) += 2.0;
       } else {
-        rotq = make_shared<Matrix>(*zcore);
-        for (int i = 0; i != nclosed; ++i)
-          rotq->element(i,i) += 2.0 * lambda;
+        rotq = make_shared<Matrix>(*zcore * lambda);
+        for (int i = 0; i != nmobasis; ++i)
+          rotq->element(i,i) += 2.0;
       }
       rotq->diagonalize(eig);
       if (eig[0] < -numerical_zero__) lambda *= 0.5;
@@ -181,16 +205,23 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     }
 
     if (nact) {
-      rot = make_shared<Matrix>(*zcore * lambda + *ref_->rdm1_mat());     // trick to make it positive definite
+      rot = make_shared<Matrix>(*zcore * lambda);
+      for (int i = 0; i != nmobasis; ++i) {
+        rot->element(i,i) += 2.0;
+      }
     } else {
-      rot = make_shared<Matrix>(*zcore);
-      for (int i = 0; i != nclosed; ++i)
-        rot->element(i,i) += 2.0 * lambda;
+      rot = make_shared<Matrix>(*zcore * lambda);
+      for (int i = 0; i != nmobasis; ++i) {
+        rot->element(i,i) += 2.0;
+      }
     }
     rot->sqrt();
     rot->scale(1.0/sqrt(2.0));
-    auto gzcoreao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, ocoeff * *rot, false, true);
-    gzcore = make_shared<Matrix>(*coeff_ % *gzcoreao * *coeff_ - *fock_); // compensate for the "trick"
+    auto gzcoreao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, *coeff_ * *rot, false, true);
+    auto rottemp = make_shared<Matrix>(nmobasis, nmobasis);
+    for (int i = 0; i != nmobasis; ++i) rottemp->element(i,i) = 1.0;
+    auto fv = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, *coeff_ * *rottemp, false, true);
+    gzcore = make_shared<Matrix>(*coeff_ % (*gzcoreao - *fv) * *coeff_); // compensate for the "trick"
     gzcore->scale(1.0 / lambda);
   }
 
@@ -204,13 +235,15 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   // patch frozen core contributions
   if (zcore) {
     // contributions to Y
-    source->first()->ax_plus_y(2.0, *fock_ * *zcore->resize(nmobasis, nmobasis) + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
+    source->first()->ax_plus_y(2.0, *fock_ * *zcore + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
     // contributions to y
-    for (int istate = 0; istate != ref_->nstate(); ++istate) {
-      shared_ptr<const Dvec> rdm1deriv = fci_->rdm1deriv(istate);
-      for (int i = 0; i != nact; ++i)
-        for (int j = 0; j != nact; ++j)
-          source->second()->data(istate)->ax_plus_y(gzcore->element(j+nclosed, i+nclosed), rdm1deriv->data(j+nact*i));
+    if (nact) {
+      for (int istate = 0; istate != ref_->nstate(); ++istate) {
+        shared_ptr<const Dvec> rdm1deriv = fci_->rdm1deriv(istate);
+        for (int i = 0; i != nact; ++i)
+          for (int j = 0; j != nact; ++j)
+            source->second()->data(istate)->ax_plus_y(gzcore->element(j+nclosed, i+nclosed), rdm1deriv->data(j+nact*i));
+      }
     }
   }
   // antisymmetrize
@@ -276,7 +309,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   *xmat += *grad_->first();
   if (zcore)
-    xmat->ax_plus_y(2.0, *fock_ * *zcore->resize(nmobasis, nmobasis) + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
+    xmat->ax_plus_y(2.0, *fock_ * *zcore + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
   xmat->symmetrize();
   xmat->scale(0.5); // due to convention
   return make_tuple(result->first(), result->second(), xmat, zcore);

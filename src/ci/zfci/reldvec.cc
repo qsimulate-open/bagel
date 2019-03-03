@@ -188,8 +188,8 @@ void RelDvector<DataType>::synchronize() {
 }
 
 
-template class RelDvector<double>;
-template class RelDvector<complex<double>>;
+template class bagel::RelDvector<double>;
+template class bagel::RelDvector<complex<double>>;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(RelDvector<double>)
 BOOST_CLASS_EXPORT_IMPLEMENT(RelDvector<complex<double>>)

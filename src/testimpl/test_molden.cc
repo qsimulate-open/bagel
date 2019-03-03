@@ -73,12 +73,12 @@ double molden_out_energy(std::string inp1, std::string inp2) {
     if (method != "molecule") throw std::logic_error("broken test case");
     auto geom = std::make_shared<Geometry>(mol);
 
-    auto coeff = std::make_shared<Coeff>(geom);
-
     std::string filename = inp1 + ".molden";
     MoldenIn mfs(filename, geom->spherical());
     mfs.read();
-    mfs >> tie(coeff, geom);
+    MOInfo mo(geom);
+    mfs >> mo;
+    std::shared_ptr<const Coeff> coeff = mo.coeff;
 
     std::shared_ptr<const Matrix> ao_density = coeff->form_density_rhf(geom->nele()/2);
     auto hcore = std::make_shared<const Hcore>(geom);

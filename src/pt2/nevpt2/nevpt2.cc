@@ -924,5 +924,5 @@ void NEVPT2<DataType>::compute() {
 #include <src/pt2/nevpt2/nevpt2_mat.cpp>
 #undef NEVPT2IMPL
 
-template class NEVPT2<double>;
-template class NEVPT2<complex<double>>;
+template class bagel::NEVPT2<double>;
+template class bagel::NEVPT2<complex<double>>;

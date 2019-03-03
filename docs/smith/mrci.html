@@ -4,29 +4,23 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Multireference configuration interaction (MRCI) &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Relativistic multireference second-order perturbation theory (RelCASPT2)" href="relcaspt2.html" />
     <link rel="prev" title="Multireference second-order perturbation theory (CASPT2)" href="caspt2.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -54,7 +48,7 @@
 <p>Fully internally contracted multireference configuration interactions up to the two-electron excitation (MRCISD).
 This is implemented with the automatical code generator SMITH3.
 By default, the Davidson corrected (+Q) energy is also printed.</p>
-<p>Title: <code class="docutils literal"><span class="pre">smith</span></code>, method: <code class="docutils literal"><span class="pre">mrci</span></code></p>
+<p>Title: <code class="docutils literal notranslate"><span class="pre">smith</span></code>, method: <code class="docutils literal notranslate"><span class="pre">mrci</span></code></p>
 </div>
 <div class="section" id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
@@ -70,7 +64,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 <h3>SMITH keywords<a class="headerlink" href="#smith-keywords" title="Permalink to this headline">¶</a></h3>
 <p>The default values are recommended unless mentioned otherwise.</p>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Convergence threshold.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -78,7 +72,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh_overlap</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh_overlap</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Overlap threshold.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -86,7 +80,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">frozen</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">frozen</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Freeze core orbitals.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -94,15 +88,15 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ncore</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ncore</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of frozen core orbitals.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
-<div class="line"><strong>Default:</strong> If <code class="docutils literal"><span class="pre">frozen</span></code> is true, subvalence orbitals are frozen. If false, zero.</div>
+<div class="line"><strong>Default:</strong> If <code class="docutils literal notranslate"><span class="pre">frozen</span></code> is true, subvalence orbitals are frozen. If false, zero.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nfrozenvirt</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nfrozenvirt</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of frozen virtual orbitals.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -110,7 +104,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of iterations in MRCI calculations.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -118,7 +112,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxtile</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxtile</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of orbitals in a single data tile used in SMITH3.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -126,7 +120,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">davidson_subspace</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">davidson_subspace</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong>  Number of vectors retained in the limited-memory Davidson algorithm.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -138,7 +132,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -166,7 +160,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </pre></div>
 </div>
 <p>from which one obtains</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="nx">freezing</span> <span class="mi">2</span> <span class="nx">orbitals</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="nx">freezing</span> <span class="mi">2</span> <span class="nx">orbitals</span>
 <span class="o">*</span> <span class="nx">XMS</span> <span class="nx">rotation</span> <span class="nx">is</span> <span class="nx">only</span> <span class="nx">appropriate</span> <span class="k">for</span> <span class="nx">CASPT2</span><span class="p">,</span> <span class="nx">and</span> <span class="nx">will</span> <span class="nx">not</span> <span class="nx">be</span> <span class="nx">used</span> <span class="kd">with</span> <span class="nx">mrci</span>
    <span class="o">-</span> <span class="nx">MO</span> <span class="nx">integral</span> <span class="nx">evaluation</span>                    <span class="mf">0.01</span>
 <span class="o">-</span> <span class="nx">linear</span> <span class="nx">dependency</span> <span class="nx">detected</span><span class="o">:</span>    <span class="mi">3</span> <span class="o">/</span>    <span class="mi">4</span>    <span class="nx">min</span> <span class="nx">eigenvalue</span><span class="o">:</span>     <span class="mf">0.0000e+00</span>    <span class="nx">max</span> <span class="nx">eigenvalue</span><span class="o">:</span>     <span class="mf">0.0000e+00</span>
@@ -256,7 +250,7 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
+<h3><a href="../index.html">Table of Contents</a></h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
@@ -284,12 +278,14 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
                         title="next chapter">Relativistic multireference second-order perturbation theory (RelCASPT2)</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

@@ -60,7 +60,12 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   sssr_    = idata->get<bool>("sssr", true);
   shift_diag_  = idata->get<bool>("shift_diag", true);
+  shift_imag_  = idata->get<bool>("shift_imag", false);
   block_diag_fock_ = idata->get<bool>("block_diag_fock", false);
+  orthogonal_basis_ = idata->get<bool>("orthogonal_basis", shift_imag_ ? true : false);
+
+  if (!orthogonal_basis_ && shift_imag_)
+    throw runtime_error("Imaginary shift is only applicable when orthogonal basis is used.");
 
   // check nact() because ciwfn() is nullptr with zero active orbitals
   if (nact() && ciwfn()->nstates() > 1)
@@ -102,7 +107,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   // save inputs for pseudospin module
   aniso_data_ = idata->get_child_optional("aniso");
   external_rdm_ = idata->get<string>("external_rdm", "");
-  if (external_rdm_.empty() && !ciwfn()->civectors())
+  if (nact() && external_rdm_.empty() && !ciwfn()->civectors())
     throw runtime_error("CI vectors are missing. Most likely you ran CASSCF with external RDMs and forgot to specify external_rdm in the smith input block.");
 }
 
@@ -113,7 +118,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const
     maxiter_(info->maxiter_), maxtile_(info->maxtile_),
     cimaxchunk_(info->cimaxchunk_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_),
     do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
-    shift_diag_(info->shift_diag_), block_diag_fock_(info->block_diag_fock_), restart_(info->restart_),
+    shift_diag_(info->shift_diag_), shift_imag_(info->shift_imag_), block_diag_fock_(info->block_diag_fock_), orthogonal_basis_(info->orthogonal_basis_), restart_(info->restart_),
     restart_each_iter_(info->restart_each_iter_), thresh_overlap_(info->thresh_overlap_),
     state_begin_(info->state_begin_), restart_iter_(info->restart_iter_), aniso_data_(info->aniso_data_), external_rdm_(info->external_rdm_) {
 }
@@ -325,8 +330,8 @@ shared_ptr<const Reference>  SMITH_Info<DataType>::extract_ref(const vector<int>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
-template class SMITH_Info<double>;
-template class SMITH_Info<complex<double>>;
+template class bagel::SMITH_Info<double>;
+template class bagel::SMITH_Info<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SMITH_Info<double>)

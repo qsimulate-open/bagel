@@ -4,29 +4,23 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Relativistic complete active space self-consistent field (RelCASSCF) &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Perturbation theory" href="../pt2/pt2.html" />
     <link rel="prev" title="Complete active space self-consistent field (CASSCF)" href="casscf.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -52,12 +46,12 @@
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>The relativistic analogue of CASSCF is implemented in BAGEL. The second-order algorithm which is basically the same as its non-relativistic analogue is used by default.</p>
-<p>Title: <code class="docutils literal"><span class="pre">zcasscf</span></code></p>
+<p>Title: <code class="docutils literal notranslate"><span class="pre">zcasscf</span></code></p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">state</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">state</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Number of states computed for each spin value.  All are included in the state-averaging procedure when orbitals are optimized.</div>
 <div class="line"><strong>Datatype</strong>: vector&lt;int&gt;</div>
@@ -69,7 +63,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nact</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nact</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Number of active orbitals</div>
 <div class="line"><strong>Datatype</strong>: int</div>
@@ -77,7 +71,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nclosed</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nclosed</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>:  Number of closed orbitals</div>
 <div class="line"><strong>Datatype</strong>: int</div>
@@ -85,7 +79,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">active</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">active</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Specify active orbitals. Note that the orbital index starts from 1.</div>
 <div class="line"><strong>Datatype:</strong> vector&lt;int&gt;</div>
@@ -97,7 +91,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">charge</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">charge</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>:  Molecular charge.</div>
 <div class="line"><strong>Datatype</strong>: int</div>
@@ -105,20 +99,20 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">algorithm</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">algorithm</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Orbital optimization algorithm.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">second</span></code>: second-order algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">noopt</span></code>: no orbital optimization.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">second</span></code>: second-order algorithm.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">noopt</span></code>: no orbital optimization.</div>
 </div>
-<div class="line"><strong>Default:</strong> <code class="docutils literal"><span class="pre">second</span></code></div>
+<div class="line"><strong>Default:</strong> <code class="docutils literal notranslate"><span class="pre">second</span></code></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">gaunt</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">gaunt</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Turns on the Gaunt interaction in the Hamiltonian.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -126,7 +120,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">breit</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">breit</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Turns on the full Breit interaction in the Hamiltonian.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -135,7 +129,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">only_electrons</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">only_electrons</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>:  This option allows the user to freeze all positronic orbitals and optimize only for rotations between electronic orbitals.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -143,7 +137,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">natocc</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">natocc</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: If set to “true,” occupation numbers of natural orbitals within the active space will be printed to casscf.log after each macroiteration.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -151,7 +145,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">canonical</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">canonical</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: If set to “true,” optimized orbitals will be transformed to semi-canonical orbitals.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -159,7 +153,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">hcore_guess</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">hcore_guess</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>:  If set to true, the one-electron Hamiltonian is diagonalized to generate initial guess orbitals.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -167,7 +161,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Maximum number of macroiterations.</div>
 <div class="line"><strong>Datatype</strong>: int</div>
@@ -175,7 +169,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter_micro</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter_micro</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Maximum number of microiterations.</div>
 <div class="line"><strong>Datatype</strong>: int</div>
@@ -183,23 +177,23 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter_fci</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter_fci</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Maximum number of iterations in CI coefficient optimization</div>
 <div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Default</strong>: copied from <code class="docutils literal"><span class="pre">maxiter</span></code></div>
+<div class="line"><strong>Default</strong>: copied from <code class="docutils literal notranslate"><span class="pre">maxiter</span></code></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh_fci</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh_fci</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Convergence threshold for the CI coefficients</div>
 <div class="line"><strong>Datatype</strong>: double</div>
-<div class="line"><strong>Default</strong>: Value copied from <code class="docutils literal"><span class="pre">thresh</span></code></div>
+<div class="line"><strong>Default</strong>: Value copied from <code class="docutils literal notranslate"><span class="pre">thresh</span></code></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">conv_ignore</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">conv_ignore</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong>  If set to “true,” BAGEL will continue running even if the maximum iterations is reached without convergence.  Normally an error is thrown and the program terminates.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -207,7 +201,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">restart_cas</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">restart_cas</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong>  If set to “true”, after each macroiteration the orbitals will be written to a binary archive with filename “zcasscf_&lt;iter&gt;.archive”.
 They can be read back in using the “load_ref” module.</div>
@@ -216,7 +210,7 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">pop</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">pop</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: If set to true, population analysis of the molecular orbitals will be printed to a file names dhf.log.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -224,7 +218,7 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">davidson_subspace</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">davidson_subspace</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>:  Number of vectors retained in the limited-memory Davidson algorithm.</div>
 <div class="line"><strong>Datatype</strong>: int</div>
@@ -233,7 +227,7 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">print_thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">print_thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Threshold below which CI coefficients are not printed.</div>
 <div class="line"><strong>Datatype</strong>: double</div>
@@ -241,7 +235,7 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">spin_adapt</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">spin_adapt</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Spin-adapt the starting guess.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -250,64 +244,64 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">aniso</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">aniso</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Performs magnetic anisotropy analysis using a pseudospin Hamiltonian, to obtain g-factors and zero-field splitting parameters</div>
 <div class="line"><strong>Datatype</strong>: input block with several paramaters, given below:</div>
 <div class="line"><br /></div>
 <div class="line"><br /></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">nspin</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">nspin</span></code></div>
 <div class="line"><br /></div>
 <div class="line"><strong>Description</strong>: 2 * the spin value of the pseudospin Hamiltonian</div>
 <div class="line"><strong>Datatype</strong>: integer</div>
 <div class="line"><strong>Default</strong>: Number of states in the CASSCF calculation minus one</div>
 <div class="line"><br /></div>
-<div class="line"><code class="docutils literal"><span class="pre">ranks</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">ranks</span></code></div>
 <div class="line"><br /></div>
 <div class="line"><strong>Description</strong>: Which ranks of the Extended Stevens Operators to include in the zero-field splitting Hamiltonian</div>
 <div class="line"><strong>Datatype</strong>: Array of integers</div>
-<div class="line"><strong>Default</strong>: Even integers from 2 to <code class="docutils literal"><span class="pre">nspin</span></code></div>
+<div class="line"><strong>Default</strong>: Even integers from 2 to <code class="docutils literal notranslate"><span class="pre">nspin</span></code></div>
 <div class="line"><strong>Recommendation</strong>: Normally use default.  The array [ 2, 4, 6 ] can be used to specify the commonly-used sixth-order Hamiltonian if using the giant spin approximation.</div>
 <div class="line"><br /></div>
-<div class="line"><code class="docutils literal"><span class="pre">print_operators</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">print_operators</span></code></div>
 <div class="line"><br /></div>
 <div class="line"><strong>Description</strong>: Option to print additional information.  If true, the Extended Stevens Operators will be printed in matrix form, along with the magnetic moment, spin, and orbital angular momentum matrices.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
 <div class="line"><strong>Default</strong>: false</div>
 <div class="line"><br /></div>
-<div class="line"><code class="docutils literal"><span class="pre">zaxis</span></code> and <code class="docutils literal"><span class="pre">xaxis</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">zaxis</span></code> and <code class="docutils literal notranslate"><span class="pre">xaxis</span></code></div>
 <div class="line"><br /></div>
 <div class="line"><strong>Description</strong>: Can be used to specify the orientation of the axes along which we should quantize the spin when mapping the zero-field anisotropy</div>
 <div class="line"><strong>Datatype</strong>: Arrays of 3 doubles</div>
 <div class="line"><strong>Default</strong>: The primary g-anisotropy axes are used</div>
 <div class="line"><br /></div>
-<div class="line"><code class="docutils literal"><span class="pre">states</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">states</span></code></div>
 <div class="line"><br /></div>
 <div class="line"><strong>Description</strong>: Which electronic states are to be mapped to the pseudospin Hamiltonian</div>
 <div class="line"><strong>Datatype</strong>: Array of integers</div>
 <div class="line"><strong>Default</strong>: The lowest-lying states are used</div>
 <div class="line"><br /></div>
-<div class="line"><code class="docutils literal"><span class="pre">center</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">center</span></code></div>
 <div class="line"><br /></div>
 <div class="line"><strong>Description</strong>: Coordinates of the spin center (typically a metal atom for a mononuclear complex), given in Bohr radii</div>
 <div class="line"><strong>Datatype</strong>: Arrays of 3 doubles</div>
 <div class="line"><strong>Default</strong>: [  0.0,  0.0,  0.0 ]</div>
 <div class="line"><br /></div>
-<div class="line"><code class="docutils literal"><span class="pre">energies</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">energies</span></code></div>
 <div class="line"><br /></div>
 <div class="line"><strong>Description</strong>: Energies to be used in the anisotropy analysis.  This option can be used to replace the CASSCF energies with those generated using another method, such as CASPT2.</div>
 <div class="line"><strong>Datatype</strong>: Arrays of nspin+1 doubles</div>
 <div class="line"><strong>Default</strong>: The relativistic CASSCF energies are used.</div>
 <div class="line"><strong>Recommendation</strong>: Use the default.  This option is deprecated now that the “aniso” module is interfaced directly to relativistic CASPT2 and MRCI.</div>
 <div class="line"><br /></div>
-<div class="line"><code class="docutils literal"><span class="pre">diagop</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">diagop</span></code></div>
 <div class="line"><br /></div>
 <div class="line"><strong>Description</strong>: Operator to be diagonalized in order to determine a mapping from ab initio electronic states to pseudospin states.</div>
 <div class="line"><strong>Datatype</strong>: string - can be “Mu” for magnetic moment, “J”, “S”, or “L”</div>
 <div class="line"><strong>Default</strong>: Mu</div>
 <div class="line"><br /></div>
-<div class="line"><code class="docutils literal"><span class="pre">phases</span></code> and <code class="docutils literal"><span class="pre">phase_full</span></code></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">phases</span></code> and <code class="docutils literal notranslate"><span class="pre">phase_full</span></code></div>
 <div class="line"><br /></div>
 <div class="line"><strong>Description</strong>: This is a debugging tool.  It allows the use to apply an arbitrary phase shift to the pseudospin states.</div>
 <div class="line"><strong>Datatype</strong>: Array of doubles; double</div>
@@ -318,7 +312,7 @@ They can be read back in using the “load_ref” module.</div>
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -343,7 +337,7 @@ They can be read back in using the “load_ref” module.</div>
 </pre></div>
 </div>
 <p>from which one obtains</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">---------------------------</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="o">---------------------------</span>
     <span class="nx">CASSCF</span> <span class="nx">calculation</span>
 <span class="o">---------------------------</span>
 
@@ -501,7 +495,7 @@ Weinheim, 2009).</td>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
+<h3><a href="../index.html">Table of Contents</a></h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
@@ -529,12 +523,14 @@ Weinheim, 2009).</td>
                         title="next chapter">Perturbation theory</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

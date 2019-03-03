@@ -102,8 +102,12 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     const std::shared_ptr<const Matrix> hcore_;
 
-    std::shared_ptr<const Coeff> semi_canonical_orb() const;
+    std::tuple<std::shared_ptr<const Coeff>,VectorB,VectorB> semi_canonical_orb() const;
     std::shared_ptr<const Matrix> spin_density() const;
+
+    // orbital eigenvalues and occupations
+    VectorB eig_;
+    VectorB occup_;
 
     // energy
     std::vector<double> energy_;

@@ -577,7 +577,7 @@ shared_ptr<const Atom> Atom::relativistic() const {
     rshells.push_back(tmp);
   }
   auto atom = make_shared<Atom>(*this);
-  atom->shells_ = rshells;
+  atom->reset_shells(rshells);
   return atom;
 }
 
