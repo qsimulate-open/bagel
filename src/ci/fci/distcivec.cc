@@ -98,15 +98,19 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
   unique_ptr<DataType[]> buf(new DataType[max(size(), out->size())]);
   blas::transpose(local_data(), lenb_, asize(), buf.get());
 
+  list<shared_ptr<RMATask<DataType>>> tasks;
   {
     RMAWindow_bare<DataType> sendwin(size());
     sendwin.accumulate_buffer(1.0, buf);
     for (int i = 0; i != mpi__->size(); ++i) {
       const size_t roffset = dist_.start(i) * out->asize();
       const size_t rsize   = dist_.size(i)  * out->asize();
-      sendwin.rma_rget(recv.get()+roffset, i, out->dist_.start(mpi__->rank())*dist_.size(i), rsize);
+      tasks.push_back(sendwin.rma_rget(recv.get()+roffset, i, out->dist_.start(mpi__->rank())*dist_.size(i), rsize));
     }
   }
+
+  for (auto& i : tasks)
+    i->wait(); 
 
   // rearrange recv buffer
   for (int i = 0; i != mpi__->size(); ++i) {
