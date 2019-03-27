@@ -79,6 +79,7 @@ shared_ptr<GradFile> Force::compute() {
 
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
+      ref = force->ref();
       if (compute_dipole)
         force->compute_dipole();
       for (auto& m : *joblist) {
@@ -94,6 +95,7 @@ shared_ptr<GradFile> Force::compute() {
 
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
+      ref = force->ref();
       if (compute_dipole)
         force->compute_dipole();
       for (auto& m : *joblist) {
@@ -119,67 +121,67 @@ shared_ptr<GradFile> Force::compute() {
 
       auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      out = force->compute(jobtitle, gradinfo);
       ref = force->ref();
+      out = force->compute(jobtitle, gradinfo);
       force_dipole_ = force->dipole();
 
     } else if (method == "rohf") {
 
       auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      out = force->compute(jobtitle, gradinfo);
       ref = force->ref();
+      out = force->compute(jobtitle, gradinfo);
       force_dipole_ = force->dipole();
 
     } else if (method == "hf") {
 
       auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      out = force->compute(jobtitle, gradinfo);
       ref = force->ref();
+      out = force->compute(jobtitle, gradinfo);
       force_dipole_ = force->dipole();
 
     } else if (method == "ks") {
 
       auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      out = force->compute(jobtitle, gradinfo);
       ref = force->ref();
+      out = force->compute(jobtitle, gradinfo);
       force_dipole_ = force->dipole();
 
     } else if (method == "dhf") {
 
       auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      out = force->compute(jobtitle, gradinfo);
       ref = force->ref();
+      out = force->compute(jobtitle, gradinfo);
 
     } else if (method == "mp2") {
 
       auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_);
       out = force->compute(jobtitle, gradinfo);
-      energyvec = force->energyvec();
       ref = force->ref();
+      energyvec = force->energyvec();
       force_dipole_ = force->dipole();
 
     } else if (method == "casscf") {
 
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
+      ref = force->ref();
       if (compute_dipole)
         force->compute_dipole();
       out = force->compute(jobtitle, gradinfo);
-      ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "caspt2") {
 
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
+      ref = force->ref();
       if (compute_dipole)
         force->compute_dipole();
       out = force->compute(jobtitle, gradinfo);
-      ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else {
