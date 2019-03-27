@@ -152,6 +152,20 @@ Optional Keywords (Universal)
    | **Default:** 100.
    | **Recommendation:** increase the value when the Z-vector equation does not converge.
 
+.. topic:: ``explicitbond``
+
+   | **Description:** Add explicit bonds between non-bonded atoms.
+   | **Datatype:** bool
+   | **Values:**
+   |    ``true``: add explicit bonds. ("explicit" block required, see below for example)
+   |    ``false``: do not add explicit bonds.
+   | **Default:** false.
+   | **Recommendation:** use default unless you are optimizing two molecules.
+
+.. topic:: ``explicit``
+
+   | **Description:** Specifies the explicit bonds. See below for example.
+
 .. topic:: ``numerical``
 
    | **Description:** Use numerical gradient.
@@ -373,6 +387,66 @@ In this example, we optimize the ground state.
    }
 
    ]}
+
+
+Example: Explicit bond
+======================
+This optimizes the ground state geometry of a benzene dimer using MP2.
+The internal coordinates complemented by two explicit bonds between the carbon atoms in the monomers are used.
+
+.. code-block:: javascript
+
+  { "bagel" : [
+
+  {
+    "title" : "molecule",
+    "basis" : "sto-3g",
+    "df_basis" : "svp",
+    "angstrom" : false,
+    "geometry" : [
+      {"atom" :"C", "xyz" : [    0.00000000000000,     0.00000000000000,     2.64112304663605] },
+      {"atom" :"C", "xyz" : [    2.28770766388446,     0.00000000000000,     1.32067631141874] },
+      {"atom" :"C", "xyz" : [    2.28770047235649,     0.00000000000000,    -1.32071294538560] },
+      {"atom" :"C", "xyz" : [    0.00000000000000,     0.00000000000000,    -2.64114665444819] },
+      {"atom" :"C", "xyz" : [   -2.28770047235649,     0.00000000000000,    -1.32071294538560] },
+      {"atom" :"C", "xyz" : [   -2.28770766388446,     0.00000000000000,     1.32067631141874] },
+      {"atom" :"H", "xyz" : [    4.07221260176630,     0.00000000000000,     2.35164689765998] },
+      {"atom" :"H", "xyz" : [    4.07221517814719,     0.00000000000000,    -2.35163163881380] },
+      {"atom" :"H", "xyz" : [    0.00000000000000,     0.00000000000000,    -4.70191324441092] },
+      {"atom" :"H", "xyz" : [   -4.07221517814719,     0.00000000000000,    -2.35163163881380] },
+      {"atom" :"H", "xyz" : [   -4.07221260176630,     0.00000000000000,     2.35164689765998] },
+      {"atom" :"H", "xyz" : [    0.00000000000000,     0.00000000000000,     4.70197960246451] },
+      {"atom" :"C", "xyz" : [    0.00000000000000,     4.00000000000000,     2.64112304663605] },
+      {"atom" :"C", "xyz" : [    2.28770766388446,     4.00000000000000,     1.32067631141874] },
+      {"atom" :"C", "xyz" : [    2.28770047235649,     4.00000000000000,    -1.32071294538560] },
+      {"atom" :"C", "xyz" : [    0.00000000000000,     4.00000000000000,    -2.64114665444819] },
+      {"atom" :"C", "xyz" : [   -2.28770047235649,     4.00000000000000,    -1.32071294538560] },
+      {"atom" :"C", "xyz" : [   -2.28770766388446,     4.00000000000000,     1.32067631141874] },
+      {"atom" :"H", "xyz" : [    4.07221260176630,     4.00000000000000,     2.35164689765998] },
+      {"atom" :"H", "xyz" : [    4.07221517814719,     4.00000000000000,    -2.35163163881380] },
+      {"atom" :"H", "xyz" : [    0.00000000000000,     4.00000000000000,    -4.70191324441092] },
+      {"atom" :"H", "xyz" : [   -4.07221517814719,     4.00000000000000,    -2.35163163881380] },
+      {"atom" :"H", "xyz" : [   -4.07221260176630,     4.00000000000000,     2.35164689765998] },
+      {"atom" :"H", "xyz" : [    0.00000000000000,     4.00000000000000,     4.70197960246451] }
+    ]
+  },
+
+  {
+    "title" : "optimize",
+    "target" : 0,
+    "explicitbond" : true,
+    "explicit" : [ 
+      { "pair" : [1, 13]},
+      { "pair" : [4, 17]}
+  ],
+  "method" : [ {
+    "title" : "mp2"
+  } ]
+  }
+
+  ]}
+
+
 
 References
 ==========

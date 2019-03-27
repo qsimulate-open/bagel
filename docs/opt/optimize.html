@@ -231,6 +231,26 @@ and can be read by <code class="docutils literal notranslate"><span class="pre">
 </div>
 </div>
 <div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">explicitbond</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Add explicit bonds between non-bonded atoms.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: add explicit bonds. (“explicit” block required, see below for example)</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: do not add explicit bonds.</div>
+</div>
+<div class="line"><strong>Default:</strong> false.</div>
+<div class="line"><strong>Recommendation:</strong> use default unless you are optimizing two molecules.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">explicit</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Specifies the explicit bonds. See below for example.</div>
+</div>
+</div>
+<div class="topic">
 <p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">numerical</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Use numerical gradient.</div>
@@ -490,6 +510,62 @@ In this example, we optimize the ground state.</p>
  <span class="p">]}</span>
 </pre></div>
 </div>
+</div>
+</div>
+<div class="section" id="example-explicit-bond">
+<h2>Example: Explicit bond<a class="headerlink" href="#example-explicit-bond" title="Permalink to this headline">¶</a></h2>
+<p>This optimizes the ground state geometry of a benzene dimer using MP2.
+The internal coordinates complemented by two explicit bonds between the carbon atoms in the monomers are used.</p>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;sto-3g&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">2.64112304663605</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">2.28770766388446</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">1.32067631141874</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">2.28770047235649</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">1.32071294538560</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">2.64114665444819</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">2.28770047235649</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">1.32071294538560</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">2.28770766388446</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">1.32067631141874</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">4.07221260176630</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">2.35164689765998</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">4.07221517814719</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">2.35163163881380</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">4.70191324441092</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">4.07221517814719</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">2.35163163881380</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">4.07221260176630</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">2.35164689765998</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">4.70197960246451</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>     <span class="mf">2.64112304663605</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">2.28770766388446</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>     <span class="mf">1.32067631141874</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">2.28770047235649</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">1.32071294538560</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">2.64114665444819</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">2.28770047235649</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">1.32071294538560</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">2.28770766388446</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>     <span class="mf">1.32067631141874</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">4.07221260176630</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>     <span class="mf">2.35164689765998</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">4.07221517814719</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">2.35163163881380</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">4.70191324441092</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">4.07221517814719</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">2.35163163881380</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">4.07221260176630</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>     <span class="mf">2.35164689765998</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000000</span><span class="p">,</span>     <span class="mf">4.00000000000000</span><span class="p">,</span>     <span class="mf">4.70197960246451</span><span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;optimize&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;explicitbond&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="s2">&quot;explicit&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;pair&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">]},</span>
+    <span class="p">{</span> <span class="s2">&quot;pair&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">17</span><span class="p">]}</span>
+<span class="p">],</span>
+<span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;mp2&quot;</span>
+<span class="p">}</span> <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
 </div>
 </div>
 <div class="section" id="references">
