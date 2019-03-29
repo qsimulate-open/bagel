@@ -65,7 +65,7 @@ $ export MKL_NUM_THREADS=16
 <p>The default value for $BAGEL_NUM_THREADS is copied from $OMP_NUM_THREADS or the number of available CPU cores.
 It is generally recommended to set this variable such that BAGEL_NUM_THREADS times the number of MPI processes
 equals the number of available cores on your machine.</p>
-<p>When you run BAGEL with Intel MPI using a large number (&gt;16) of processes, you have to set:</p>
+<p>When you run BAGEL with Intel MPI using a large number (16 or larger) of processes, you have to set:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ export I_MPI_SCALABLE_OPTIMIZATION=off
 </pre></div>
 </div>
