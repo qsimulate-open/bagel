@@ -62,14 +62,14 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
     const size_t nocc = nclosed + nact;
     const size_t norb = nocc + nvirtual;
     const size_t rsize = nclosed*nocc*nvirtual*nvirtual + nclosed*nclosed*nact*(nvirtual+nact) + nact2*(norb*nvirtual+nact*nclosed);
-    cout << "    * Approximate memory requirement for SMITH calulation per MPI process:" << endl;
+    cout << "    * Approximate memory requirement for SMITH calculation per MPI process:" << endl;
     cout << "      o Storage requirement for T-amplitude, lambda, and residual is ";
     if (info->orthogonal_basis()) {
-      // T-amp (r, o), Lambda (r, o), Residual (r, o)
-      cout << setprecision(2) << rsize*(info->sssr() ? nstate : nstate*nstate) * (info->grad() ? 6 : 4) * 8.e-9 / mpi__->size() << " GB" << endl;
+      // During iteration      : davidson_subspace * (Lambda or T (ortho) + Residual (ortho)) * nstate + (T-amp(orthogonal, redundant) + Res + Lambda) * nstate * nstate
+      cout << setprecision(2) << (info->davidson_subspace() * 2 + nstate * (4 + info->grad() ? 2 : 0)) * rsize * (info->sssr() ? 1 : nstate) * 8.e-9 / mpi__->size() << " GB" << endl;
     } else {
-      // T-amp (r), Lambda (r), Residual (r)
-      cout << setprecision(2) << rsize*(info->sssr() ? nstate : nstate*nstate) * (info->grad() ? 3 : 2) * 8.e-9 / mpi__->size() << " GB" << endl;
+      // During iteration      : davidson_subspace * (Lambda or T (redun) + Residual (r)) * nstate + (T-amp(r) + Res + Lambda) * nstate * nstate
+      cout << setprecision(2) << (info->davidson_subspace() * 2 + nstate * (2 + info->grad() ? 1 : 0)) * rsize * (info->sssr() ? 1 : nstate) * 8.e-9 / mpi__->size() << " GB" << endl;
     }
     cout << "      o Storage requirement for MO integrals is ";
     cout << setprecision(2) << (norb*norb*2 + nocc*nocc*(nact+nvirtual)*(nact+nvirtual)) * 8.e-9 / mpi__->size() << " GB" << endl;
