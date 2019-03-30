@@ -62,7 +62,7 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
     const size_t nocc = nclosed + nact;
     const size_t norb = nocc + nvirtual;
     const size_t rsize = nclosed*nocc*nvirtual*nvirtual + nclosed*nclosed*nact*(nvirtual+nact) + nact2*(norb*nvirtual+nact*nclosed);
-    cout << "    * Approximate memory requirement for SMITH calulation per MPI process:" << endl;
+    cout << "    * Approximate memory requirement for SMITH calculation per MPI process:" << endl;
     cout << "      o Storage requirement for T-amplitude, lambda, and residual is ";
     if (info->orthogonal_basis()) {
       // During iteration      : davidson_subspace * (Lambda or T (ortho) + Residual (ortho)) * nstate + (T-amp(orthogonal, redundant) + Res + Lambda) * nstate * nstate
