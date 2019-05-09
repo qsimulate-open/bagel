@@ -36,13 +36,14 @@ class Force {
     const std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
+    bool mfonly_;
 
     bool numerical_;
     std::vector<double> energy_;
     std::vector<double> force_dipole_;
 
   public:
-    Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
+    Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>, const bool mfonly = false);
 
     std::shared_ptr<GradFile> compute();
     void force_export(const std::string jobtitle, std::shared_ptr<const GradInfo> gradinfo, const std::vector<double> energy, std::shared_ptr<const GradFile> out, const bool export_single);

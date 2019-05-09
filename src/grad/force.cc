@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : idata_(idata), geom_(g), ref_(r) {
+Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const bool m) : idata_(idata), geom_(g), ref_(r), mfonly_(m) {
 
 }
 
@@ -63,12 +63,20 @@ shared_ptr<GradFile> Force::compute() {
 
   shared_ptr<GradFile> out;
 
-  const string method = to_lower(cinput->get<string>("title", ""));
+  string method = to_lower(cinput->get<string>("title", ""));
   vector<double> energyvec;
 
   const bool export_grad = idata_->get<bool>("export", false);
   const bool export_single = idata_->get<bool>("export_single", false);
   const bool compute_dipole = idata_->get<bool>("dipole", false);
+
+  if (mfonly_) {
+    if (method == "mp2") {
+      method = "hf";
+    } else if (method == "caspt2" || method == "nevpt2") {
+      method = "casscf";
+    }
+  }
 
   if (jobtitle == "forces") {
 
@@ -79,7 +87,6 @@ shared_ptr<GradFile> Force::compute() {
 
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      ref = force->ref();
       if (compute_dipole)
         force->compute_dipole();
       for (auto& m : *joblist) {
@@ -95,7 +102,6 @@ shared_ptr<GradFile> Force::compute() {
 
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      ref = force->ref();
       if (compute_dipole)
         force->compute_dipole();
       for (auto& m : *joblist) {
@@ -121,67 +127,67 @@ shared_ptr<GradFile> Force::compute() {
 
       auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      ref = force->ref();
       out = force->compute(jobtitle, gradinfo);
+      ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "rohf") {
 
       auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      ref = force->ref();
       out = force->compute(jobtitle, gradinfo);
+      ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "hf") {
 
       auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      ref = force->ref();
       out = force->compute(jobtitle, gradinfo);
+      ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "ks") {
 
       auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      ref = force->ref();
       out = force->compute(jobtitle, gradinfo);
+      ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "dhf") {
 
       auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      ref = force->ref();
       out = force->compute(jobtitle, gradinfo);
+      ref = force->ref();
 
     } else if (method == "mp2") {
 
       auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_);
       out = force->compute(jobtitle, gradinfo);
-      ref = force->ref();
       energyvec = force->energyvec();
+      ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "casscf") {
 
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      ref = force->ref();
       if (compute_dipole)
         force->compute_dipole();
       out = force->compute(jobtitle, gradinfo);
+      ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "caspt2") {
 
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      ref = force->ref();
       if (compute_dipole)
         force->compute_dipole();
       out = force->compute(jobtitle, gradinfo);
+      ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else {

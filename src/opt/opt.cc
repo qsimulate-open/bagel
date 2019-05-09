@@ -65,7 +65,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
       bmat_ = current_->compute_internal_coordinate(nullptr, optinfo_->bonds(), optinfo_->opttype()->is_transition());
   }
 
-  maxstep_ = idat->get<double>("maxstep", optinfo_->opttype()->is_energy() ? 0.3 : 0.1);
+  maxstep_ = idat->get<double>("maxstep", optinfo_->opttype()->is_energy() || optinfo_->opttype()->is_transition() ? 0.3 : 0.1);
 
 }
 
@@ -90,7 +90,7 @@ void Opt::compute() {
     }
   } else {
     cout << "    * Compute molecular Hessian for optimization" << endl;
-    auto hess = make_shared<Hess>(idata_, current_, prev_ref_);
+    auto hess = make_shared<Hess>(idata_, current_, prev_ref_, optinfo()->hess_meanfield());
     hess->compute();
     // if internal, we should transform the Hessian according to Eq. (6) in Schlegel
     // dB/dX term currently omitted (reasonable approximation: Handbook of Computational Chemistry, pp. 323--324)

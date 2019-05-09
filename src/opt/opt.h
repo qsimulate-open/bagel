@@ -70,6 +70,7 @@ class Opt {
     std::array<std::shared_ptr<const Matrix>,4> bmat_red_;
 
     // size of internals
+    int iter_;
     int dispsize_;
     size_t size_;
 
@@ -87,8 +88,9 @@ class Opt {
     std::vector<double> prev_en_;
     std::vector<std::shared_ptr<const GradFile>> prev_grad_;
     std::vector<std::shared_ptr<const XYZFile>> prev_xyz_;
+    std::vector<std::shared_ptr<const XYZFile>> prev_xyz_internal_;
     std::vector<std::shared_ptr<const XYZFile>> prev_displ_;
-    std::shared_ptr<const GradFile> prev_grad_internal_;
+    std::vector<std::shared_ptr<const GradFile>> prev_grad_internal_;
 
     // protected compute module (changes object)
     void compute_optimize();
@@ -105,7 +107,7 @@ class Opt {
     std::tuple<double,double,std::shared_ptr<XYZFile>> get_step() const;
     std::shared_ptr<XYZFile> get_step_nr() const;
     std::shared_ptr<XYZFile> get_step_ef() const;
-    std::shared_ptr<XYZFile> get_step_ef_pn() const;
+    std::shared_ptr<XYZFile> get_step_ef_pn(const int mode) const;
     std::tuple<double,double,std::shared_ptr<XYZFile>> get_step_rfo() const;
 
     std::shared_ptr<XYZFile> iterate_displ() const;
@@ -114,6 +116,7 @@ class Opt {
     std::shared_ptr<Matrix> hessian_update_bfgs(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> hs) const;
     std::shared_ptr<Matrix> hessian_update_sr1(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
     std::shared_ptr<Matrix> hessian_update_psb(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
+    std::shared_ptr<Matrix> hessian_update_bofill(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
 
     double do_adaptive(const int iter) const;
 

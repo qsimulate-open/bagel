@@ -38,7 +38,7 @@ using namespace bagel;
 
 static const AtomMap atommap;
 
-Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : idata_(idata), geom_(g), ref_(r) {
+Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const bool mf) : idata_(idata), geom_(g), ref_(r), mfonly_(mf) {
   numhess_ = idata_->get<bool>("numhess", true);
   numforce_ = idata_->get<bool>("numforce", false);
   if (numhess_) {
@@ -181,7 +181,7 @@ void Hess::compute_finite_diff_() {
       if (ref_)
         ref_plus = ref_->project_coeff(geom_plus);
 
-      auto plus = make_shared<Force>(idata_, geom_plus, ref_plus);
+      auto plus = make_shared<Force>(idata_, geom_plus, ref_plus, mfonly_);
       outplus = plus->compute();
       dipole_plus = plus->force_dipole();
     }
@@ -199,7 +199,7 @@ void Hess::compute_finite_diff_() {
       if (ref_)
         ref_minus = ref_->project_coeff(geom_minus);
 
-      auto minus = make_shared<Force>(idata_, geom_minus, ref_minus);
+      auto minus = make_shared<Force>(idata_, geom_minus, ref_minus, mfonly_);
       outminus = minus->compute();
       dipole_minus = minus->force_dipole();
     }
