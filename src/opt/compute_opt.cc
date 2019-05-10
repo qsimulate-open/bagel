@@ -104,7 +104,7 @@ void Opt::compute_optimize() {
 
       // Update Hessian with Flowchart method
       if (hess_recalc) {
-        auto hess = make_shared<Hess>(idata_, current_, prev_ref_, optinfo()->hess_meanfield());
+        auto hess = make_shared<Hess>(idata_, current_, prev_ref_);
         hess->compute();
         if (optinfo()->internal()) {
           if (optinfo()->redundant())

@@ -156,7 +156,6 @@ class OptInfo : public GradInfo {
     double thielc3_;
     double thielc4_;
     int hess_recalc_freq_;
-    bool hess_meanfield_;
 
     int mep_direction_;
 
@@ -178,7 +177,6 @@ class OptInfo : public GradInfo {
       numerical_ = idat->get<bool>("numerical", false);
       hess_approx_ = idat->get<bool>("hess_approx", opttype_->is_mep() ? false : true);
       hess_recalc_freq_ = idat->get<int>("hess_recalc_freq", 5);
-      hess_meanfield_ = idat->get<bool>("hess_meanfield", false);
 
       explicit_bond_ = idat->get<bool>("explicitbond", false);
       if (explicit_bond_) {
@@ -261,7 +259,6 @@ class OptInfo : public GradInfo {
     double thielc3() const { return thielc3_; }
     double thielc4() const { return thielc4_; }
     int hess_recalc_freq() const { return hess_recalc_freq_; }
-    bool hess_meanfield() const { return hess_meanfield_; }
 
     int mep_direction() const { return mep_direction_; }
 

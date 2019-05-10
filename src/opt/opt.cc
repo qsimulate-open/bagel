@@ -90,7 +90,7 @@ void Opt::compute() {
     }
   } else {
     cout << "    * Compute molecular Hessian for optimization" << endl;
-    auto hess = make_shared<Hess>(idata_, current_, prev_ref_, optinfo()->hess_meanfield());
+    auto hess = make_shared<Hess>(idata_, current_, prev_ref_);
     hess->compute();
     // if internal, we should transform the Hessian according to Eq. (6) in Schlegel
     // dB/dX term currently omitted (reasonable approximation: Handbook of Computational Chemistry, pp. 323--324)

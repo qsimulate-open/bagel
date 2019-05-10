@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const bool m) : idata_(idata), geom_(g), ref_(r), mfonly_(m) {
+Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : idata_(idata), geom_(g), ref_(r) {
 
 }
 
@@ -63,20 +63,12 @@ shared_ptr<GradFile> Force::compute() {
 
   shared_ptr<GradFile> out;
 
-  string method = to_lower(cinput->get<string>("title", ""));
+  const string method = to_lower(cinput->get<string>("title", ""));
   vector<double> energyvec;
 
   const bool export_grad = idata_->get<bool>("export", false);
   const bool export_single = idata_->get<bool>("export_single", false);
   const bool compute_dipole = idata_->get<bool>("dipole", false);
-
-  if (mfonly_) {
-    if (method == "mp2") {
-      method = "hf";
-    } else if (method == "caspt2" || method == "nevpt2") {
-      method = "casscf";
-    }
-  }
 
   if (jobtitle == "forces") {
 
