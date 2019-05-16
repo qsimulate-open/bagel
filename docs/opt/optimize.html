@@ -46,9 +46,10 @@
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>Three types of the geometry can be optimized: the most stable (minimum energy) geometry, conical intersections between the electronic states, and
-the transition state geometry (or the saddle point on the potential energy surface).</p>
+the transition state (TS) geometry (or the saddle point on the potential energy surface).</p>
 <p>In the optimizations, rather than using the exact Hessian, one can
 start using the approximate Hessian and update it according to the step taken.
+In the transition state search, the exact Hessian usually improves the convergence.
 The advanced quasi-newton optimization methods, eigenvector following (EF) algorithm and rational functional optimization (RFO) are implemented.
 In the minimum energy conical intersection (MECI) optimization, the
 molecular gradient is replaced by the sum of the energy difference gradient and the upper state gradient after projecting the
@@ -182,7 +183,7 @@ and can be read by <code class="docutils literal notranslate"><span class="pre">
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum step. The unit is in the specifed coordinate.</div>
 <div class="line"><strong>Datatype:</strong> double precision.</div>
-<div class="line"><strong>Default:</strong> 0.3 (energy optimization); 0.1 (otherwise).</div>
+<div class="line"><strong>Default:</strong> 0.3 (energy or TS optimization); 0.1 (CI optimization).</div>
 </div>
 </div>
 <div class="topic">
@@ -282,8 +283,10 @@ and can be read by <code class="docutils literal notranslate"><span class="pre">
 <div class="line"><code class="docutils literal notranslate"><span class="pre">bfgs</span></code>: use BFGS scheme.</div>
 <div class="line"><code class="docutils literal notranslate"><span class="pre">psb</span></code>: use PSB scheme.</div>
 <div class="line"><code class="docutils literal notranslate"><span class="pre">sr1</span></code>: use SR1 scheme.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">bofill</span></code>: use the Bofill’s scheme for combining PSB and SR1.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">noupdate</span></code>: does not update Hessian at all.</div>
 </div>
-<div class="line"><strong>Default:</strong> flowchart.</div>
+<div class="line"><strong>Default:</strong> flowchart for energy and conical intersection optimization; bofill for transition state optimization.</div>
 </div>
 </div>
 <div class="topic">
@@ -297,6 +300,7 @@ and can be read by <code class="docutils literal notranslate"><span class="pre">
 <div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: calculate numerical Hessian first, and start the optimization using the Hessian.</div>
 </div>
 <div class="line"><strong>Default:</strong> true.</div>
+<div class="line"><strong>Recommendation:</strong> Using false substantially increases computational cost, and improves convergence in some cases (especially in TS optimization).</div>
 </div>
 </div>
 <div class="topic">
@@ -596,10 +600,13 @@ The internal coordinates complemented by two explicit bonds between the carbon a
 <tr class="row-even"><td>Flowchart method</td>
 <td>A. B. Birkholz and H. B. Schlegel, Theor. Chem. Acc. <strong>135</strong>, 84 (2016).</td>
 </tr>
-<tr class="row-odd"><td>ETF in nonadiabatic coupling</td>
+<tr class="row-odd"><td>The Bofill’s update for TS optimization</td>
+<td>J. M. Bofill, J. Comput. Chem. <strong>15</strong>, 1 (1994).</td>
+</tr>
+<tr class="row-even"><td>ETF in nonadiabatic coupling</td>
 <td>S. Fatehi and J. E. Subotnik, J. Phys. Chem. Lett. <strong>3</strong>, 2039 (2012).</td>
 </tr>
-<tr class="row-even"><td>Thiel’s conical intersection parameters</td>
+<tr class="row-odd"><td>Thiel’s conical intersection parameters</td>
 <td>T. W. Keal, A. Koslowski, and W. Thiel, Theor. Chem. Acc. <strong>118</strong>, 837 (2007).</td>
 </tr>
 </tbody>

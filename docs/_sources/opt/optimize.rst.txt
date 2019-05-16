@@ -7,10 +7,11 @@ Molecular geometry optimization
 Description
 ===========
 Three types of the geometry can be optimized: the most stable (minimum energy) geometry, conical intersections between the electronic states, and
-the transition state geometry (or the saddle point on the potential energy surface).
+the transition state (TS) geometry (or the saddle point on the potential energy surface).
 
 In the optimizations, rather than using the exact Hessian, one can
 start using the approximate Hessian and update it according to the step taken.
+In the transition state search, the exact Hessian usually improves the convergence.
 The advanced quasi-newton optimization methods, eigenvector following (EF) algorithm and rational functional optimization (RFO) are implemented.
 In the minimum energy conical intersection (MECI) optimization, the
 molecular gradient is replaced by the sum of the energy difference gradient and the upper state gradient after projecting the
@@ -117,7 +118,7 @@ Optional Keywords (Universal)
 
    | **Description:** Maximum step. The unit is in the specifed coordinate.
    | **Datatype:** double precision.
-   | **Default:** 0.3 (energy optimization); 0.1 (otherwise).
+   | **Default:** 0.3 (energy or TS optimization); 0.1 (CI optimization).
 
 .. topic:: ``internal``
 
@@ -190,7 +191,9 @@ Optional Keywords (Universal)
    |    ``bfgs``: use BFGS scheme.
    |    ``psb``: use PSB scheme.
    |    ``sr1``: use SR1 scheme.
-   | **Default:** flowchart.
+   |    ``bofill``: use the Bofill's scheme for combining PSB and SR1.
+   |    ``noupdate``: does not update Hessian at all.
+   | **Default:** flowchart for energy and conical intersection optimization; bofill for transition state optimization.
 
 .. topic:: ``hess_approx``
 
@@ -200,6 +203,12 @@ Optional Keywords (Universal)
    |    ``true``: use approximate Hessian.
    |    ``false``: calculate numerical Hessian first, and start the optimization using the Hessian.
    | **Default:** true.
+   | **Recommendation:** Using false substantially increases computational cost, and improves convergence in some cases (especially in TS optimization).
+
+.. topic:: ``hess_recalc_freq``
+   | **Description:** When hess_approx is false, recalculate the exact Hessian every hess_recalc_freq steps.
+   | **Datatype:** int
+   | **Default:** 5 (steps).
 
 .. topic:: ``adaptive``
 
@@ -463,6 +472,8 @@ References
 | Gradient projection algorithm                 | M\. J. Bearpark, M. A. Robb, and H. B. Schlegel, Chem. Phys. Lett. **223**, 269 (1994).  |
 +-----------------------------------------------+------------------------------------------------------------------------------------------+
 | Flowchart method                              | A\. B. Birkholz and H. B. Schlegel, Theor. Chem. Acc. **135**, 84 (2016).                |
++-----------------------------------------------+------------------------------------------------------------------------------------------+
+| The Bofill's update for TS optimization       | J\. M. Bofill, J. Comput. Chem. **15**, 1 (1994).                                        |
 +-----------------------------------------------+------------------------------------------------------------------------------------------+
 | ETF in nonadiabatic coupling                  | S\. Fatehi and J. E. Subotnik, J. Phys. Chem. Lett. **3**, 2039 (2012).                  |
 +-----------------------------------------------+------------------------------------------------------------------------------------------+
