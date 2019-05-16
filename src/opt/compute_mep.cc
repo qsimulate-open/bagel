@@ -78,6 +78,7 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
 
       if (optinfo()->mep_direction() == 0) {
         copy_n(grad_->data(), size_, mep_start->data());
+        mep_start->scale(-1.0);
       }
     }
   }
@@ -92,6 +93,18 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
   auto displ = make_shared<XYZFile>(current_->natom());
 
   for (int iter = 1; iter != optinfo()->maxiter(); ++iter) {
+    if (optinfo()->internal()) {
+      if (optinfo()->redundant()) {
+        grad_ = grad_->transform(bmat_red_[1], true);
+        prev_xyz_internal_.push_back(make_shared<GradFile>(*(current_->xyz()->transform(bmat_red_[0], true))));
+      } else {
+        grad_ = grad_->transform(bmat_[1], true);
+        prev_xyz_internal_.push_back(make_shared<GradFile>(*(current_->xyz()->transform(bmat_[0], true))));
+      }
+    } else {
+      prev_xyz_internal_.push_back(make_shared<XYZFile>(*(current_->xyz())));
+    }
+    prev_grad_internal_.push_back(make_shared<GradFile>(*grad_));
 
     prev_en_.push_back(en_);
     prev_xyz_.push_back(current_->xyz());
@@ -129,13 +142,21 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
         bmat_ = current_->compute_internal_coordinate(bmat_[0], optinfo()->bonds(), false, false);
     }
 
+    if (iter > 1) {
+      // Hessian updater
+      auto y  = make_shared<GradFile>(*(prev_grad_internal_[iter-1]) - *(prev_grad_internal_[iter-2]));
+      auto s  = make_shared<GradFile>((*prev_xyz_internal_[iter-1] - *prev_xyz_internal_[iter-2]));
+      auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
+      auto dhess = hessian_update_bofill(y, s, hs);
+      *hess_ += *dhess;
+    }
+
     // microiteration with quasi-Newton search
     // initial guess: p_{k+1} = x_{k+1}^{\prime} - x_k
     auto pd = make_shared<XYZFile>(current_->natom());
     pd = displ_;
     bool flag = false;
     for (int miciter = 1; miciter != optinfo()->maxiter(); ++miciter) {
-      prev_grad_internal_ = make_shared<GradFile>(*grad_);
 
       // move geometry
       auto dx = make_shared<XYZFile>(current_->natom());
@@ -173,15 +194,6 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
           else
             grad_ = grad_->transform(bmat_[1], true);
         }
-      }
-
-      {
-        // Hessian updater
-        const double sfactor = (miciter == 1) ? 2.0 : 1.0;
-        auto y  = make_shared<GradFile>(*grad_ - *prev_grad_internal_);
-        auto s  = make_shared<GradFile>(*displ_ * sfactor);
-        auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
-        hess_ = hessian_update_bfgs(y, s, hs);
       }
 
       {
@@ -239,8 +251,9 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
 
       auto tangent_vec = make_shared<GradFile>(*grad_ - *pd * (pd->dot_product(*grad_) / (pd->norm() * pd->norm())));
       cout << "  * MEP microiteration " << miciter << " residual = " << setprecision(10) << tangent_vec->norm() << "  " << dx->norm() << endl;
-      if (tangent_vec->norm() < 1.0e-6 && dx->norm() < 1.0e-6)
+      if (tangent_vec->norm() < 1.0e-5 && dx->norm() < 1.0e-5)
         break;
+
     }
     muffle_->unmute();
 

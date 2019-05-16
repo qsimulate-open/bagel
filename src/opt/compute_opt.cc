@@ -28,6 +28,7 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
+#include <src/grad/hess.h>
 #include <src/grad/gradeval.h>
 #include <src/util/timer.h>
 #include <src/util/io/moldenout.h>
@@ -43,20 +44,21 @@ void Opt::compute_optimize() {
   muffle_ = make_shared<Muffle>("opt.log");
   muffle_->unmute();
 
-  for (int iter = 1; iter != optinfo()->maxiter(); ++iter) {
+  for (iter_ = 1; iter_ != optinfo()->maxiter(); ++iter_) {
+    const bool hess_recalc = (iter_ % optinfo()->hess_recalc_freq() == 1 && iter_ != 1 && optinfo()->hess_approx() == false && optinfo()->opttype()->is_transition());
     shared_ptr<const XYZFile> xyz = current_->xyz();
     prev_xyz_.push_back(xyz);
 
     displ = displ_;
 
-    if (optinfo()->internal() && iter != 1) {
+    if (optinfo()->internal() && iter_ != 1) {
       if (optinfo()->redundant())
         displ = displ->transform(bmat_red_[1], false);
       else
         displ = iterate_displ();
     }
 
-    if (iter != 1) {
+    if (iter_ != 1) {
       prev_displ_.push_back(displ);
       current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>());
       current_->print_atoms();
@@ -88,17 +90,33 @@ void Opt::compute_optimize() {
       maxgrad = cgrad->maximum(current_->natom());
 
       if (optinfo()->internal()) {
-        if (optinfo()->redundant())
+        if (optinfo()->redundant()) {
           grad_ = grad_->transform(bmat_red_[1], true);
-        else
+          prev_xyz_internal_.push_back(make_shared<GradFile>(*(current_->xyz()->transform(bmat_red_[0], true))));
+        } else {
           grad_ = grad_->transform(bmat_[1], true);
+          prev_xyz_internal_.push_back(make_shared<GradFile>(*(current_->xyz()->transform(bmat_[0], true))));
+        }
+      } else {
+        prev_xyz_internal_.push_back(make_shared<XYZFile>(*xyz));
       }
+      prev_grad_internal_.push_back(make_shared<GradFile>(*grad_));
 
       // Update Hessian with Flowchart method
-      if (iter != 1)
+      if (hess_recalc) {
+        auto hess = make_shared<Hess>(idata_, current_, prev_ref_);
+        hess->compute();
+        if (optinfo()->internal()) {
+          if (optinfo()->redundant())
+            hess_ = make_shared<Matrix>(*bmat_red_[1] % *(hess->hess()) * *bmat_red_[1]);
+          else
+            hess_ = make_shared<Matrix>(*bmat_[1] % *(hess->hess()) * *bmat_[1]);
+        } else {
+          hess_ = hess->hess()->copy();
+        }
+      } else if (iter_ != 1 && !(optinfo()->hess_approx() == false && optinfo()->opttype()->is_transition() && iter_ % optinfo()->hess_recalc_freq() == 2)) {
         hess_ = hessian_update();
-
-      prev_grad_internal_ = make_shared<GradFile>(*grad_);
+      }
 
       MoldenOut mfs("opt.molden");
       mfs << current_;
@@ -117,7 +135,7 @@ void Opt::compute_optimize() {
     }
 
     if (optinfo()->adaptive())
-      maxstep_ = do_adaptive(iter);
+      maxstep_ = do_adaptive(iter_);
 
     const double maxdispl = displ->maximum(current_->natom());
     const double echange = en_ - (prev_en_.empty() ? 0.0 : prev_en_.back());
@@ -134,11 +152,11 @@ void Opt::compute_optimize() {
 
     muffle_->unmute();
 
-    if (iter == 1)
+    if (iter_ == 1)
       print_header();
 
     prev_en_.push_back(en_);
-    print_iteration(iter, rms, param, timer_.tick());
+    print_iteration(iter_, rms, param, timer_.tick());
 
     muffle_->mute();
 

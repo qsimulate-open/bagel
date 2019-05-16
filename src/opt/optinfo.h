@@ -33,7 +33,7 @@ namespace bagel {
 
 enum OptTargetType { energy, meci, mdci, transition, mep };
 enum OptAlgorithmType { ef, rfo, nr };
-enum HessUpdateType { flowchart, bfgs, psb, sr1 };
+enum HessUpdateType { flowchart, bfgs, psb, sr1, bofill, noupdate };
 
 
 class HessUpdate {
@@ -51,8 +51,12 @@ class HessUpdate {
         type_ = HessUpdateType::psb;
       } else if (input_hess_update == "sr1") {
         type_ = HessUpdateType::sr1;
+      } else if (input_hess_update == "bofill") {
+        type_ = HessUpdateType::bofill;
+      } else if (input_hess_update == "noupdate") {
+        type_ = HessUpdateType::noupdate;
       } else {
-        throw std::logic_error ("Available hess_update: \"flowchart\", \"bfgs\", \"psb\" or \"sr1\".");
+        throw std::logic_error ("Available hess_update: \"flowchart\", \"bfgs\", \"psb\", \"sr1\", \"bofill\", \"noupdate\".");
       }
     }
 
@@ -60,6 +64,8 @@ class HessUpdate {
     bool is_bfgs() const { return type_ == HessUpdateType::bfgs; }
     bool is_psb() const { return type_ == HessUpdateType::psb; }
     bool is_sr1() const { return type_ == HessUpdateType::sr1; }
+    bool is_bofill() const { return type_ == HessUpdateType::bofill; }
+    bool is_noupdate() const { return type_ == HessUpdateType::noupdate; }
 };
 
 
@@ -69,7 +75,8 @@ class OptAlgorithms {
 
   public:
     OptAlgorithms() : type_(OptAlgorithmType::ef) { }
-    OptAlgorithms(std::string input_algorithm) {
+    OptAlgorithms(std::shared_ptr<const PTree> idat) {
+      const std::string input_algorithm = to_lower(idat->get<std::string>("algorithm", "ef"));
       if (input_algorithm == "ef") {
         type_ = OptAlgorithmType::ef;
       } else if (input_algorithm == "rfo") {
@@ -148,6 +155,7 @@ class OptInfo : public GradInfo {
     bool hess_approx_;
     double thielc3_;
     double thielc4_;
+    int hess_recalc_freq_;
 
     int mep_direction_;
 
@@ -159,8 +167,8 @@ class OptInfo : public GradInfo {
   public:
     OptInfo(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom) : GradInfo(idat, /*opt=*/true) {
       opttype_ = std::make_shared<OptType>(to_lower(idat->get<std::string>("opttype", "energy")));
-      algorithm_ = std::make_shared<OptAlgorithms>(to_lower(idat->get<std::string>("algorithm", "ef")));
-      hessupdate_ = std::make_shared<HessUpdate>(to_lower(idat->get<std::string>("hess_update", "flowchart")));
+      algorithm_ = std::make_shared<OptAlgorithms>(idat);
+      hessupdate_ = std::make_shared<HessUpdate>(to_lower(idat->get<std::string>("hess_update", opttype_->is_transition() ? "bofill" : "flowchart")));
 
       internal_ = idat->get<bool>("internal", true);
       redundant_ = idat->get<bool>("redundant", false);
@@ -168,6 +176,7 @@ class OptInfo : public GradInfo {
       scratch_ = idat->get<bool>("scratch", false);
       numerical_ = idat->get<bool>("numerical", false);
       hess_approx_ = idat->get<bool>("hess_approx", opttype_->is_mep() ? false : true);
+      hess_recalc_freq_ = idat->get<int>("hess_recalc_freq", 5);
 
       explicit_bond_ = idat->get<bool>("explicitbond", false);
       if (explicit_bond_) {
@@ -249,6 +258,7 @@ class OptInfo : public GradInfo {
     bool hess_approx() const { return hess_approx_; }
     double thielc3() const { return thielc3_; }
     double thielc4() const { return thielc4_; }
+    int hess_recalc_freq() const { return hess_recalc_freq_; }
 
     int mep_direction() const { return mep_direction_; }
 

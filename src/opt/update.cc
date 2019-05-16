@@ -39,11 +39,11 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<Matrix> Opt::hessian_update() const {
-  auto y  = make_shared<GradFile>(*grad_ - *prev_grad_internal_);
+  auto y  = make_shared<GradFile>(*grad_ - *(prev_grad_internal_[iter_-2]));
   auto s  = make_shared<GradFile>(*displ_);
   auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
   auto z  = make_shared<GradFile>(*y - *hs);
-  shared_ptr<Matrix> hess;
+  shared_ptr<Matrix> dhess;
 
   if (optinfo()->hessupdate()->is_flowchart()) {
 
@@ -53,36 +53,53 @@ shared_ptr<Matrix> Opt::hessian_update() const {
     const double ys = y->dot_product(s);
 
     if ((zs / nzs) < -0.1) {
-      hess = hessian_update_sr1(y, s, z);
+      cout << "  * Updating Hessian using SR1 " << endl;
+      dhess = hessian_update_sr1(y, s, z);
     } else if ((ys / nys) > 0.1) {
-      hess = hessian_update_bfgs(y, s, hs);
+      cout << "  * Updating Hessian using BFGS " << endl;
+      dhess = hessian_update_bfgs(y, s, hs);
     } else {
-      hess = hessian_update_psb(y, s, z);
+      cout << "  * Updating Hessian using PSB " << endl;
+      dhess = hessian_update_psb(y, s, z);
     }
 
   } else if (optinfo()->hessupdate()->is_bfgs()) {
 
-    hess = hessian_update_bfgs(y, s, hs);
+    cout << "  * Updating Hessian using BFGS " << endl;
+    dhess = hessian_update_bfgs(y, s, hs);
 
   } else if (optinfo()->hessupdate()->is_psb()) {
 
-    hess = hessian_update_psb(y, s, z);
+    cout << "  * Updating Hessian using PSB " << endl;
+    dhess = hessian_update_psb(y, s, z);
 
   } else if (optinfo()->hessupdate()->is_sr1()) {
 
-    hess = hessian_update_sr1(y, s, z);
+    cout << "  * Updating Hessian using SR1 " << endl;
+    dhess = hessian_update_sr1(y, s, z);
+
+  } else if (optinfo()->hessupdate()->is_bofill()) {
+
+    cout << "  * Updating Hessian using Bofill's algorithm for combining SR1 and PSB" << endl;
+    dhess = hessian_update_bofill(y, s, z);
+
+  } else if (optinfo()->hessupdate()->is_noupdate()) {
+
+    cout << "  * Does not update Hessian" << endl;
+    dhess = hess_->clone();
 
   } else {
 
-    throw runtime_error ("available Hessian update schemes are: \"flowchart\", \"bfgs\", \"psb\" and \"sr1\"");
+    throw runtime_error ("available Hessian update schemes are: \"flowchart\", \"bfgs\", \"psb\", \"sr1\", and \"bofill\"");
   }
 
-  return hess;
+  *dhess += *hess_;
+
+  return dhess;
 }
 
 
 shared_ptr<Matrix> Opt::hessian_update_sr1(shared_ptr<const GradFile> y, shared_ptr<const GradFile> s, shared_ptr<const GradFile> z) const {
-  cout << "  * Updating Hessian using SR1 " << endl;
   // Hessian update with SR1
 
   double  zs = z->dot_product(s);
@@ -92,14 +109,13 @@ shared_ptr<Matrix> Opt::hessian_update_sr1(shared_ptr<const GradFile> y, shared_
   auto zzt = make_shared<Matrix>(size_, size_);
   dger_(size_, size_, zs, z->data(), 1, z->data(), 1, zzt->data(), size_);
 
-  auto hess = make_shared<Matrix>(*hess_ + *zzt);
+  auto hess = make_shared<Matrix>(*zzt);
 
   return hess;
 }
 
 
 shared_ptr<Matrix> Opt::hessian_update_bfgs(shared_ptr<const GradFile> y, shared_ptr<const GradFile> s, shared_ptr<const GradFile> hs) const {
-  cout << "  * Updating Hessian using BFGS " << endl;
   // Hessian update with BFGS
   double shs = hs->dot_product(s);
   double  ys = y->dot_product(s);
@@ -115,14 +131,13 @@ shared_ptr<Matrix> Opt::hessian_update_bfgs(shared_ptr<const GradFile> y, shared
 
   auto bsst = make_shared<Matrix>(*hess_ * *sst * *hess_);
 
-  auto hess = make_shared<Matrix>(*hess_ + *bsst + *yyt);
+  auto hess = make_shared<Matrix>(*bsst + *yyt);
 
   return hess;
 }
 
 
 shared_ptr<Matrix> Opt::hessian_update_psb(shared_ptr<const GradFile> y, shared_ptr<const GradFile> s, shared_ptr<const GradFile> z) const {
-  cout << "  * Updating Hessian using PSB " << endl;
   // Hessian update with PSB
   double ss = s->dot_product(s);
   double ss2 = ss * ss;
@@ -138,7 +153,26 @@ shared_ptr<Matrix> Opt::hessian_update_psb(shared_ptr<const GradFile> y, shared_
   dger_(size_, size_, ss, z->data(), 1, s->data(), 1, zst->data(), size_);
   dger_(size_, size_, ss2, s->data(), 1, s->data(), 1, sst->data(), size_);
 
-  auto hess = make_shared<Matrix>(*hess_ + *szt + *zst + *sst);
+  auto hess = make_shared<Matrix>(*szt + *zst + *sst);
+
+  return hess;
+}
+
+
+shared_ptr<Matrix> Opt::hessian_update_bofill(shared_ptr<const GradFile> y, shared_ptr<const GradFile> s, shared_ptr<const GradFile> z) const {
+  // Hessian update with bofill
+  double ss = s->dot_product(s);
+  double sz = s->dot_product(z);
+  double zz = z->dot_product(z);
+
+  double phi = sz * sz / (zz * ss);
+
+  auto hess_psb = hessian_update_psb(y, s, z);
+  auto hess_sr1 = hessian_update_sr1(y, s, z);
+  hess_sr1->scale(phi);
+  hess_psb->scale(1.0 - phi);
+
+  auto hess = make_shared<Matrix>(*hess_psb + *hess_sr1);
 
   return hess;
 }
@@ -154,7 +188,7 @@ tuple<double,double,shared_ptr<XYZFile>> Opt::get_step() const {
     tie(predictedchange, predictedchange_prev, displ) = get_step_rfo();
   } else if (optinfo()->algorithm()->is_ef()) {
     if (optinfo()->opttype()->is_transition())
-      displ = get_step_ef_pn();
+      displ = get_step_ef_pn(0);
     else
       displ = get_step_ef();
   }
@@ -230,15 +264,19 @@ shared_ptr<XYZFile> Opt::get_step_ef() const {
 }
 
 
-shared_ptr<XYZFile> Opt::get_step_ef_pn() const {
+shared_ptr<XYZFile> Opt::get_step_ef_pn(const int mode) const {
   // Eigenvector following by Baker
   auto displ = make_shared<XYZFile>(dispsize_);
   auto hess = make_shared<Matrix>(*hess_);
 
   // diagonalize Hessian
-  // Note: size_ will be 3N - 6 (transition state search), 3N - 6 + constraints_.size() (constrained optimization)
   VectorB eigv(size_);
   hess->diagonalize(eigv);
+
+  cout << " Hessian Eigenvalues = " << endl;
+  for (int i = 0; i != size_; ++i) {
+    cout << setprecision(10) << eigv[i] << endl;
+  }
 
   // partition lambda
   double lambda_p = 100.0;
@@ -249,37 +287,30 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() const {
   VectorB f1(size_p);
   VectorB f2(size_n);
 
-  for (int i = 0; i != size_p; ++i) {
-    copy_n(hess->element_ptr(0, i), size_, displ->data());
-    f1[i] = -displ->dot_product(grad_);
-  }
-  for (int j = 0; j != size_n; ++j) {
-    copy_n(hess->element_ptr(0, j+size_p), size_, displ->data());
-    f2[j] = -displ->dot_product(grad_);
-  }
+  copy_n(hess->element_ptr(0, mode), size_, displ->data());
+  f1[0] = displ->dot_product(grad_);
 
-  for (int i = 0; i != size_p; ++i) eigv[i] *= -1.0;
-
-  for (int iiter = 0; iiter != 100; ++iiter) {
-    const double lambda_p_prev = lambda_p;
-    double lambda_p_n = 0.0;
-    for (int i = 0; i != size_p; ++i)
-      lambda_p_n += -(f1[i] * f1[i]) / (eigv[i] - lambda_p);
-    lambda_p = lambda_p_n;
-
-    const double error = fabs(lambda_p_prev - lambda_p);
-    if (error < 1.0e-8)
-      break;
+  for (int j = 0, k = 0; j != size_; ++j) {
+    if (j == mode) continue;
+    copy_n(hess->element_ptr(0, j), size_, displ->data());
+    f2[k] = displ->dot_product(grad_);
+    ++k;
   }
 
-  for (int iiter = 0; iiter != 100; ++iiter) {
-    const double lambda_n_prev = lambda_n;
+  lambda_p = 0.5 * (eigv[mode] + sqrt(eigv[mode] * eigv[mode] + 4.0 * f1[0] * f1[0]));
+
+  for (int iiter = 0; iiter != 500; ++iiter) {
+    const double lambda_prev = lambda_n;
     double lambda_n_n = 0.0;
-    for (int j = 0; j != size_n; ++j)
-      lambda_n_n += -(f2[j] * f2[j]) / (eigv[j+size_p] - lambda_n);
+    for (int i = 0, k = 0; i != size_; ++i) {
+      if (i == mode) continue;
+      lambda_n_n += -(f2[k] * f2[k]) / (eigv[i] - lambda_n);
+      ++k;
+    }
     lambda_n = lambda_n_n;
 
-    const double error = fabs(lambda_n_prev - lambda_n);
+    const double error = fabs(lambda_prev - lambda_n);
+    cout << " error = " << setprecision(10) << error << setw(20) << lambda_n << endl;
     if (error < 1.0e-8)
       break;
   }
@@ -287,19 +318,21 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() const {
   displ->zero();
 
   for (int i = 0; i != size_p; ++i) {
-    auto dispb = make_shared<XYZFile>(size_);
-    const double fb = f1[i] / (eigv[i] - lambda_p);
-    copy_n(hess->element_ptr(0, i), size_, dispb->data());
+    auto dispb = make_shared<XYZFile>(dispsize_);
+    const double fb = -f1[i] / (eigv[mode] - lambda_p);
+    copy_n(hess->element_ptr(0, mode), size_, dispb->data());
     dispb->scale(fb);
     *displ += *dispb;
   }
 
-  for (int j = 0; j != size_n; ++j) {
-    auto dispb = make_shared<XYZFile>(size_);
-    const double fb = f2[j] / (eigv[j+size_p] - lambda_n);
-    copy_n(hess->element_ptr(0, j+size_p), size_, dispb->data());
+  for (int j = 0, k = 0; j != size_; ++j) {
+    if (j == mode) continue;
+    auto dispb = make_shared<XYZFile>(dispsize_);
+    const double fb = -f2[k] / (eigv[j] - lambda_n);
+    copy_n(hess->element_ptr(0, j), size_, dispb->data());
     dispb->scale(fb);
     *displ += *dispb;
+    ++k;
   }
 
   if (displ->norm() > maxstep_)
@@ -312,7 +345,6 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() const {
 tuple<double,double,shared_ptr<XYZFile>> Opt::get_step_rfo() const {
   // Rational function optimization (aka augmented Hessian)
   // Here we do scale lambda to get step < steplength
-
   auto displ = make_shared<XYZFile>(dispsize_);
   {
     auto aughes = make_shared<Matrix>(size_ + 1,size_ + 1);
