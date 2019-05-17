@@ -158,7 +158,7 @@ class Molecule {
         bool negative_hessian = false,
         bool verbose = true) const;
     // driver for compute B matrix for redundant coordinate (original Wilson B)
-    std::array<std::shared_ptr<const Matrix>,4> compute_redundant_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
+    std::tuple<std::vector<std::vector<int>>,std::array<std::shared_ptr<const Matrix>,5>> compute_redundant_coordinate(std::vector<std::vector<int>> prev) const;
 
     // Split up the atoms into several Molecule objects
     // To limit the memory requirement of integral evaluation

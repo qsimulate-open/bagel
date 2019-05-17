@@ -192,7 +192,6 @@ tuple<double,double,shared_ptr<XYZFile>> Opt::get_step() const {
     else
       displ = get_step_ef();
   }
-
   return tie(predictedchange, predictedchange_prev, displ);
 }
 
@@ -391,33 +390,61 @@ shared_ptr<XYZFile> Opt::iterate_displ() const {
   auto displ = make_shared<XYZFile>(*displ_);
   auto dqc = make_shared<XYZFile>(*displ_);
   bool flag = false;
-  shared_ptr<const XYZFile> qc = current_->xyz();
-  qc = qc->transform(bmat_[0], true);
+  shared_ptr<XYZFile> qc = displ->clone();
+  if (optinfo()->redundant()) {
+    copy_n(bmat_red_[2]->data(), size_, qc->data());
+  } else {
+    copy_n(current_->xyz()->data(), current_->natom()*3, qc->data());
+    qc = qc->transform(bmat_[0], true);
+  }
   cout << endl << "  === Displacement transformation iteration === " << endl << endl;
   Timer timer;
 
   array<shared_ptr<const Matrix>,3> bmat = bmat_;
+  array<shared_ptr<const Matrix>,5> bmat_red = bmat_red_;
   for (int i = 0; i != optinfo()->maxiter(); ++i) {
-    displ = displ->transform(bmat[1], false);
+    if (optinfo()->redundant()) {
+      displ = displ->transform(bmat_red[1], false);
+    } else {
+      displ = displ->transform(bmat[1], false);
+    }
     currentv = make_shared<Molecule>(*currentv, displ, true);
-    bmat = currentv->compute_internal_coordinate(bmat[0], optinfo()->bonds(), optinfo()->opttype()->is_transition(), /*verbose=*/false);
-    shared_ptr<const XYZFile> qcurrent = currentv->xyz();
-    qcurrent = qcurrent->transform(bmat[0], true);
-    auto qdiff = make_shared<XYZFile>(currentv->natom());
-    *qdiff = *qcurrent - *qc;
-    *displ = *dqc - *qdiff;
-    if (displ->norm() > 0.1 || i == (optinfo()->maxiter() - 1)) {
+    if (optinfo()->redundant()) {
+      vector<vector<int>> bondlist;
+      tie(bondlist, bmat_red) = currentv->compute_redundant_coordinate(bondlist_);
+    } else {
+      bmat = currentv->compute_internal_coordinate(bmat[0], optinfo()->bonds(), optinfo()->opttype()->is_transition(), /*verbose=*/false);
+    }
+    auto qcurrent = make_shared<XYZFile>(dispsize_);
+    if (optinfo()->redundant()) {
+      copy_n(bmat_red[2]->data(), size_, qcurrent->data());
+      for (int i = 0; i != size_; ++i) {
+        const double thresh = pi__ - 0.1;
+        if (qcurrent->element(i%3, i/3) > thresh && qc->element(i%3, i/3) < -thresh)      qcurrent->element(i%3, i/3) -= 2.0 * pi__;
+        else if (qcurrent->element(i%3, i/3) < -thresh && qc->element(i%3, i/3) > thresh) qcurrent->element(i%3, i/3) += 2.0 * pi__;
+      }
+    } else {
+      copy_n(currentv->xyz()->data(), currentv->natom()*3, qcurrent->data());
+      qcurrent = qcurrent->transform(bmat[0], true);
+    }
+    auto qdiff = make_shared<XYZFile>(*qcurrent - *qc);
+    displ = make_shared<XYZFile>(*dqc - *qdiff);
+    if ((displ->norm() / size_ > 0.1 || i == (optinfo()->maxiter() - 1))) {
       cout << "  * Calculated displacement too large, switching to first-order" << endl;
       flag = true;
       break;
     }
-    cout << setw(7) << i << setprecision(10) << setw(15) << displ->norm() << setw(10) << setprecision(2) << timer.tick() << endl;
-    if (displ->norm() < 1.0e-8)
+    cout << setw(7) << i << setprecision(10) << setw(15) << displ->norm() / (currentv->natom()*3) << setw(10) << setprecision(2) << timer.tick() << endl;
+    if (displ->norm() < 1.0e-7)
       break;
   }
 
   if (flag) {
-    displ = displ_->transform(bmat[1], false);
+    if (optinfo()->redundant()) {
+      displ = displ_->transform(bmat_red[1], false);
+    } else {
+      displ = displ_->transform(bmat[1], false);
+    }
   } else {
     *displ = *(currentv->xyz()) - *(current_->xyz());
   }

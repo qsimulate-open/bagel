@@ -52,10 +52,11 @@ void Opt::compute_optimize() {
     displ = displ_;
 
     if (optinfo()->internal() && iter_ != 1) {
-      if (optinfo()->redundant())
+      if (optinfo()->redundant()) {
         displ = displ->transform(bmat_red_[1], false);
-      else
+      } else {
         displ = iterate_displ();
+      }
     }
 
     if (iter_ != 1) {
@@ -66,7 +67,7 @@ void Opt::compute_optimize() {
 
     if (optinfo()->internal()) {
       if (optinfo()->redundant())
-        bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
+        tie(bondlist_, bmat_red_) = current_->compute_redundant_coordinate(bondlist_);
       else
         bmat_ = current_->compute_internal_coordinate(bmat_[0], optinfo()->bonds(), optinfo()->opttype()->is_transition(), false);
     }
@@ -102,6 +103,7 @@ void Opt::compute_optimize() {
       }
       prev_grad_internal_.push_back(make_shared<GradFile>(*grad_));
 
+
       // Update Hessian with Flowchart method
       if (hess_recalc) {
         auto hess = make_shared<Hess>(idata_, current_, prev_ref_);
@@ -122,6 +124,7 @@ void Opt::compute_optimize() {
       mfs << current_;
 
       tie(predictedchange_, predictedchange_prev_, displ_) = get_step();
+
     }
 
     displ = displ_;

@@ -610,11 +610,10 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
   return array<shared_ptr<const Matrix>,3>{{bnew, bdmnew, hessout}};
 }
 
-array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_ptr<const Matrix> prev) const {
-  // Using original B by E B Wilson (Chapter 4)
-  cout << "    o Connectivitiy analysis" << endl;
-
+tuple<vector<vector<int>>,array<shared_ptr<const Matrix>,5>> Molecule::compute_redundant_coordinate(vector<vector<int>> prev_bond) const {
   vector<vector<double>> out;
+
+  vector<vector<int>> bondlist;
   vector<double> val;
   const size_t size = natom()*3;
 
@@ -625,56 +624,202 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
     nodes.push_back(make_shared<Node>(*i, n));
   }
 
-  // first pick up bonds
-  for (auto i = nodes.begin(); i != nodes.end(); ++i) {
-    const double radiusi = (*i)->atom()->cov_radius();
-    auto j = i;
-    for (++j ; j != nodes.end(); ++j) {
-      const double radiusj = (*j)->atom()->cov_radius();
+  vector<double> hessprim;
+  hessprim.reserve(natom()*3 * 10);
 
-      if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
-        (*i)->add_connected(*j);
-        (*j)->add_connected(*i);
+  if (prev_bond.size() == 0) {
+    // first pick up bonds. this is done only once
+    cout << "    o Connectivitiy analysis" << endl;
+    for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+      const double radiusi = (*i)->atom()->cov_radius();
+      auto j = i;
+      for (++j ; j != nodes.end(); ++j) {
+        const double radiusj = (*j)->atom()->cov_radius();
 
-        cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
-                                    setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
+        if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
+          (*i)->add_connected(*j);
+          (*j)->add_connected(*i);
+          cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
+                                      setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
 
-        Quatern<double> ip = (*i)->atom()->position();
-        Quatern<double> jp = (*j)->atom()->position();
+          Quatern<double> ip = (*i)->atom()->position();
+          Quatern<double> jp = (*j)->atom()->position();
+          jp -= ip;  // jp is a vector from i to j
+          jp.normalize();
+          vector<double> current(size);
+          current[3*(*i)->num()+0] =  jp[1];
+          current[3*(*i)->num()+1] =  jp[2];
+          current[3*(*i)->num()+2] =  jp[3];
+          current[3*(*j)->num()+0] = -jp[1];
+          current[3*(*j)->num()+1] = -jp[2];
+          current[3*(*j)->num()+2] = -jp[3];
+
+          out.push_back(current);
+          hessprim.push_back(0.50);
+
+          const double length = (*i)->atom()->distance((*j)->atom()) * -1.0;
+          val.push_back(length);
+
+          vector<int> bondij(3);
+          bondij[0] = 0;
+          bondij[1] = (*i)->num();
+          bondij[2] = (*j)->num();
+          bondlist.push_back(bondij);
+        }
+      }
+    }
+
+    if (!molecule_details::is_one_molecule(nodes))
+      throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule -- consider using \"explicitbond\".");
+
+    // then bond angles A-O-B (A<B)
+    for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+      auto j = i;
+      for (++j; j != nodes.end(); ++j) {
+        std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
+        for (auto c = center.begin(); c != center.end(); ++c) {
+          const double theta = (*c)->atom()->angle((*i)->atom(), (*j)->atom());
+          Quatern<double> op = (*c)->atom()->position();
+          Quatern<double> ap = (*i)->atom()->position();
+          Quatern<double> bp = (*j)->atom()->position();
+          Quatern<double> e21 = ap - op;
+          Quatern<double> e23 = bp - op;
+          const double r21 = e21.norm();
+          const double r23 = e23.norm();
+          e21.normalize();
+          e23.normalize();
+          const double rad = theta/rad2deg__;
+          Quatern<double> st1 = (e21 * cos(rad) - e23) / (r21 * sin(rad));
+          Quatern<double> st3 = (e23 * cos(rad) - e21) / (r23 * sin(rad));
+          Quatern<double> st2 = (st1 + st3) * (-1.0);
+          vector<double> current(size);
+
+          for (int ic = 0; ic != 3; ++ic) {
+            current[3*(*i)->num() + ic] = st1[ic+1];
+            current[3*(*j)->num() + ic] = st3[ic+1];
+            current[3*(*c)->num() + ic] = st2[ic+1];
+          }
+          out.push_back(current);
+          hessprim.push_back(0.20);
+
+          val.push_back(rad);
+
+          vector<int> bondij(4);
+          bondij[0] = 1;
+          bondij[1] = (*i)->num();
+          bondij[2] = (*j)->num();
+          bondij[3] = (*c)->num();
+          bondlist.push_back(bondij);
+        }
+      }
+    }
+
+    // then dihedral angle (i-c-j-k)
+    for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+      for (auto j = nodes.begin(); j != nodes.end(); ++j) {
+        if (*i == *j) continue;
+        std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
+        for (auto k = nodes.begin(); k != nodes.end(); ++k) {
+          for (auto c = center.begin(); c != center.end(); ++c) {
+            bool improper;
+            if (((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) {
+              if (*c > *j) continue;
+              if (*c == *k || *k == *i) continue;
+              if (*j == *k) continue;
+              improper = false;
+            } else if (((*k)->connected_with(*c) && (*j)->connected_with(*c) && (*i)->connected_with(*c))) {
+              if (*j == *k || *k == *i) continue;
+              if (!(*i < *j && *j < *k)) continue;
+              improper = true;
+            } else continue;
+            double dihed = (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom())/rad2deg__;
+            Quatern<double> ap = (*i)->atom()->position();
+            Quatern<double> bp = (*c)->atom()->position();
+            Quatern<double> cp = (*j)->atom()->position();
+            Quatern<double> dp = (*k)->atom()->position();
+            Quatern<double> eab = bp - ap;
+            Quatern<double> ebc = cp - bp;
+            Quatern<double> edc = cp - dp;
+            Quatern<double> ecb = bp - cp;
+            const double rab = eab.norm();
+            const double rbc = ebc.norm();
+            const double rcd = edc.norm();
+            eab.normalize();
+            ebc.normalize();
+            edc.normalize();
+            ecb.normalize();
+            Quatern<double> rotabc = (eab*(-1.0)) * ebc; rotabc[0] = 0.0;
+            Quatern<double> rotbcd = (edc*(-1.0)) * ecb; rotbcd[0] = 0.0;
+            const double tabc = atan2(rotabc.norm(), -eab.dot_product(ebc));
+            const double tbcd = atan2(rotbcd.norm(), -edc.dot_product(ecb));
+
+            Quatern<double> sa = (eab * ebc) / (-rab*::pow(::sin(tabc), 2.0));
+            Quatern<double> sd = (edc * ecb) / (-rcd*::pow(::sin(tbcd), 2.0));
+            Quatern<double> sb = (eab * ebc) * ((rbc-rab*::cos(tabc)) / (rab*rbc*::pow(::sin(tabc), 2.0)))
+                               + (edc * ecb) * (::cos(tbcd) / (rbc*::pow(::sin(tbcd), 2.0)));
+            Quatern<double> sc = (eab * ebc) * (::cos(tabc) / (rbc*::pow(::sin(tabc), 2.0)))
+                               + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
+            vector<double> current(size);
+
+            for (int ic = 0; ic != 3; ++ic) {
+              current[3*(*i)->num() + ic] = sa[ic+1];
+              current[3*(*c)->num() + ic] = sb[ic+1];
+              current[3*(*j)->num() + ic] = sc[ic+1];
+              current[3*(*k)->num() + ic] = sd[ic+1];
+              assert(fabs(sa[ic+1]+sb[ic+1]+sc[ic+1]+sd[ic+1]) < 1.0e-8);
+            }
+            out.push_back(current);
+            hessprim.push_back(0.1);
+
+            val.push_back(dihed);
+
+            vector<int> bondij(6);
+            bondij[0] = 2;
+            bondij[1] = (*i)->num();
+            bondij[2] = (*c)->num();
+            bondij[3] = (*j)->num();
+            bondij[4] = (*k)->num();
+            bondij[5] = improper ? 1 : 0;
+            bondlist.push_back(bondij);
+          }
+        }
+      }
+    }
+    cout << "      Redundant internal coordinate generated (dim = " << bondlist.size() << ")" << endl;
+
+  } else {
+
+    // Now I have original connectivity matrix. Never update the bondlist when redundant
+
+    for (int i = 0; i != prev_bond.size(); ++i) {
+      if (prev_bond[i][0] == 0) {
+        const int iatom = prev_bond[i][1];
+        const int jatom = prev_bond[i][2];
+        Quatern<double> ip = atoms_[iatom]->position();
+        Quatern<double> jp = atoms_[jatom]->position();
         jp -= ip;  // jp is a vector from i to j
         jp.normalize();
         vector<double> current(size);
-        current[3*(*i)->num()+0] =  jp[1];
-        current[3*(*i)->num()+1] =  jp[2];
-        current[3*(*i)->num()+2] =  jp[3];
-        current[3*(*j)->num()+0] = -jp[1];
-        current[3*(*j)->num()+1] = -jp[2];
-        current[3*(*j)->num()+2] = -jp[3];
+        current[3*iatom+0] =  jp[1];
+        current[3*iatom+1] =  jp[2];
+        current[3*iatom+2] =  jp[3];
+        current[3*jatom+0] = -jp[1];
+        current[3*jatom+1] = -jp[2];
+        current[3*jatom+2] = -jp[3];
         out.push_back(current);
+        hessprim.push_back(0.50);
 
-        const double length = (*i)->atom()->distance((*j)->atom());
+        const double length = atoms_[iatom]->distance(atoms_[jatom]) * -1.0;
         val.push_back(length);
-      }
-    }
-  }
+      } else if (prev_bond[i][0] == 1) {
+        const int iatom = prev_bond[i][1];
+        const int jatom = prev_bond[i][2];
+        const int catom = prev_bond[i][3];
 
-  if (!molecule_details::is_one_molecule(nodes))
-    throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule -- consider using \"explicitbond\".");
-
-  // then bond angles A-O-B (A<B)
-  for (auto i = nodes.begin(); i != nodes.end(); ++i) {
-    auto j = i;
-    for (++j; j != nodes.end(); ++j) {
-      std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
-      for (auto c = center.begin(); c != center.end(); ++c) {
-        const double theta = (*c)->atom()->angle((*i)->atom(), (*j)->atom());
-#if 0
-        cout << "       angle: " << setw(6) << (*c)->num() << setw(6) << (*i)->num() << setw(6) << (*j)->num() <<
-                "     angle" << setw(10) << setprecision(4) << theta << " deg" << endl;
-#endif
-        Quatern<double> op = (*c)->atom()->position();
-        Quatern<double> ap = (*i)->atom()->position();
-        Quatern<double> bp = (*j)->atom()->position();
+        const double theta = atoms_[catom]->angle(atoms_[iatom], atoms_[jatom]);
+        Quatern<double> op = atoms_[catom]->position();
+        Quatern<double> ap = atoms_[iatom]->position();
+        Quatern<double> bp = atoms_[jatom]->position();
         Quatern<double> e21 = ap - op;
         Quatern<double> e23 = bp - op;
         const double r21 = e21.norm();
@@ -686,84 +831,74 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
         Quatern<double> st3 = (e23 * cos(rad) - e21) / (r23 * sin(rad));
         Quatern<double> st2 = (st1 + st3) * (-1.0);
         vector<double> current(size);
+
         for (int ic = 0; ic != 3; ++ic) {
-          current[3*(*i)->num() + ic] = st1[ic+1];
-          current[3*(*j)->num() + ic] = st3[ic+1];
-          current[3*(*c)->num() + ic] = st2[ic+1];
+          current[3*iatom + ic] = st1[ic+1];
+          current[3*jatom + ic] = st3[ic+1];
+          current[3*catom + ic] = st2[ic+1];
         }
         out.push_back(current);
+        hessprim.push_back(0.20);
 
         val.push_back(rad);
-      }
-    }
-  }
+      } else if (prev_bond[i][0] == 2) {
+        const int iatom = prev_bond[i][1];
+        const int catom = prev_bond[i][2];
+        const int jatom = prev_bond[i][3];
+        const int katom = prev_bond[i][4];
 
-  // then dihedral angle (i-c-j-k)
-  for (auto i = nodes.begin(); i != nodes.end(); ++i) {
-    for (auto j = nodes.begin(); j != nodes.end(); ++j) {
-      if (*i == *j) continue;
-      std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
-      for (auto k = nodes.begin(); k != nodes.end(); ++k) {
-        for (auto c = center.begin(); c != center.end(); ++c) {
-          if (((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) {
-            if (*c > *j) continue;
-            if (*c == *k || *k == *i) continue;
-            if (*j == *k) continue;
-          } else if (((*k)->connected_with(*c) && (*j)->connected_with(*c) && (*i)->connected_with(*c))) {
-            if (*j == *k || *k == *i) continue;
-            if (!(*i < *j && *j < *k)) continue;
-          } else continue;
-#if 0
-          cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
-                  "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;
-#endif
-          const double dihed = (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom())/rad2deg__;
-          Quatern<double> ap = (*i)->atom()->position();
-          Quatern<double> bp = (*c)->atom()->position();
-          Quatern<double> cp = (*j)->atom()->position();
-          Quatern<double> dp = (*k)->atom()->position();
-          Quatern<double> eab = bp - ap;
-          Quatern<double> ebc = cp - bp;
-          Quatern<double> edc = cp - dp;
-          Quatern<double> ecb = bp - cp;
-          const double rab = eab.norm();
-          const double rbc = ebc.norm();
-          const double rcd = edc.norm();
-          eab.normalize();
-          ebc.normalize();
-          edc.normalize();
-          ecb.normalize();
-          Quatern<double> rotabc = (eab*(-1.0)) * ebc; rotabc[0] = 0.0;
-          Quatern<double> rotbcd = (edc*(-1.0)) * ecb; rotbcd[0] = 0.0;
-          const double tabc = atan2(rotabc.norm(), -eab.dot_product(ebc));
-          const double tbcd = atan2(rotbcd.norm(), -edc.dot_product(ecb));
+        double dihed = atoms_[catom]->dihedral_angle(atoms_[iatom], atoms_[jatom], atoms_[katom])/rad2deg__;
+        Quatern<double> ap = atoms_[iatom]->position();
+        Quatern<double> bp = atoms_[catom]->position();
+        Quatern<double> cp = atoms_[jatom]->position();
+        Quatern<double> dp = atoms_[katom]->position();
+        Quatern<double> eab = bp - ap;
+        Quatern<double> ebc = cp - bp;
+        Quatern<double> edc = cp - dp;
+        Quatern<double> ecb = bp - cp;
+        const double rab = eab.norm();
+        const double rbc = ebc.norm();
+        const double rcd = edc.norm();
+        eab.normalize();
+        ebc.normalize();
+        edc.normalize();
+        ecb.normalize();
+        Quatern<double> rotabc = (eab*(-1.0)) * ebc; rotabc[0] = 0.0;
+        Quatern<double> rotbcd = (edc*(-1.0)) * ecb; rotbcd[0] = 0.0;
+        const double tabc = atan2(rotabc.norm(), -eab.dot_product(ebc));
+        const double tbcd = atan2(rotbcd.norm(), -edc.dot_product(ecb));
 
-          Quatern<double> sa = (eab * ebc) / (-rab*::pow(::sin(tabc), 2.0));
-          Quatern<double> sd = (edc * ecb) / (-rcd*::pow(::sin(tbcd), 2.0));
-          Quatern<double> sb = (eab * ebc) * ((rbc-rab*::cos(tabc)) / (rab*rbc*::pow(::sin(tabc), 2.0)))
-                             + (edc * ecb) * (::cos(tbcd) / (rbc*::pow(::sin(tbcd), 2.0)));
-          Quatern<double> sc = (eab * ebc) * (::cos(tabc) / (rbc*::pow(::sin(tabc), 2.0)))
-                             + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
-          vector<double> current(size);
-          for (int ic = 0; ic != 3; ++ic) {
-            current[3*(*i)->num() + ic] = sa[ic+1];
-            current[3*(*c)->num() + ic] = sb[ic+1];
-            current[3*(*j)->num() + ic] = sc[ic+1];
-            current[3*(*k)->num() + ic] = sd[ic+1];
-            assert(fabs(sa[ic+1]+sb[ic+1]+sc[ic+1]+sd[ic+1]) < 1.0e-8);
-          }
-          out.push_back(current);
+        Quatern<double> sa = (eab * ebc) / (-rab*::pow(::sin(tabc), 2.0));
+        Quatern<double> sd = (edc * ecb) / (-rcd*::pow(::sin(tbcd), 2.0));
+        Quatern<double> sb = (eab * ebc) * ((rbc-rab*::cos(tabc)) / (rab*rbc*::pow(::sin(tabc), 2.0)))
+                           + (edc * ecb) * (::cos(tbcd) / (rbc*::pow(::sin(tbcd), 2.0)));
+        Quatern<double> sc = (eab * ebc) * (::cos(tabc) / (rbc*::pow(::sin(tabc), 2.0)))
+                           + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
+        vector<double> current(size);
 
-          val.push_back(dihed);
+        for (int ic = 0; ic != 3; ++ic) {
+          current[3*iatom + ic] = sa[ic+1];
+          current[3*catom + ic] = sb[ic+1];
+          current[3*jatom + ic] = sc[ic+1];
+          current[3*katom + ic] = sd[ic+1];
         }
+        out.push_back(current);
+        hessprim.push_back(0.10);
+
+        val.push_back(dihed);
       }
     }
+    bondlist = prev_bond;
   }
 
   // debug output
   const int primsize = out.size();
   const int cartsize = 3*natom();
-  cout << "      Redundant internal coordinate generated (dim = " << primsize << ")" << endl;
+
+  auto inithess = make_shared<Matrix>(primsize, primsize);
+  for (int i = 0; i != primsize; ++i) {
+    inithess->element(i, i) = hessprim[i];
+  }
 
   Matrix minv(cartsize, cartsize);
   minv.zero();
@@ -781,9 +916,15 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
 
   bdag.broadcast();
 
-  // (-1.0) is a trick to make it (K L), not (L K)
-  Matrix g = bdag % minv * bdag * (-1.0);
+  auto bmat = make_shared<Matrix>(*bdag.transpose());
+  bmat->broadcast();
+
+
+  Matrix g = bdag % minv * bdag;
+  shared_ptr<Matrix> g2 = g.copy();
   VectorB geig(primsize);
+  // (-1.0) is a trick to make it (K L), not (L K) (the results are essentially the same, but just following the literature...)
+  g.scale(-1.0);
   g.diagonalize(geig);
 
 #ifndef HAVE_SCALAPACK
@@ -799,17 +940,19 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
   for (int i = 0; i != primsize; ++i) {
     values->element(i%3,i/3) = val[i];
     geig(i) *= -1.0;
-    if (fabs(geig(i)) < 1.0e-8) { geig(i) = 0.0; ml(i,i) = 0.0; }
-    else ml(i,i) = 1.0 / geig(i);
+    if (fabs(geig(i)) < 1.0e-7) { geig(i) = 0.0; ml(i,i) = 0.0;
+      for (int j = 0; j != primsize; ++j)
+        g(j,i) = 0.0;
+    }
+    else { ml(i,i) = 1.0 / geig(i); }
   }
   Matrix ginv = g * ml ^ g;
-  auto bmat = make_shared<Matrix>(*bdag.transpose());
   auto ubgnew = make_shared<Matrix>(minv * bdag * ginv);
+  auto gg = make_shared<Matrix>(*g2 * ginv);
 
-  bmat->broadcast();
   ubgnew->broadcast();
 
-  return array<shared_ptr<const Matrix>,4>{{bmat, ubgnew, values, nullptr}};
+  return make_tuple(bondlist,array<shared_ptr<const Matrix>,5>{{bmat, ubgnew, values, inithess, gg}});
 }
 
 

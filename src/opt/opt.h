@@ -67,7 +67,8 @@ class Opt {
     // global values that change during the optimization
     // internal - Cartesian transformation
     std::array<std::shared_ptr<const Matrix>,3> bmat_;
-    std::array<std::shared_ptr<const Matrix>,4> bmat_red_;
+    std::vector<std::vector<int>> bondlist_;
+    std::array<std::shared_ptr<const Matrix>,5> bmat_red_;
 
     // size of internals
     int iter_;
