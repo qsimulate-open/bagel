@@ -137,7 +137,7 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
 
     if (optinfo()->internal()) {
       if (optinfo()->redundant())
-        bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
+        tie(bondlist_, bmat_red_) = current_->compute_redundant_coordinate(bondlist_);
       else
         bmat_ = current_->compute_internal_coordinate(bmat_[0], optinfo()->bonds(), false, false);
     }
@@ -147,6 +147,7 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
       auto y  = make_shared<GradFile>(*(prev_grad_internal_[iter-1]) - *(prev_grad_internal_[iter-2]));
       auto s  = make_shared<GradFile>((*prev_xyz_internal_[iter-1] - *prev_xyz_internal_[iter-2]));
       auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
+//      auto dhess = hessian_update_bfgs(y, s, hs);
       auto dhess = hessian_update_bofill(y, s, hs);
       *hess_ += *dhess;
     }
@@ -172,7 +173,7 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
       current_->print_atoms();
       if (optinfo()->internal()) {
         if (optinfo()->redundant())
-          bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
+          tie(bondlist_, bmat_red_) = current_->compute_redundant_coordinate(bondlist_);
         else
           bmat_ = current_->compute_internal_coordinate(bmat_[0], optinfo()->bonds(), false, false);
       }

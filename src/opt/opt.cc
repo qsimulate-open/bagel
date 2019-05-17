@@ -60,7 +60,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
 
   if (optinfo_->internal()) {
     if (optinfo_->redundant())
-      bmat_red_ = current_->compute_redundant_coordinate();
+      tie(bondlist_, bmat_red_) = current_->compute_redundant_coordinate(bondlist_);
     else
       bmat_ = current_->compute_internal_coordinate(nullptr, optinfo_->bonds(), optinfo_->opttype()->is_transition());
   }
@@ -82,8 +82,12 @@ void Opt::compute() {
 
   if (optinfo()->hess_approx()) {
     cout << "    * Use approximate Hessian for optimization" << endl;
-    if (optinfo()->internal() && !optinfo()->redundant()) {
-      hess_ = make_shared<Matrix>(*(bmat_[2]));
+    if (optinfo()->internal()) {
+      if (optinfo()->redundant()) {
+        hess_ = make_shared<Matrix>(*(bmat_red_[3]));
+      } else {
+        hess_ = make_shared<Matrix>(*(bmat_[2]));
+      }
     } else {
       hess_ = make_shared<Matrix>(size_, size_);
       hess_->unit();
