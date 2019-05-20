@@ -44,8 +44,12 @@ class MP2Tag {
       for (auto& i : o)
         *j++ = i;
     }
+    MP2Tag(const MP2Tag<DataType>&) = default;
+    MP2Tag(MP2Tag<DataType>&&) = default;
 
-    MP2Tag<DataType>& operator=(const MP2Tag<DataType>& o) { tag_ = o.tag_; return *this; }
+    MP2Tag<DataType>& operator=(const MP2Tag<DataType>& o) = default; 
+    MP2Tag<DataType>& operator=(MP2Tag<DataType>&&) = default;
+
     bool operator<(const MP2Tag<DataType>& o) const {
       auto j = tag_.begin();
       for (auto i : o.tag_) {
@@ -54,6 +58,7 @@ class MP2Tag {
       }
       return false;
     }
+
     bool operator==(const MP2Tag<DataType>& o) const {
       return !(*this < o) && !(o < *this);
     }

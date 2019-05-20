@@ -743,7 +743,7 @@ void NEVPT2<DataType>::compute() {
         auto multiply_nt = [](const ViewType a, const ViewType b) {
           MatType out(a.ndim(), b.ndim(), true);
           btas::contract(1.0, a, {0,1}, b, {2,1}, 0.0, out, {0,2}, false, false);
-          return move(out);
+          return out;
         };
         const MatType mat_va = compute_mat<DataType>(*iblock, jablock);
         const MatType mat_av = compute_mat<DataType>(iablock, *jblock);

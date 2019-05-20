@@ -423,7 +423,9 @@ void MPI_Interface::merge() {
   --depth_;
 
   mpi_comm_ = get<0>(mpi_comm_old_[depth_]);
-  array<int,5> scalapack_info = get<1>(mpi_comm_old_[depth_]);
+#ifdef HAVE_SCALAPACK
+  const array<int,5> scalapack_info = get<1>(mpi_comm_old_[depth_]);
+#endif
   MPI_Comm_rank(mpi_comm_, &rank_);
   MPI_Comm_size(mpi_comm_, &size_);
 

@@ -57,7 +57,7 @@ vector<shared_ptr<const ZMatrix>> ShellPair::multipoles(const int lmax, const ar
     }
   }
 
-  return move(mult);
+  return mult;
 }
 
 

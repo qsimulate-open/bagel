@@ -57,6 +57,9 @@ class Matrix1e_ : public MatType{
     Matrix1e_(const Matrix1e_&);
     virtual ~Matrix1e_() { }
 
+    Matrix1e_& operator=(const Matrix1e_&) = default;
+    Matrix1e_& operator=(Matrix1e_&&) = default;
+
     using MatType::zero;
     using MatType::size;
     using MatType::data;

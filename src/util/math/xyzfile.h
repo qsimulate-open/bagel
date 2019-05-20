@@ -39,6 +39,9 @@ class XYZFile : public Matrix {
     XYZFile(const XYZFile& o) : Matrix(o) { assert(o.ndim() == 3 && localized_); }
     XYZFile(const Matrix& o) : Matrix(o) { localize(); assert(o.ndim() == 3); }
 
+    XYZFile& operator=(const XYZFile& o) = default;
+    XYZFile& operator=(XYZFile&& o) = default;
+
     std::shared_ptr<XYZFile> clone() const;
 
     void print(const std::string in = "", const int dum = 0) const override;
