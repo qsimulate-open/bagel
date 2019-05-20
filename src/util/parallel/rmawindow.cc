@@ -185,7 +185,7 @@ unique_ptr<DataType[]> RMAWindow<DataType>::rma_get(const size_t rank, const siz
   assert(initialized_);
   unique_ptr<DataType[]> out(new DataType[size]);
   rma_get(out.get(), rank, off, size);
-  return move(out);
+  return out;
 }
 
 

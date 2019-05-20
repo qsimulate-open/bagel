@@ -108,6 +108,9 @@ namespace btas {
         return contiguous_;
       }
 
+      BoxOrdinal& operator=(const BoxOrdinal&) = default;
+      BoxOrdinal& operator=(BoxOrdinal&&) = default;
+
       template <typename Index>
       typename std::enable_if<btas::is_index<Index>::value, value_type>::type
       operator()(const Index& index) const {

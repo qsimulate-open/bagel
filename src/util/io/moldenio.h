@@ -58,9 +58,10 @@ struct complex4 {
   std::complex<double> data[4];
 
   complex4() { }
+  complex4(const complex4& o) = default;
   template<typename T> complex4(const T a) { data[0] = a; data[1] = a; data[2] = a; data[3] = a; } 
   
-  complex4 operator=(const complex4& a) { data[0] = a.data[0]; data[1] = a.data[1]; data[2] = a.data[2]; data[3] = a.data[3]; return *this; }
+  complex4& operator=(const complex4& a) { data[0] = a.data[0]; data[1] = a.data[1]; data[2] = a.data[2]; data[3] = a.data[3]; return *this; }
   void operator+=(const complex4& a) { data[0] += a.data[0]; data[1] += a.data[1]; data[2] += a.data[2]; data[3] += a.data[3]; }
   void operator-=(const complex4& a) { data[0] -= a.data[0]; data[1] -= a.data[1]; data[2] -= a.data[2]; data[3] -= a.data[3]; }
 
