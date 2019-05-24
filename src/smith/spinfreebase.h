@@ -114,7 +114,7 @@ class SpinFreeMethod {
     // printing functions called from the solve function of a derived class
     static void print_iteration();
     static void print_iteration(const int i, const double en, const double err, const double tim, const int istate = -1);
-    static void print_iteration(const bool noconv);
+    void print_iteration(const bool noconv) const;
 
     // compute e0 which is defined as Trace(f(x,x), gamma(x,x))
     void compute_e0();

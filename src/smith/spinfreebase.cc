@@ -622,9 +622,17 @@ void SpinFreeMethod<DataType>::print_iteration(const int i, const double en, con
 
 
 template<typename DataType>
-void SpinFreeMethod<DataType>::print_iteration(const bool noconv) {
-  cout << endl << "      -------------------" << endl;
-  if (noconv) cout << "      *** Convergence not reached ***" << endl;
+void SpinFreeMethod<DataType>::print_iteration(const bool noconv) const {
+  if (info()->orthogonal_basis()) {
+    cout << endl << "      ------------------------------------------------------------------------------------------------------------------" << endl << endl;
+  } else {
+    cout << endl << "      -------------------" << endl;
+  }
+  if (noconv) {
+    cout << "      *** Convergence not reached ***" << endl;
+    if (info()->convergence_throw())
+      throw runtime_error("SMITH convergence not reached. ");
+  }
   cout << endl;
 }
 

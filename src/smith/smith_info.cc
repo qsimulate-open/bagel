@@ -93,6 +93,9 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
   thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
 
+  // if no convergence is obtained, throw it
+  convergence_throw_ = idata->get<bool>("convergence_throw", true);
+
   // enable restart capability
   restart_ = idata->get<bool>("restart", false);
   restart_each_iter_ = idata->get<bool>("restart_each_iter", restart_);

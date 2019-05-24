@@ -62,6 +62,7 @@ class SMITH_Info {
 
     bool restart_;
     bool restart_each_iter_;
+    bool convergence_throw_;
 
     double thresh_overlap_;
 
@@ -79,7 +80,7 @@ class SMITH_Info {
     void serialize(Archive& ar, const unsigned int) {
       ar & ref_ & method_ & ncore_ & nfrozenvirt_ & thresh_ & shift_ & maxiter_;
       ar & maxtile_ & cimaxchunk_ & davidson_subspace_ & grad_;
-      ar & do_ms_ & do_xms_ & sssr_ & shift_diag_ & shift_imag_ & block_diag_fock_ & orthogonal_basis_ & restart_ & restart_each_iter_;
+      ar & do_ms_ & do_xms_ & sssr_ & shift_diag_ & shift_imag_ & block_diag_fock_ & orthogonal_basis_ & restart_ & restart_each_iter_ & convergence_throw_;
       ar & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_ & external_rdm_;
     }
 
@@ -119,6 +120,7 @@ class SMITH_Info {
     bool block_diag_fock() const { return block_diag_fock_; }
     bool restart() const { return restart_; }
     bool restart_each_iter() const { return restart_each_iter_; }
+    bool convergence_throw() const { return convergence_throw_; }
     bool orthogonal_basis() const { return orthogonal_basis_; }
     bool rdm4_eval() const { return (grad_ || method_!="caspt2"); }
 
