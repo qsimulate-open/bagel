@@ -411,6 +411,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
     converged &= conv;
   }
   cout << endl << "      ------------------------------------------------------------------------------------------------------------------" << endl << endl;
+  if (!converged) cout << "      *** Convergence not reached ***" << endl;
   return make_tuple(amplitude, t);
 }
 
