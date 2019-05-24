@@ -630,8 +630,9 @@ void SpinFreeMethod<DataType>::print_iteration(const bool noconv) const {
   }
   if (noconv) {
     cout << "      *** Convergence not reached ***" << endl;
-    if (info()->convergence_throw())
-      throw runtime_error("SMITH convergence not reached. ");
+    if (info()->convergence_throw()) {
+      throw runtime_error("SMITH convergence not reached.");
+    }
   }
   cout << endl;
 }
