@@ -132,6 +132,8 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor_<DataType>> init_amplitude() const;
     std::shared_ptr<Tensor_<DataType>> init_residual() const;
 
+    static void remove_offdiagonal_block(std::shared_ptr<Matrix> den2, const int nc, const int na, const int nv);
+
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info<DataType>> r);
 

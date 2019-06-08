@@ -765,6 +765,22 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor
 }
 
 
+template<typename DataType>
+void SpinFreeMethod<DataType>::remove_offdiagonal_block(std::shared_ptr<Matrix> den2, const int nc, const int na, const int nv) {
+  assert(den2->ndim() == den2->mdim() && den2->ndim() == nc+na+nv);
+  const int no = nc+na;
+  for (int i = 0; i != nc; ++i)
+    for (int j = 0; j != nv; ++j)
+      (*den2)(i, j+no) = (*den2)(j+no, i) = 0.0;
+  for (int i = 0; i != nc; ++i)
+    for (int j = 0; j != na; ++j)
+      (*den2)(i, j+nc) = (*den2)(j+nc, i) = 0.0;
+  for (int i = 0; i != nv; ++i)
+    for (int j = 0; j != na; ++j)
+      (*den2)(i+no, j+nc) = (*den2)(j+nc, i+no) = 0.0;
+}
+
+
 #define SPINFREEMETHOD_DETAIL
 #include <src/smith/spinfreebase_update.cpp>
 #undef SPINFREEMETHOD_DETAIL

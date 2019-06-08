@@ -766,6 +766,13 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   const int nclosed = info_->nclosed()-info_->ncore();
   const int nact = info_->nact();
 
+  // if block_diag_fock is used, we zero out the off-diagonal blocks of the second-order 1RDM
+  if (info_->block_diag_fock()) {
+    auto dtmp = den2_->copy();
+    this->remove_offdiagonal_block(dtmp, info_->nclosed()-info_->ncore(), info_->nact(), info_->nvirt());
+    den2_ = dtmp;
+  }
+
   if (nact) {
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     auto dtmp = den2_->copy();
