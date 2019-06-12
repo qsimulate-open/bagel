@@ -481,7 +481,10 @@ tuple<shared_ptr<PTree>,shared_ptr<const Reference>,shared_ptr<const Geometry>> 
   shared_ptr<const Reference> ref;
   auto current = make_shared<const Geometry>(*current_);
 
-  if (!prev_ref_ || optinfo()->scratch() || prev_ref_->is_skelton()) {
+  if (prev_ref_ && prev_ref_->is_skelton())
+    throw runtime_error("Perform a single-point calculation before optimization when starting from Molden");
+
+  if (!prev_ref_ || optinfo()->scratch()) {
     auto m = input_->begin();
     for ( ; m != --input_->end(); ++m) {
       const string title = to_lower((*m)->get<string>("title", ""));
