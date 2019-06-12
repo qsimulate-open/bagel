@@ -83,7 +83,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & geom_ & coeff_ & coeffA_ & coeffB_ & noccA_ & noccB_ & energy_ & prop_freq_ & prop_ir_ & prop_eig_
-         & hcore_ & eig_ & eigB_ & occup_ & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_;
+         & hcore_ & eig_ & eigB_ & occup_ & nclosed_ & nact_ & nvirt_ & nstate_ & is_skelton_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_;
     }
 
   public:
