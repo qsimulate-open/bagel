@@ -481,7 +481,7 @@ tuple<shared_ptr<PTree>,shared_ptr<const Reference>,shared_ptr<const Geometry>> 
   shared_ptr<const Reference> ref;
   auto current = make_shared<const Geometry>(*current_);
 
-  if (!prev_ref_ || optinfo()->scratch()) {
+  if (!prev_ref_ || optinfo()->scratch() || prev_ref_->is_skelton()) {
     auto m = input_->begin();
     for ( ; m != --input_->end(); ++m) {
       const string title = to_lower((*m)->get<string>("title", ""));

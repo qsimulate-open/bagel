@@ -68,6 +68,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int nvirt_;
 
     int nstate_;
+    bool is_skelton_;
 
     std::shared_ptr<const CIWfn> ciwfn_;
     std::shared_ptr<const VecRDM<1>> rdm1_;
@@ -101,7 +102,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
       Reference(o.geom(), c ? c : o.coeff(), o.nclosed(), o.nact(), o.nvirt(), o.energy(), o.rdm1(), o.rdm2(), o.rdm1_av(), o.rdm2_av(), o.ciwfn()) { }
 
     // constructing a skelton
-    Reference(std::shared_ptr<const Geometry> g) : geom_(g), hcore_(std::make_shared<Hcore>(g)) { }
+    Reference(std::shared_ptr<const Geometry> g) : geom_(g), hcore_(std::make_shared<Hcore>(g)), is_skelton_(true) { }
 
     virtual ~Reference() { }
 
@@ -135,6 +136,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     // used in SA-CASSCF
     int nstate() const { return energy_.size(); }
+
+    bool is_skelton() const { return is_skelton_; }
 
     // To extract some states from the reference, and get RDMs averaged over all the retained states
     virtual std::shared_ptr<Reference> extract_state(const std::vector<int> rdm_state, const bool extract_rdm) const;
