@@ -57,6 +57,7 @@ class FCI_base : public Method {
     // results
     std::vector<double> energy_;
     std::shared_ptr<MOFile> jop_;
+    std::shared_ptr<Matrix> coeff_;
 
     // RDMs; should be resized in constructors
     std::shared_ptr<VecRDM<1>> rdm1_;
@@ -105,6 +106,7 @@ class FCI_base : public Method {
 
     std::shared_ptr<const Determinants> det() const { return det_; }
     std::shared_ptr<const MOFile> jop() const { return jop_; }
+    std::shared_ptr<const Matrix> coeff() const { return coeff_; }
     virtual std::shared_ptr<const Civec> denom() const = 0;
     virtual std::shared_ptr<const Dvec> civectors() const = 0;
 
