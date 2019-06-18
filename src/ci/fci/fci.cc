@@ -393,7 +393,7 @@ void FCI::compute() {
   if (dipoles_) {
     compute_rdm12();
     cout << endl;
-    auto ocoeff = ref_->coeff()->slice(0, ncore_+norb_);
+    auto ocoeff = coeff_->slice(0, ncore_+norb_);
     for (int i = 0; i != nstate_; ++i) {
       stringstream ss; ss << "state " << i;
       shared_ptr<const Matrix> mordm = rdm1(i)->rdm1_mat(ncore_);
