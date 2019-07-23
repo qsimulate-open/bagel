@@ -263,7 +263,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, shared_ptr
     auto cp = make_shared<CPCASSCF>(grad, civ, half, ref_, task_->fci());
     shared_ptr<const Matrix> zmat, xmat, dummy;
     shared_ptr<const Dvec> zvec;
-    tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), gradinfo->maxziter());
+    tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), gradinfo->maxziter(), nullptr, true);
 
     // form Zd + dZ^+
     shared_ptr<const RDM<1>> rdm1_av = task_->fci()->rdm1_av();
