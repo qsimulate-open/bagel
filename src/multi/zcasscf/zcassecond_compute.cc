@@ -187,6 +187,7 @@ void ZCASSecond_base::compute() {
     if (restart_cas_) {
       stringstream ss; ss << "zcasscf_" << iter;
       OArchive archive(ss.str());
+      tie(coeff_,eig_,eigB_,occup_,occupB_) = semi_canonical_orb(kramers());
       shared_ptr<const Reference> ref = conv_to_ref();
       archive << ref;
     }
