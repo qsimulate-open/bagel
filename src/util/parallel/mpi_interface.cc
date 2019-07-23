@@ -28,6 +28,7 @@
 #include <thread>
 #include <stdexcept>
 #include <algorithm>
+#include <array>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
 #include <src/util/parallel/scalapack.h>
