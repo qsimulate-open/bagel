@@ -27,6 +27,7 @@
 #include <src/multi/casscf/qvec.h>
 #include <src/multi/casscf/cassecond.h>
 #include <src/prop/hyperfine.h>
+#include <src/prop/multipole.h>
 
 using namespace std;
 using namespace bagel;
@@ -159,6 +160,12 @@ void CASSecond::compute() {
     fci_->update(coeff_);
     fci_->compute();
     fci_->compute_rdm12();
+  }
+
+  if (nstate_ == 1) {
+    const MatView ocoeff = coeff_->slice(0, nocc_);
+    Dipole dipole(geom_, make_shared<Matrix>(ocoeff * *fci_->rdm1(0)->rdm1_mat(nclosed_) ^ ocoeff));
+    dipole.compute();
   }
 
   // calculate the HFCCs
