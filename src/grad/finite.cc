@@ -46,7 +46,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
   auto grad = make_shared<GradFile>(natom);
 
   const int ncomm = mpi__->world_size() / nproc_;
-  const int npass = natom * 3 / ncomm + 1;
+  const int npass = (natom * 3 - 1) / ncomm + 1;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
     const int ncolor = (ipass == (npass-1)) ? (natom * 3) % ncomm : ncomm;
@@ -132,7 +132,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   gmo->zero();
 
   const int ncomm = mpi__->world_size() / nproc_;
-  const int npass = natom * 3 / ncomm + 1;
+  const int npass = (natom * 3 - 1) / ncomm + 1;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
     const int ncolor = (ipass == (npass-1)) ? (natom * 3) % ncomm : ncomm;
