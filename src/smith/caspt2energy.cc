@@ -143,7 +143,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
   idata_out->put("_target2", target_state2_);
 
   const int ncomm = mpi__->world_size() / nproc_;
-  const int npass = natom * 3 / ncomm + 1;
+  const int npass = (natom * 3 - 1) / ncomm + 1;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
     const int ncolor = (ipass == (npass-1)) ? (natom * 3) % ncomm : ncomm;
