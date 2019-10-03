@@ -93,6 +93,9 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
   thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
 
+  // if no convergence is obtained, throw it
+  convergence_throw_ = idata->get<bool>("convergence_throw", true);
+
   // enable restart capability
   restart_ = idata->get<bool>("restart", false);
   restart_each_iter_ = idata->get<bool>("restart_each_iter", restart_);
@@ -119,7 +122,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const
     cimaxchunk_(info->cimaxchunk_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_),
     do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
     shift_diag_(info->shift_diag_), shift_imag_(info->shift_imag_), block_diag_fock_(info->block_diag_fock_), orthogonal_basis_(info->orthogonal_basis_), restart_(info->restart_),
-    restart_each_iter_(info->restart_each_iter_), thresh_overlap_(info->thresh_overlap_),
+    restart_each_iter_(info->restart_each_iter_), convergence_throw_(info->convergence_throw_), thresh_overlap_(info->thresh_overlap_),
     state_begin_(info->state_begin_), restart_iter_(info->restart_iter_), aniso_data_(info->aniso_data_), external_rdm_(info->external_rdm_) {
 }
 

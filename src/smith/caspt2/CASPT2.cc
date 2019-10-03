@@ -410,7 +410,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
     if (i+1 != nstates_) cout << endl;
     converged &= conv;
   }
-  cout << endl << "      ------------------------------------------------------------------------------------------------------------------" << endl << endl;
+  print_iteration(!converged);
   return make_tuple(amplitude, t);
 }
 
