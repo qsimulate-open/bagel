@@ -514,7 +514,7 @@ void ZCASSecond::trans_natorb() {
   if (natocc_) {
     cout << "  ========       state-averaged       ======== " << endl;
     cout << "  ======== natural occupation numbers ======== " << endl;
-    for (int i = 0; i != occup.size(); ++i)
+    for (int i = 0; i != nact_; ++i)
       cout << setprecision(4) << "   Orbital " << i << " : " << (occup[i] < numerical_zero__ ? 0.0 : occup[i]) << endl;
     cout << "  ============================================ " << endl;
   }
