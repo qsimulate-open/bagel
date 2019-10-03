@@ -157,6 +157,10 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, shared_ptr
     shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
     shared_ptr<const DFDist> qrs = qijd->back_transform(ocoeff)->back_transform(ocoeff);
 
+    // Recalculation of dipole is required for Hessian calculation
+    Dipole dipole(geom_, rdm1);
+    dipole_ = dipole.compute();
+
     gradient = contract_gradient(rdm1, erdm1, qrs, qq);
 
   } else {
