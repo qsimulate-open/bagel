@@ -49,13 +49,9 @@ shared_ptr<GradFile> FiniteGrad::compute() {
   const int npass = (natom * 3 - 1) / ncomm + 1;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
-    const int ncolor = (ipass == (npass-1)) ? (natom * 3) % ncomm : ncomm;
-    const int icomm = mpi__->world_rank() % ncolor;
-    if (ncolor != 0) {
-      mpi__->split(ncolor);
-    } else {
-      continue;
-    }
+    const int ncolor = min(ncomm, natom*3-ncomm*ipass);
+    const int icomm = mpi__->rank() % ncolor;
+    mpi__->split(ncolor);
 
     const int counter = icomm + ncomm * ipass;
     const int i = counter / 3;
@@ -131,17 +127,13 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   auto gmo = make_shared<Matrix>(norb, norb);
   gmo->zero();
 
-  const int ncomm = mpi__->world_size() / nproc_;
+  const int ncomm = mpi__->size() / nproc_;
   const int npass = (natom * 3 - 1) / ncomm + 1;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
-    const int ncolor = (ipass == (npass-1)) ? (natom * 3) % ncomm : ncomm;
-    const int icomm = mpi__->world_rank() % ncolor;
-    if (ncolor != 0) {
-      mpi__->split(ncolor);
-    } else {
-      continue;
-    }
+    const int ncolor = min(ncomm, natom*3-ncomm*ipass);
+    const int icomm = mpi__->rank() % ncolor;
+    mpi__->split(ncolor);
 
     const int counter = icomm + ncomm * ipass;
     const int i = counter / 3;
