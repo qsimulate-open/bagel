@@ -1,0 +1,1 @@
+If the authors agree to transfer the copyright of the source code and any related materials to Quantum Simulation Technologies, Inc., we may consider merging pull requests to the master branch. Otherwise we recommend you to fork the repository and work on your own copy.
