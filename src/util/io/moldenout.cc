@@ -158,7 +158,7 @@ void MoldenOut::write_mos() {
     if (ref_->coeffB()) {
       ss << " Ene=" << setw(12) << setprecision(6) << fixed << (eigB.empty() ? 0.0 : eigB[i]) << endl;
       ss << " Spin=" << "  Beta" << endl;
-      ss << " Occup=" << setw(12) << occupB[i] << endl;
+      ss << " Occup=" << setw(12) << (occupB.empty() ? 0.0 : occupB[i]) << endl;
       write_mo_one(ss, ref_->coeffB()->element_ptr(0, i));
     }
   }
