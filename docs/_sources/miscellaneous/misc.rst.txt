@@ -10,6 +10,7 @@ Molecular properties, printing and reading, processing data.
    :maxdepth: 2
 
    localization.rst
+   dyson.rst
    molden.rst
    moprint.rst
    save_ref.rst

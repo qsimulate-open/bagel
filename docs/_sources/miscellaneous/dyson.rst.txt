@@ -1,0 +1,157 @@
+.. _dyson:
+
+**************
+Dyson Orbitals
+**************
+
+===========
+Description
+===========
+Dyson orbitals are the effective one-particle wavefunctions for describing
+the ionization transition from a wavefunction with `N` electrons to one with
+`N-1` electrons. They can be evaluated as the overlap between the initial
+and final wavefunction. Since those wavefunctions differ by one electron,
+the overlap is not a scalar but a one-particle wavefunction. The norm of the
+Dyson orbital indicates the intensity of the ionization channel. For Koopmans-allowed
+transitions the norm is close to 1 and close 0 for forbidden transitions.
+
+Dyson orbitals require two calculations: one for the initial and one for the final
+wavefunctions. The wavefunctions have to be saved to files using the ``save_ref``
+command.
+
+Commands: ``dyson``
+
+========
+Keywords
+========
+
+.. topic:: ``initial``
+
+   | **Description:** Specify initial N-electron wavefunctions.
+   | **Datatype:** JSON
+   | **Keywords:**
+   |
+   |             ``states``
+   |
+   |             **Description:** list of state indices
+   |             **Datatype:** vector<int>
+   |             **Default:** [0], i.e. only ground state
+   |
+   |             ``file``
+   |
+   |		 **Description:** The initial wavefunctions, which were generated in a previous
+   |                 calculation and saved via the ``save_ref`` command, are read in from this
+   |                 file. The extension .archive will be appended.
+   |             **Datatype:** string
+
+
+.. topic:: ``final``
+
+   | **Description:** Specify final (N-1)-electron wavefunctions.
+   | **Datatype:** JSON
+   | **Keywords:**
+   |
+   |             ``states``
+   |
+   |             **Description:** list of state indices
+   |             **Datatype:** vector<int>
+   |             **Default:** [0], i.e. only ground state
+   |
+   |             ``file``
+   |
+   |		 **Description:** The final wavefunctions, which were generated in a previous
+   |                 calculation and saved via the ``save_ref`` command, are read in from this
+   |                 file. The extension .archive will be appended.
+   |             **Datatype:** string
+
+
+.. topic:: ``thresh``
+
+   | **Description:** Threshold for neglecting products of CI coefficients in overlap calculations.
+   | **Datatype:** double
+   | **Default:** 1.0e-10
+   | **Recommendation:** The calculation can be sped up by increasing this threshold.
+
+.. topic:: ``molden_file``
+
+   | **Description:** File name for saving Dyson orbitals in molden format.
+   | **Datatype:** string
+   | **Default:** ``dyson_orbitals.molden``
+
+=======
+Example
+=======
+
+Sample input
+------------
+
+.. code-block:: javascript
+   { "bagel": [
+    { 
+	"title": "molecule",
+	"basis": "svp",
+	"df_basis": "svp-jkfit",
+	"angstrom": true,
+	"geometry": [
+	    {"atom": "H", "xyz" : [ -0.227, -0.825, -2.666] },
+	    {"atom": "O", "xyz" : [  0.186, -0.147, -3.258] },
+	    {"atom": "H", "xyz" : [  0.030,  0.714, -2.796] }
+	]
+    },
+
+    {
+	"title"  : "casscf",
+	"nact"   : 6,
+	"nstate" : 3,
+	"charge" : 0,
+	"natocc" : true,
+	"nspin"  : 0
+    },
+
+    {
+	"title" : "save_ref",
+	"file"  : "h2o"
+    },
+    
+    {
+	"title"  : "casscf",
+	"nact"   : 6,
+	"nstate" : 3,
+	"charge" : 1,
+	"nspin"  : 1
+    },
+
+    {
+	"title"  : "save_ref",
+	"file"   : "h2o+"
+    },
+
+    {
+	"title"   : "dyson",
+	"initial" :
+        {
+	    "states" : [0,1],
+	    "file"   : "h2o"
+	},
+	"final"   :
+	{
+	    "states" : [0,1,2],
+	    "file"   : "h2o+"
+	},
+	"thresh"  : 1.0e-8,
+	"molden_file" : "dyson_orbitals.molden"
+    }
+   ]}
+
+
+==========
+References
+==========
+
++----------------------------------------------------+----------------------------------------------------------------------------------------------+
+|          Description of Reference                  |                          Reference                                                           |
++====================================================+==============================================================================================+
+| Dyson orbitals (definition and some applications)  | M\. Oana and A. Krylov, J. Chem. Phys. **127**, 234106 (2007).                               |
++----------------------------------------------------+----------------------------------------------------------------------------------------------+
+
+
