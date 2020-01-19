@@ -65,6 +65,14 @@ class MoldenOut : public MoldenIO {
       MoldenOut& operator<< (std::shared_ptr<const Molecule>);
       MoldenOut& operator<< (std::shared_ptr<const Reference>);
 
+      // TODO: Maybe it's a little bit ugly to expose this private data.
+      template<typename Type>
+      void write_mo_single(std::ostream& ss, const Type* data) {
+	write_mo_one(ss, data) ;
+      }
+      std::ostream& ofs() {
+	return ofs_;
+      }
 };
 
 }

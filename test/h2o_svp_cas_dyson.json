@@ -1,0 +1,61 @@
+{ "bagel": [
+
+    { 
+	"title": "molecule",
+	"basis": "svp",
+	"df_basis": "svp-jkfit",
+	"angstrom": true,
+	"geometry": [
+	    {"atom": "H",
+	     "xyz" : [ -0.227, -0.825, -2.666] },
+	    {"atom": "O",
+	     "xyz" : [  0.186, -0.147, -3.258] },
+	    {"atom": "H",
+	     "xyz" : [  0.030,  0.714, -2.796] }
+	]
+    },
+
+    {
+	"title"  : "casscf",
+	"nact"   : 6,
+	"nstate" : 3,
+	"charge" : 0,
+	"natocc" : true,
+	"nspin"  : 0
+    },
+
+    {
+	"title" : "save_ref",
+	"file"  : "h2o"
+    },
+    
+    {
+	"title"  : "casscf",
+	"nact"   : 6,
+	"nstate" : 3,
+	"charge" : 1,
+	"nspin"  : 1
+    },
+
+    {
+	"title"  : "save_ref",
+	"file"   : "h2o+"
+    },
+
+    {
+	"title"   : "dyson",
+	"initial" :
+        {
+	    "states" : [0,1],
+	    "file"   : "h2o"
+	},
+	"final"   :
+	{
+	    "states" : [0,1,2],
+	    "file"   : "h2o+"
+	},
+	"thresh"  : 1.0e-8,
+	"molden_file" : "dyson_orbitals.molden"
+    }
+]}
+

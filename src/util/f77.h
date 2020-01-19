@@ -47,7 +47,7 @@ extern "C" {
              double* b, const int* ldb, double* work, const int* lwork, int* info);
  void drot_(const int*, const double*, const int*, const double*, const int*, const double*, const double*);
  void dger_(const int*, const int*, const double*, const double*, const int*, const double*, const int*, double*, const int*);
-
+  
  void zcopy_(const int*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
  void zscal_(const int*, const std::complex<double>*, std::complex<double>*, const int*);
 #ifndef ZDOT_RETURN
@@ -90,6 +90,7 @@ extern "C" {
               std::complex<double>*, const int*, std::complex<double>*, const int*,  std::complex<double>*, const int*, double*, int*);
  void zgesdd_(const char*, const int*, const int*, std::complex<double>*, const int*, double*,
               std::complex<double>*, const int*, std::complex<double>*, const int*,  std::complex<double>*, const int*, double*, int*, int*);
+ void dgetrf_(const int* m, const int* n, double* a, const int* lda, int* ipiv, int* info);
 }
 
 
@@ -213,6 +214,9 @@ namespace {
              std::complex<double>* h, const int i) { ::zgerc_(&a, &b, &c, d, &e, f, &g, h, &i); }
  void zgeru_(const int a, const int b, const std::complex<double> c, const std::complex<double>* d, const int e, const std::complex<double>* f, const int g,
              std::complex<double>* h, const int i) { ::zgeru_(&a, &b, &c, d, &e, f, &g, h, &i); }
+
+ void dgetrf_(const int m, const int n, double* a, const int lda, int* ipiv, int& info) { ::dgetrf_(&m,&n,a,&lda,ipiv,&info); }
+ void dgetrf_(const int m, const int n, std::unique_ptr<double []>& a, const int lda, std::unique_ptr<int []>& ipiv, int& info) { ::dgetrf_(&m,&n,a.get(),&lda,ipiv.get(),&info); }
 
 }
 
