@@ -55,9 +55,7 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
     for (auto& state : *istates) {
       int i = lexical_cast<int>(state->data());
       if (! (0 <= i < iptr->nstate()) ) {
-	stringstream msg;
-	msg << "State " << i << " does not exist in initial wavefunctions loaded from '" << iname << "'.";
-	throw runtime_error(msg);
+	throw runtime_error(format("State %1 does not exist in initial wavefunctions.") % i);
       }
       initial_states_.push_back(i);
     }
@@ -84,9 +82,7 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
     for (auto& state : *fstates) {
       int j = lexical_cast<int>(state->data());
       if (! (0 <= j < fptr->nstate()) ) {
-	stringstream msg;
-	msg << "State " << j << " does not exist in final wavefunctions loaded from '" << fname << "'.";
-	throw runtime_error(msg);
+	throw runtime_error(format("State %1 does not exist in final wavefunctions.") % j);
       }
       final_states_.push_back(j);
     }
