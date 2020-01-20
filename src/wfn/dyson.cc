@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <string>
+#include <boost/format.hpp>
 
 #include <src/mat1e/overlap.h>
 #include <src/wfn/dyson.h>
@@ -32,7 +33,6 @@
 
 using namespace bagel;
 using namespace std;
-using boost::format;
 
 DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
   input_(input)
