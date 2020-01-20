@@ -24,7 +24,6 @@
 
 #include <algorithm>
 #include <string>
-#include <boost/format.hpp>
 
 #include <src/mat1e/overlap.h>
 #include <src/wfn/dyson.h>
@@ -56,7 +55,7 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
     for (auto& state : *istates) {
       int i = lexical_cast<int>(state->data());
       if (! (0 <= i < iptr->nstate()) ) {
-	throw runtime_error(boost::format("State %1 does not exist in initial wavefunctions.") % i);
+	throw runtime_error("State index does not exist in initial wavefunctions.");
       }
       initial_states_.push_back(i);
     }
@@ -83,7 +82,7 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
     for (auto& state : *fstates) {
       int j = lexical_cast<int>(state->data());
       if (! (0 <= j < fptr->nstate()) ) {
-	throw runtime_error(boost::format("State %1 does not exist in final wavefunctions.") % j);
+	throw runtime_error("State index does not exist in final wavefunctions.");
       }
       final_states_.push_back(j);
     }
