@@ -32,6 +32,7 @@
 
 using namespace bagel;
 using namespace std;
+using boost::format;
 
 DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
   input_(input)
