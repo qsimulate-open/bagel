@@ -16,12 +16,12 @@
     },
 
     {
-	"title"  : "casscf",
-	"nact"   : 6,
-	"nstate" : 3,
-	"charge" : 0,
-	"natocc" : true,
-	"nspin"  : 0
+	"title"   : "casscf",
+	"nclosed" : 1,
+	"nact"    : 6,
+	"nstate"  : 3,
+	"charge"  : 0,
+	"nspin"   : 0
     },
 
     {
@@ -30,11 +30,12 @@
     },
     
     {
-	"title"  : "casscf",
-	"nact"   : 6,
-	"nstate" : 3,
-	"charge" : 1,
-	"nspin"  : 1
+	"title"   : "casscf",
+	"nclosed" : 1,
+	"nact"    : 6,
+	"nstate"  : 3,
+	"charge"  : 1,
+	"nspin"   : 1
     },
 
     {

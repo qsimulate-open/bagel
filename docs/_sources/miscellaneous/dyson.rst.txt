@@ -21,6 +21,11 @@ command.
 
 Commands: ``dyson``
 
+===========
+Limitations
+===========
+So far Dyson orbitals have been implemented only for CASSCF wavefunctions.
+
 ========
 Keywords
 ========
@@ -101,11 +106,12 @@ Sample input
     },
 
     {
-	"title"  : "casscf",
-	"nact"   : 6,
-	"nstate" : 3,
-	"charge" : 0,
-	"nspin"  : 0
+	"title"   : "casscf",
+	"nclosed" : 1,
+	"nact"    : 6,
+	"nstate"  : 3,
+	"charge"  : 0,
+	"nspin"   : 0
     },
 
     {
@@ -114,11 +120,12 @@ Sample input
     },
     
     {
-	"title"  : "casscf",
-	"nact"   : 6,
-	"nstate" : 3,
-	"charge" : 1,
-	"nspin"  : 1
+	"title"   : "casscf",
+	"nclosed" : 1,
+	"nact"    : 6,
+	"nstate"  : 3,
+	"charge"  : 1,
+	"nspin"   : 1
     },
 
     {

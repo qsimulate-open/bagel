@@ -25,6 +25,7 @@
 #include <sstream>
 #include <src/wfn/reference.h>
 #include <src/wfn/dyson.h>
+#include <src/wfn/get_energy.h>
 
 using namespace bagel;
 
@@ -41,59 +42,24 @@ VectorB dyson_norms(std::string filename) {
 
   for (auto& itree : *keys) {
 
-    const string title = to_lower(itree->get<string>("title", ""));
-    if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
+    const std::string title = to_lower(itree->get<std::string>("title", ""));
 
     if (title == "molecule") {
-      geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
-      if (itree->get<bool>("restart", false))
-        ref.reset();
-      if (ref) ref = ref->project_coeff(geom);
-      if (!itree->get<string>("molden_file", "").empty())
-        ref = molden_to_ref(geom, itree);
-    } else {
-      if (!geom) {
-        if (title != "continue" && !(title == "relsmith" && itree->get<string>("method", "") == "continue") && title != "load_ref")
-          throw runtime_error("molecule block is missing");
-      } else {
-        if (!itree->get<bool>("df",true)) dodf = false;
-        if (dodf && !geom->df() && !geom->do_periodic_df() && !dofmm) throw runtime_error("It seems that DF basis was not specified in molecule block");
-      }
-    }
-
-    if (title == "dyson") {
-      shared_ptr<const DysonOrbitals> dyson = make_shared<DysonOrbitals>(itree);
+      geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
+    } else if (title == "dyson") {
+      std::shared_ptr<DysonOrbitals> dyson = std::make_shared<DysonOrbitals>(itree);
       dyson->compute();
       return dyson->norms();
       
 #ifndef DISABLE_SERIALIZATION
-    } else if (title == "load_ref") {
-      const string name = itree->get<string>("file", "reference");
-      if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
-      IArchive archive(name);
-      shared_ptr<Reference> ptr;
-      archive >> ptr;
-      ref = shared_ptr<Reference>(ptr);
-      if (itree->get<bool>("continue_geom", true)) {
-        cout << endl << "  Using the geometry in the archive file " << endl << endl;
-        geom = ref->geom();
-      } else {
-        cout << endl << "  Using the coefficient projected to the input geometry " << endl << endl;
-        ref = ref->project_coeff(geom);
-      }
-      if (itree->get<bool>("extract_average_rdms", false)) {
-        vector<int> rdm_states = itree->get_vector<int>("rdm_state");
-        ref = ref->extract_average_rdm(rdm_states);
-      }
-
     } else if (title == "save_ref") {
-      const string name = itree->get<string>("file", "reference");
+      const std::string name = itree->get<std::string>("file", "reference");
       OArchive archive(name);
       archive << ref;
 #endif
     } else {
       // otherwise, they are considered single point energy calculation
-      tie(ignore, ref) = get_energy(title, itree, geom, ref);
+      tie(std::ignore, ref) = get_energy(title, itree, geom, ref);
     }
 
   }
@@ -103,12 +69,13 @@ VectorB dyson_norms(std::string filename) {
 
 VectorB reference_dyson_norms() {
   VectorB norms(6);
-  norms[0] = 0.9252774;
-  norms[1] = 0.0003564;
-  norms[2] = 0.0000284;
-  norms[3] = 0.0000017;
-  norms[4] = 0.0000059;
-  norms[5] = 0.0000523;
+     
+  norms[0] = 0.9636565;
+  norms[1] = 0.9626057;
+  norms[2] = 0.0752643;
+  norms[3] = 0.0015795;
+  norms[4] = 0.0192686;
+  norms[5] = 0.0076390;
 
   return norms;
 }

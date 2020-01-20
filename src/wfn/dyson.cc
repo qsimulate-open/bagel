@@ -63,7 +63,11 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
     initial_states_.push_back(0);
   }
   // extract wavefunctions for selected initial states
-  refI_ = shared_ptr<Reference>(iptr)->extract_state(initial_states_, false);
+  if (iptr->nstate() > 1) {
+    refI_ = shared_ptr<Reference>(iptr)->extract_state(initial_states_, false);
+  } else {
+    refI_ = shared_ptr<Reference>(iptr);
+  }
 
   // Where are the wavefunctions of the final states stored?
   shared_ptr<const PTree> final_keys = input_->get_child("final");
@@ -90,7 +94,11 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
     final_states_.push_back(0);
   }
   // extract wavefunctions for selected final states
-  refF_ = shared_ptr<Reference>(fptr)->extract_state(final_states_, false);
+  if (fptr->nstate() > 1) {
+    refF_ = shared_ptr<Reference>(fptr)->extract_state(final_states_, false);
+  } else {
+    refF_ = shared_ptr<Reference>(fptr);
+  }
 
   // read additional options
   thresh_      = input_->get<double>("thresh", 1.0e-10);
@@ -111,6 +119,12 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
 bool DysonOrbitals::consistency_checks()
 {
   bool out = true;
+  if (! refI_->ciwfn()) {
+    throw runtime_error("No CI wavefunctions found for initial states. Note that Dyson orbitals have been implemented only for CASSCF wavefunctions, so far."); 
+  }
+  if (! refF_->ciwfn()) {
+    throw runtime_error("No CI wavefunctions found for final states. Note that Dyson orbitals have been implemented only for CASSCF wavefunctions, so far."); 
+  }
   
   auto detI = refI_->ciwfn()->det();
   auto detF = refF_->ciwfn()->det();
@@ -186,34 +200,78 @@ VectorB DysonOrbitals::slater_dyson(bitset<nbit__> bita1, bitset<nbit__> bitb1, 
 
     This is explained in J. Chem. Phys. **139**, 134104 (2013), see eqns. (21)-(23).
   */
-  
+
   // overlap between occupied alpha MOs
   auto SmoAocc = make_shared<Matrix>(nclosed1+det1->nelea(), nclosed2+det2->nelea());
   // overlap between occupied beta MOs
   auto SmoBocc = make_shared<Matrix>(nclosed1+det1->neleb(), nclosed2+det2->neleb());
   
   // select occupied orbitals in bra and ket and compose overlap matrices
+
+  /*
+    The overlap matrix between the occupied orbitals consists of four blocks:
+
+        closed-closed        closed-active
+
+	active-closed        active-active
+
+    In the closed block the orbitals are doubly occupied in all determinants.
+    In the active space we have to check the occupation numbers.
+   */
   
-  // The closed orbitals are doubly occupied in all determinants.
+  // closed-closed block
   for (int i1 = 0; i1 < nclosed1; i1++) {
     for (int i2 = 0; i2 < nclosed2; i2++) {
       SmoAocc->element(i1,i2) = SmoA_.element(i1,i2);
       SmoBocc->element(i1,i2) = SmoB_.element(i1,i2);
     }
   }
-  // In the active space we have to check the occupation numbers.
+  // closed-active block
+  for (int i1 = 0; i1 < nclosed1; i1++) {
+    int a2 = nclosed2;
+    int b2 = nclosed2;
+    for (int i2 = 0; i2 != det2->norb(); i2++) {
+      if (bita2[i2]) {
+	SmoAocc->element(i1,a2) = SmoA_.element(i1,nclosed2+i2);
+      }
+      if (bitb2[i2]) {
+	SmoBocc->element(i1,b2) = SmoB_.element(i1,nclosed2+i2);
+      }
+      if (bita2[i2]) a2++;
+      if (bitb2[i2]) b2++;
+    }
+    assert(a2 == nclosed2+det2->nelea());
+    assert(b2 == nclosed2+det2->neleb());    
+  }
+  // active-closed block
   int a1 = nclosed1;
   int b1 = nclosed1;
+  for (int i1 = 0; i1 < det1->norb(); i1++) {
+    for (int i2 = 0; i2 != nclosed2; i2++) {
+      if (bita1[i1]) {
+	SmoAocc->element(a1,i2) = SmoA_.element(nclosed1+i1,i2);
+      }
+      if (bitb1[i1]) {
+	SmoBocc->element(b1,i2) = SmoB_.element(nclosed1+i1,i2);
+      }
+    }
+    if (bita1[i1]) a1++;
+    if (bitb1[i1]) b1++;
+  }
+  assert(a1 == nclosed1+det1->nelea());
+  assert(b1 == nclosed1+det1->neleb());
+
+  // active-active block
+  a1 = nclosed1;
+  b1 = nclosed1;
   for (int i1 = 0; i1 != det1->norb(); i1++) {
     int a2 = nclosed2;
     int b2 = nclosed2;
     for (int i2 = 0; i2 != det2->norb(); i2++) {
       if (bita1[i1] && bita2[i2]) {
-	// SmoAocc[a1,a2] = SmoA_[i1,i2]
 	SmoAocc->element(a1,a2) = SmoA_.element(nclosed1+i1,nclosed2+i2);
       }
       if (bitb1[i1] && bitb2[i2]) {
-	// SmoBocc[b1,b2] = SmoB_[i1,i2]
 	SmoBocc->element(b1,b2) = SmoB_.element(nclosed1+i1,nclosed2+i2);
       }
       if (bita2[i2]) a2++;
@@ -229,7 +287,7 @@ VectorB DysonOrbitals::slater_dyson(bitset<nbit__> bita1, bitset<nbit__> bitb1, 
 
   // coefficients of Dyson orbital <bra(N-1 electrons)|ket(N electron)> in the
   // basis of the final MOs
-  auto coeff = VectorB(det2->norb());
+  auto coeff = VectorB(nclosed2+det2->norb());
 
   assert(det1->nelea()+det1->neleb() == det2->nelea()+det2->neleb()-1);
   //SmoAocc->print("overlap between occupied alpha orbitals", 0);
@@ -237,14 +295,59 @@ VectorB DysonOrbitals::slater_dyson(bitset<nbit__> bita1, bitset<nbit__> bitb1, 
   
   if (det1->nelea() < det2->nelea()) {
     assert(det1->neleb() == det2->neleb());
-    // ket contains 1 alpha electron more
-    coeff = SmoBocc->det() * minors(SmoAocc);
+    // ket contains one alpha electron more
+    auto vec = SmoBocc->det() * minors(SmoAocc);
+    /*
+      `vec` contains the coefficients of the Dyson orbital in the basis of 
+      the alpha orbitals that are occupied in the determinant `det2`.
+      To transform this into the basis of MOs we need to copy the
+      components of `vec` to the positions in `coeff` belonging to
+      the occupied orbitals.
+    */
+    // The lowest nclosed2 orbitals are always occupied.
+    int a2 = 0;
+    for (int i2 = 0; i2 < nclosed2; i2++) {
+      coeff[i2] = vec[a2];
+      a2++;
+    }
+    // In the active space we need to check the bit string.
+    for (int i2 = 0; i2 != det2->norb(); i2++) {
+      if (bita2[i2]) {
+	coeff[nclosed2+i2] = vec[a2];
+	a2++;
+      }
+    }
   } else {
     assert(det1->nelea() == det2->nelea());
-    // ket contains 1 beta electron more
-    coeff = SmoAocc->det() * minors(SmoBocc);
+    // ket contains one beta electron more
+    auto vec = SmoAocc->det() * minors(SmoBocc);
+    /*
+      `vec` contains the coefficients of the Dyson orbital in the basis of 
+      the beta orbitals that are occupied in the determinant `det2`.
+      To transform this into the basis of MOs we need to copy the
+      components of `vec` to the positions in `coeff` belonging to
+      the occupied orbitals.
+    */
+    // The lowest nclosed2 orbitals are always occupied.
+    int b2 = 0;
+    for (int i2 = 0; i2 < nclosed2; i2++) {
+      coeff[i2] = vec[b2];
+      b2++;
+    }
+    // In the active space we need to check the bit string.
+    for (int i2 = 0; i2 != det2->norb(); i2++) {
+      if (bitb2[i2]) {
+	coeff[nclosed2+i2] = vec[b2];
+	b2++;
+      }
+    }
   }
 
+  /*
+    `coeff` now contains the coefficients of the Dyson orbital between the
+    two Slater determinants det1 and det2 in the basis of the alpha or
+    beta MOs of det2.
+  */
   return coeff;
 }
 
@@ -258,11 +361,11 @@ VectorB DysonOrbitals::minors(shared_ptr<const Matrix> mat)
     v[j] = (-1)^j * det(mat[:,column j deleted])
   */
 
-  int n = mat->ndim();
-  int m = mat->mdim();
+  int n = mat->ndim(); // = (N-1)
+  int m = mat->mdim(); // =  N
   assert(n == m-1);
 
-  auto v = VectorB(n);
+  auto v = VectorB(m);
   
   for (int j=0; j<m; j++) {
     // Deleting the j-th column would require to shift the m-j-1 columns to the
@@ -296,6 +399,7 @@ void DysonOrbitals::ci_dyson()
   /*
     Dyson orbitals between CI wavefunctions
   */
+
   // coefficients of CI vectors for initial and final states
   auto civecI = refI_->ciwfn()->civectors();
   auto civecF = refF_->ciwfn()->civectors();
@@ -320,7 +424,7 @@ void DysonOrbitals::ci_dyson()
 	for (int stF=0; stF<refF_->nstate(); stF++) {
 	  // ij enumerates ionization channels I->F
 	  int ij = stI * refF_->nstate() + stF;
-	  assert(0 <= ij && ij <= nchan_);
+	  assert(0 <= ij && ij < nchan_);
 	  // loop over determinants definig final Hilbert space
 	  for (auto& bitaF : detF->string_bits_a()) {
 	    for (auto& bitbF : detF->string_bits_b()) {
@@ -379,11 +483,13 @@ void DysonOrbitals::ci_dyson()
 
   // Dyson orbitals should be orthogonal to each other
   auto Sdyson = coeff_ % Sao_ * coeff_;
-  // diagonal elements are the Dyson norms,
+  //Sdyson.print("Overlap between Dyson orbitals", 0);
+  
+  // diagonal elements are the Dyson norms^2,
   // which are ~1 for Koopmans allowed transitions and
   // ~0 for Koopmans forbitten transitions
   for(int ij = 0; ij < nchan_; ij++) {
-    norms_[ij] = Sdyson.element(ij,ij);
+    norms_[ij] = sqrt( Sdyson.element(ij,ij) );
   }
 }
 
@@ -397,10 +503,10 @@ void DysonOrbitals::compute()
 void DysonOrbitals::print_results()
 {
   cout << endl;
-  cout << indent << "initial states : ";
+  cout << indent << "initial states I : ";
   for (int i : initial_states_) cout << setw(3) << i << " ";
   cout << endl;
-  cout << indent << "final states   : ";
+  cout << indent << "final states F   : ";
   for (int f : final_states_) cout << setw(3) << f << " "; 
   cout << endl << endl;   
 
