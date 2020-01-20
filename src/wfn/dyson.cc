@@ -44,20 +44,28 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
   if (iname == "") {
     throw runtime_error("You need to specify an archive file for loading the wavefunctions of the initial states.");
   }
+  // load wavefunctions for initial states from archives  
+  IArchive iarchive(iname);
+  shared_ptr<Reference> iptr;
+  iarchive >> iptr;
   // Find indices of initial states (defaults to [0])
   const shared_ptr<const PTree> istates = initial_keys->get_child_optional("states");
   if (istates) {
     // state indices are 0-based
-    for (auto& i : *istates) initial_states_.push_back(lexical_cast<int>(i->data()));
+    for (auto& state : *istates) {
+      int i = lexical_cast<int>(state->data());
+      if (! (0 <= i < iptr->nstate()) ) {
+	stringstream msg;
+	msg << "State " << i << " does not exist in initial wavefunctions loaded from '" << iname << "'.";
+	throw runtime_error(msg);
+      }
+      initial_states_.push_back(i);
+    }
   } else {
     initial_states_.push_back(0);
   }
-  // load wavefunctions for selected initial states from archives  
-  IArchive iarchive(iname);
-  shared_ptr<Reference> iptr;
-  iarchive >> iptr;
+  // extract wavefunctions for selected initial states
   refI_ = shared_ptr<Reference>(iptr)->extract_state(initial_states_, false);
-
 
   // Where are the wavefunctions of the final states stored?
   shared_ptr<const PTree> final_keys = input_->get_child("final");
@@ -65,18 +73,27 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
   if (fname == "") {
     throw runtime_error("You need to specify an archive file for loading the wavefunctions of the final states.");
   }  
+  // load wavefunctions for final states from archives
+  IArchive farchive(fname);
+  shared_ptr<Reference> fptr;
+  farchive >> fptr;
   // Find indices of initial states (defaults to [0])
   const shared_ptr<const PTree> fstates = final_keys->get_child_optional("states");
   if (fstates) {
     // state indices are 0-based
-    for (auto& f : *fstates) final_states_.push_back(lexical_cast<int>(f->data()));
+    for (auto& state : *fstates) {
+      int j = lexical_cast<int>(state->data());
+      if (! (0 <= j < fptr->nstate()) ) {
+	stringstream msg;
+	msg << "State " << j << " does not exist in final wavefunctions loaded from '" << fname << "'.";
+	throw runtime_error(msg);
+      }
+      final_states_.push_back(j);
+    }
   } else {
     final_states_.push_back(0);
   }
-  // load wavefunctions for selected final states from archives
-  IArchive farchive(fname);
-  shared_ptr<Reference> fptr;
-  farchive >> fptr;
+  // extract wavefunctions for selected final states
   refF_ = shared_ptr<Reference>(fptr)->extract_state(final_states_, false);
 
   // read additional options
