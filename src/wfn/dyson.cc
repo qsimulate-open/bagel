@@ -28,6 +28,7 @@
 #include <src/mat1e/overlap.h>
 #include <src/wfn/dyson.h>
 #include <src/util/archive.h>
+#include <src/util/parallel/mpi_interface.h>
 #include <src/util/io/moldenout.h>
 
 using namespace bagel;
@@ -368,28 +369,32 @@ VectorB DysonOrbitals::minors(shared_ptr<const Matrix> mat)
   auto v = VectorB(m);
   
   for (int j=0; j<m; j++) {
-    // Deleting the j-th column would require to shift the m-j-1 columns to the
-    // right by one position to the left. To avoid this, we replace the j-th
-    // column with the last column (m-1) and take the submatrix [0:n,0:n],
-    // which contains the same columns as mat[0:n,column j deleted] but in
-    // different order. The different ordering leads to an additional sign
-    // in the determinant.
+    // We parallelize over minors, each process computes a batch of determinants.
+    if (j % mpi__->size() == mpi__->rank()) {
+      // Deleting the j-th column would require to shift the m-j-1 columns to the
+      // right by one position to the left. To avoid this, we replace the j-th
+      // column with the last column (m-1) and take the submatrix [0:n,0:n],
+      // which contains the same columns as mat[0:n,column j deleted] but in
+      // different order. The different ordering leads to an additional sign
+      // in the determinant.
 
-    auto minor = mat->get_submatrix(0,0,n,n);
-    // sign from Laplace's expansion
-    int sgn = pow(-1,j);    
-    // swap column j with column m-1, unless j==m-1
-    if (j != m-1) {
-      for (int i=0; i<n; i++) {
-        minor->element(i,j) = mat->element(i,m-1);
+      auto minor = mat->get_submatrix(0,0,n,n);
+      // sign from Laplace's expansion
+      int sgn = pow(-1,j);    
+      // swap column j with column m-1, unless j==m-1
+      if (j != m-1) {
+	for (int i=0; i<n; i++) {
+	  minor->element(i,j) = mat->element(i,m-1);
+	}
+	// Moving column m-1 to position j envolves m-1-j exchanges
+	// of neighbouring columns and thus introduces an additional
+	// factor of (-1)^(m-1-j) in the determinant
+	sgn *= pow(-1,m-1-j);
       }
-      // Moving column m-1 to position j envolves m-1-j exchanges
-      // of neighbouring columns and thus introduces an additional
-      // factor of (-1)^(m-1-j) in the determinant
-      sgn *= pow(-1,m-1-j);
+      v[j] = sgn * minor->det();
     }
-    v[j] = sgn * minor->det();
   }
+  v.allreduce();
 
   return v;
 }
