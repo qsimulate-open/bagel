@@ -82,19 +82,20 @@ class DysonOrbitals {
 			 std::shared_ptr<const Determinants> det1, int nclosed1,
 			 std::bitset<nbit__> bita2, std::bitset<nbit__> bitb2,
 			 std::shared_ptr<const Determinants> det2, int nclosed2);
-
+  
   public:
     DysonOrbitals(std::shared_ptr<const PTree> input);
     void compute();
     void print_results();
     void write_molden();
     // access functions
-    int nchan() const { return nchan_ };
-    std::shared_ptr<const Matrix> coeff() const { return coeff_; }
-    std::shared_ptr<const VectorB> norms() const { return norms_; }
-    std::shared_ptr<const VectorB> energies() const { return energies_; }
+    int nchan() const { return nchan_; };
+    const Matrix& coeff() const { return coeff_; }
+    const VectorB& norms() const { return norms_; }
+    const VectorB& energies() const { return energies_; }
 };
 
 }
 
 #endif
+

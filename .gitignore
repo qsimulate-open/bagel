@@ -53,5 +53,6 @@ INSTALL
 
 # emacs backup files
 ~*
+*~
 \#*\#
 

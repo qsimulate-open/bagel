@@ -218,7 +218,7 @@ void bagel::impl::run_bagel_(shared_ptr<const PTree> idata) {
         if (orbitals || vibration) mfs << ref;
       }
     } else if (title == "dyson") {
-      shared_ptr<const DysonOrbitals> dyson = make_shared<DysonOrbitals>(itree);
+      shared_ptr<DysonOrbitals> dyson = make_shared<DysonOrbitals>(itree);
       dyson->compute();
       dyson->print_results();
       dyson->write_molden();

@@ -28,8 +28,6 @@
 #include <src/mat1e/overlap.h>
 #include <src/wfn/dyson.h>
 #include <src/util/archive.h>
-#include <src/util/constants.h>
-#include <src/wfn/reference.h>
 #include <src/util/io/moldenout.h>
 
 using namespace bagel;
@@ -95,8 +93,6 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
   coeff_    = Matrix(nao_, nchan_);
   
   consistency_checks();
-  
-  compute();
 }
 
 bool DysonOrbitals::consistency_checks()
@@ -450,4 +446,3 @@ void DysonOrbitals::write_molden()
   }
   mfs.ofs() << ss.str();
 }
-
