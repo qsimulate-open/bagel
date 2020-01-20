@@ -54,7 +54,7 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
     // state indices are 0-based
     for (auto& state : *istates) {
       int i = lexical_cast<int>(state->data());
-      if (! (0 <= i < iptr->nstate()) ) {
+      if (! (0 <= i && i < iptr->nstate()) ) {
 	throw runtime_error("State index does not exist in initial wavefunctions.");
       }
       initial_states_.push_back(i);
@@ -81,7 +81,7 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
     // state indices are 0-based
     for (auto& state : *fstates) {
       int j = lexical_cast<int>(state->data());
-      if (! (0 <= j < fptr->nstate()) ) {
+      if (! (0 <= j && j < fptr->nstate()) ) {
 	throw runtime_error("State index does not exist in final wavefunctions.");
       }
       final_states_.push_back(j);
@@ -320,7 +320,7 @@ void DysonOrbitals::ci_dyson()
 	for (int stF=0; stF<refF_->nstate(); stF++) {
 	  // ij enumerates ionization channels I->F
 	  int ij = stI * refF_->nstate() + stF;
-	  assert(0 <= ij <= nchan_);
+	  assert(0 <= ij && ij <= nchan_);
 	  // loop over determinants definig final Hilbert space
 	  for (auto& bitaF : detF->string_bits_a()) {
 	    for (auto& bitbF : detF->string_bits_b()) {
