@@ -435,7 +435,7 @@ void DysonOrbitals::ci_dyson()
 	    for (auto& bitbF : detF->string_bits_b()) {
 
 	      double cc = *ciI * *ciF;
-	      if (cc > thresh_) {
+	      if (abs(cc) > thresh_) {
 
 		// Print occupations of Slater determinants between which
 		// the Dyson orbital is computed, i.e. <222a|2222>.
