@@ -372,32 +372,28 @@ VectorB DysonOrbitals::minors(shared_ptr<const Matrix> mat)
   auto v = VectorB(m);
   
   for (int j=0; j<m; j++) {
-    // We parallelize over minors, each process computes a batch of determinants.
-    if (j % mpi__->size() == mpi__->rank()) {
-      // Deleting the j-th column would require to shift the m-j-1 columns to the
-      // right by one position to the left. To avoid this, we replace the j-th
-      // column with the last column (m-1) and take the submatrix [0:n,0:n],
-      // which contains the same columns as mat[0:n,column j deleted] but in
-      // different order. The different ordering leads to an additional sign
-      // in the determinant.
+    // Deleting the j-th column would require to shift the m-j-1 columns to the
+    // right by one position to the left. To avoid this, we replace the j-th
+    // column with the last column (m-1) and take the submatrix [0:n,0:n],
+    // which contains the same columns as mat[0:n,column j deleted] but in
+    // different order. The different ordering leads to an additional sign
+    // in the determinant.
 
-      auto minor = mat->get_submatrix(0,0,n,n);
-      // sign from Laplace's expansion
-      int sgn = pow(-1,j);    
-      // swap column j with column m-1, unless j==m-1
-      if (j != m-1) {
-	for (int i=0; i<n; i++) {
-	  minor->element(i,j) = mat->element(i,m-1);
-	}
-	// Moving column m-1 to position j envolves m-1-j exchanges
-	// of neighbouring columns and thus introduces an additional
-	// factor of (-1)^(m-1-j) in the determinant
-	sgn *= pow(-1,m-1-j);
+    auto minor = mat->get_submatrix(0,0,n,n);
+    // sign from Laplace's expansion
+    int sgn = pow(-1,j);    
+    // swap column j with column m-1, unless j==m-1
+    if (j != m-1) {
+      for (int i=0; i<n; i++) {
+	minor->element(i,j) = mat->element(i,m-1);
       }
-      v[j] = sgn * minor->det();
+      // Moving column m-1 to position j envolves m-1-j exchanges
+      // of neighbouring columns and thus introduces an additional
+      // factor of (-1)^(m-1-j) in the determinant
+      sgn *= pow(-1,m-1-j);
     }
+    v[j] = sgn * minor->det();
   }
-  v.allreduce();
   
   return v;
 }
@@ -429,7 +425,13 @@ void DysonOrbitals::ci_dyson()
       auto cvecF = civecsF->data(stF);
       // ij enumerates ionization channels I->F
       int ij = stI * refF_->nstate() + stF;
-      
+
+      // We parallelize over products between initial and final wavefunctions.
+      // k enumerates the pairs of determinants which are not neglected
+      int count=0;
+      // accumulator for coefficients of Dyson orbital belonging to channel ij
+      VectorB coeffMOij(nmo_);
+
       // loop over determinants definig initial Hilbert space
       auto ciI = cvecI->data();
       for (auto& bitaI : detI->string_bits_a()) {
@@ -443,27 +445,37 @@ void DysonOrbitals::ci_dyson()
 
 	      if (abs(cc) > thresh_) {
 
-		// Print occupations of Slater determinants between which
-		// the Dyson orbital is computed, i.e. <222a|2222>.
-		//cout << "<" << print_bit(bitaF, bitbF, detF->norb())
-		//     << "|" << print_bit(bitaI, bitbI, detI->norb())
-		//     << ">" << endl;
-		
-		VectorB incr = cc * slater_dyson(bitaF, bitbF, detF, nclosedF,
-						 bitaI, bitbI, detI, nclosedI);
+		// Each processor computes contribution from one pair of determinants.
+		if (count % mpi__->size() == mpi__->rank()) {
+		  // Print occupations of Slater determinants between which
+		  // the Dyson orbital is computed, i.e. <222a|2222>.
+		  //cout << "<" << print_bit(bitaF, bitbF, detF->norb())
+		  //     << "|" << print_bit(bitaI, bitbI, detI->norb())
+		  //     << ">" << endl;
+		  
+		  VectorB incr = cc * slater_dyson(bitaF, bitbF, detF, nclosedF,
+						   bitaI, bitbI, detI, nclosedI);
 
-		// add contribution from this determinant pair to Dyson MO
-		// for ionization channel ij.
-		for (int k=0; k < incr.size(); k++) {
-		  coeffMO.element(k,ij) += incr[k];
+		  // add contribution from this determinant pair to Dyson MO
+		  // for ionization channel ij.
+		  for (int k=0; k < incr.size(); k++) {
+		    coeffMOij[k] += incr[k];
+		  }
 		}
-
+		count++;
+		
 	      }
 	      ciF++;
 	    }
 	  }
 	  ciI++;
 	}
+      }
+      // synchronize
+      coeffMOij.allreduce();
+
+      for (int k=0; k < nmo_; k++) {
+	coeffMO.element(k,ij) = coeffMOij[k];
       }
     }
   }
