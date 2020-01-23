@@ -381,22 +381,31 @@ double Matrix::det() {
   dgetrf_(n, n, mat->data(), n, ipiv.get(), info);
   if (info < 0) throw runtime_error("dgetrf_ failed in Matrix::det()");
 
-  // determinant of triangular matrix is product of the diagonals
-  double det = 1.0;
+  /*
+    The LU decomposition factorizes the matrix into 
+      M = P.L.U,
+    where L is lower diagonal (with 1's on the diagonal) and U
+    is upper diagonal. Only the diagonal elements of U are stored.
+    The determinant of the product is
+      det(M) = det(P)*det(L)*det(U)
+             = det(P)*  1   *det(U)
+  */ 
+  // determinant of triangular matrix U is product of the diagonals
+  double detU = 1.0;
   for (int i=0; i<n; i++) {
-    det *= mat->element(i,i);
+    detU *= mat->element(i,i);
   }
-  // determine sign from permutation matrix
-  double sgn = 1.0;
+  // determine sign of permutation, det(P), from sequence of row swaps
+  double detP = 1.0;
   for (int i=0; i<n; i++) {
     // Apparently indices in ipiv are 1-based !
     if (ipiv[i] != i+1) {
-      sgn *= -1.0;
+      detP *= -1.0;
     }
   }
-  det *= sgn;
-
-  return det;
+  double detM = detP*detU;
+  
+  return detM;
 }
 
 shared_ptr<Matrix> Matrix::hadamard_product(const Matrix& o) const {

@@ -294,7 +294,7 @@ VectorB DysonOrbitals::slater_dyson(bitset<nbit__> bita1, bitset<nbit__> bitb1, 
   //SmoAocc->print("overlap between occupied alpha orbitals", 0);
   //SmoBocc->print("overlap between occupied beta orbitals", 0);
   
-  if (det1->nelea() < det2->nelea()) {
+  if (det1->nelea() == det2->nelea()-1) {
     assert(det1->neleb() == det2->neleb());
     // ket contains one alpha electron more
     auto vec = SmoBocc->det() * minors(SmoAocc);
@@ -319,6 +319,7 @@ VectorB DysonOrbitals::slater_dyson(bitset<nbit__> bita1, bitset<nbit__> bitb1, 
       }
     }
   } else {
+    assert(det1->neleb() == det2->neleb()-1);
     assert(det1->nelea() == det2->nelea());
     // ket contains one beta electron more
     auto vec = SmoAocc->det() * minors(SmoBocc);
@@ -360,12 +361,12 @@ VectorB DysonOrbitals::minors(shared_ptr<const Matrix> mat)
     deleting the j-th column, with the appropriate sign from Laplace's expansion rule:
 
     v[j] = (-1)^j * det(mat[:,column j deleted])
-  */
 
+  */
   int n = mat->ndim(); // = (N-1)
   int m = mat->mdim(); // =  N
   assert(n == m-1);
-
+  
   auto v = VectorB(m);
   
   for (int j=0; j<m; j++) {
@@ -395,7 +396,7 @@ VectorB DysonOrbitals::minors(shared_ptr<const Matrix> mat)
     }
   }
   v.allreduce();
-
+  
   return v;
 }
 
@@ -435,6 +436,7 @@ void DysonOrbitals::ci_dyson()
 	    for (auto& bitbF : detF->string_bits_b()) {
 
 	      double cc = *ciI * *ciF;
+
 	      if (abs(cc) > thresh_) {
 
 		// Print occupations of Slater determinants between which
@@ -442,7 +444,7 @@ void DysonOrbitals::ci_dyson()
 		//cout << "<" << print_bit(bitaF, bitbF, detF->norb())
 		//     << "|" << print_bit(bitaI, bitbI, detI->norb())
 		//     << ">" << endl;
-
+		
 		VectorB incr = cc * slater_dyson(bitaF, bitbF, detF, nclosedF,
 						 bitaI, bitbI, detI, nclosedI);
 
@@ -486,7 +488,7 @@ void DysonOrbitals::ci_dyson()
     }
   }
 
-  // Dyson orbitals should be orthogonal to each other
+  // Overlap between Dyson orbitals
   auto Sdyson = coeff_ % Sao_ * coeff_;
   //Sdyson.print("Overlap between Dyson orbitals", 0);
   
