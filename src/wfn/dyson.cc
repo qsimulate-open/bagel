@@ -27,6 +27,7 @@
 
 #include <src/mat1e/overlap.h>
 #include <src/wfn/dyson.h>
+#include <src/ci/ciutil/bitutil.h>
 #include <src/util/archive.h>
 #include <src/util/parallel/mpi_interface.h>
 #include <src/util/io/moldenout.h>
@@ -182,12 +183,13 @@ void DysonOrbitals::mo_overlaps()
 
   // overlap between AOs
   Sao_ = Overlap(refI_->geom());
-  // overlap between  MOs of initial and MOs of final wavefunction
-  SmoA_ = *coeffAi % Sao_  * *coeffAf;
-  SmoB_ = *coeffBi % Sao_  * *coeffBf;
+  // overlap between  MOs of final (N-1 electrons)
+  // and MOs of initial wavefunction (N electrons)
+  SmoA_ = *coeffAf % Sao_  * *coeffAi;
+  SmoB_ = *coeffBf % Sao_  * *coeffBi;
 
-  //SmoA_.print("overlap between initial and final MOs (alpha)", 0);
-  //SmoB_.print("overlap between initial and final MOs (beta)", 0);
+  //SmoA_.print("overlap between final and initial MOs (alpha)", 0);
+  //SmoB_.print("overlap between final and initial MOs (beta)", 0);
 }
 
 VectorB DysonOrbitals::slater_dyson(bitset<nbit__> bita1, bitset<nbit__> bitb1, shared_ptr<const Determinants> det1, int nclosed1,
@@ -407,8 +409,8 @@ void DysonOrbitals::ci_dyson()
   */
 
   // coefficients of CI vectors for initial and final states
-  auto civecI = refI_->ciwfn()->civectors();
-  auto civecF = refF_->ciwfn()->civectors();
+  auto civecsI = refI_->ciwfn()->civectors();
+  auto civecsF = refF_->ciwfn()->civectors();
   // determinant spaces
   auto detI = refI_->ciwfn()->det();
   auto detF = refF_->ciwfn()->det();
@@ -418,20 +420,22 @@ void DysonOrbitals::ci_dyson()
   
   // coefficients of Dyson orbital in MO basis
   Matrix coeffMO(nmo_, nchan_);
-  
-  auto ciI = civecI->begin();
+
   // loop over initial states
   for (int stI=0; stI<refI_->nstate(); stI++) {
-    // loop over determinants definig initial Hilbert space
-    for (auto& bitaI : detI->string_bits_a()) {
-      for (auto& bitbI : detI->string_bits_b()) {
-	// loop over final states
-	auto ciF = civecF->begin();
-	for (int stF=0; stF<refF_->nstate(); stF++) {
-	  // ij enumerates ionization channels I->F
-	  int ij = stI * refF_->nstate() + stF;
-	  assert(0 <= ij && ij < nchan_);
+    auto cvecI = civecsI->data(stI);
+    // loop over final states
+    for (int stF=0; stF<refF_->nstate(); stF++) {
+      auto cvecF = civecsF->data(stF);
+      // ij enumerates ionization channels I->F
+      int ij = stI * refF_->nstate() + stF;
+      
+      // loop over determinants definig initial Hilbert space
+      auto ciI = cvecI->data();
+      for (auto& bitaI : detI->string_bits_a()) {
+	for (auto& bitbI : detI->string_bits_b()) {
 	  // loop over determinants definig final Hilbert space
+	  auto ciF = cvecF->data();
 	  for (auto& bitaF : detF->string_bits_a()) {
 	    for (auto& bitbF : detF->string_bits_b()) {
 
@@ -453,12 +457,13 @@ void DysonOrbitals::ci_dyson()
 		for (int k=0; k < incr.size(); k++) {
 		  coeffMO.element(k,ij) += incr[k];
 		}
+
 	      }
-	      ++ciF;
+	      ciF++;
 	    }
-          }
+	  }
+	  ciI++;
 	}
-	++ciI;
       }
     }
   }
