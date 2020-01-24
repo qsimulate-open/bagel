@@ -27,7 +27,6 @@
 
 #include <src/mat1e/overlap.h>
 #include <src/wfn/dyson.h>
-#include <src/ci/ciutil/bitutil.h>
 #include <src/util/archive.h>
 #include <src/util/parallel/mpi_interface.h>
 #include <src/util/io/moldenout.h>
@@ -50,6 +49,9 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
   IArchive iarchive(iname);
   shared_ptr<Reference> iptr;
   iarchive >> iptr;
+  if (!iptr) {
+    throw runtime_error("Loading of reference from archive for initial states failed.");
+  }
   // Find indices of initial states (defaults to [0])
   const shared_ptr<const PTree> istates = initial_keys->get_child_optional("states");
   if (istates) {
@@ -70,7 +72,6 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
   } else {
     refI_ = shared_ptr<Reference>(iptr);
   }
-
   // Where are the wavefunctions of the final states stored?
   shared_ptr<const PTree> final_keys = input_->get_child("final");
   const string fname = final_keys->get<string>("file", "");
@@ -81,6 +82,9 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
   IArchive farchive(fname);
   shared_ptr<Reference> fptr;
   farchive >> fptr;
+  if (!fptr) {
+    throw runtime_error("Loading of reference from archive for final states failed.");
+  }
   // Find indices of initial states (defaults to [0])
   const shared_ptr<const PTree> fstates = final_keys->get_child_optional("states");
   if (fstates) {
