@@ -135,7 +135,8 @@ bool DysonOrbitals::consistency_checks()
   auto detI = refI_->ciwfn()->det();
   auto detF = refF_->ciwfn()->det();
   // N electrons in initial, N-1 electrons in final (ionized) wavefunctions
-  out &= detI->nelea()+detI->neleb()-1 == detF->nelea()+detF->neleb();
+  out &=  (detF->nelea()+detF->neleb() == detI->nelea()+detI->neleb()-1);
+  out &= ((detF->nelea() == detI->nelea()-1) || (detF->neleb() == detI->neleb()-1));
   cout << endl;
   cout << indent << "electrons in initial states : " << detI->nelea() << " (alpha)    " << detI->neleb() << " (beta)" << endl;
   cout << indent << "electrons in final states   : " << detF->nelea() << " (alpha)    " << detF->neleb() << " (beta)" << endl;
