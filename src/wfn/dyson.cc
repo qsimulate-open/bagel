@@ -391,10 +391,10 @@ VectorB DysonOrbitals::minors(shared_ptr<const Matrix> mat)
       for (int i=0; i<n; i++) {
 	minor->element(i,j) = mat->element(i,m-1);
       }
-      // Moving column m-1 to position j envolves m-1-j exchanges
+      // Moving column m-1 to position j envolves (m-1)-j-1 exchanges
       // of neighbouring columns and thus introduces an additional
-      // factor of (-1)^(m-1-j) in the determinant
-      sgn *= pow(-1,m-1-j);
+      // factor of (-1)^(m-j) in the determinant
+      sgn *= pow(-1,m-j);
     }
     v[j] = sgn * minor->det();
   }
@@ -538,20 +538,19 @@ void DysonOrbitals::print_results()
   for (int f : final_states_) cout << setw(3) << f << " "; 
   cout << endl << endl;   
 
+  cout << indent << "Norms^2 of Dyson orbitals approximately indicate the strength of an inization transitions."
+       << endl << endl;
   // Table with ionization energies and Dyson norms for each ionization channel I -> F
   //     I->F     energy     norm
-  cout << indent 
-       << "I -> F"
-       << "     " << "energy" << "        "
-       << "norm" << endl << endl;
-  
+  cout << indent << "  transition  " << "        " << " ionization  " << "         " << "Dyson" << endl;
+  cout << indent << "from   -> to  " << "        " << "energy (a.u.)" << "         " << "norm"  << endl << endl;
+
   int ij = 0;
   for(int i=0; i < refI_->nstate(); i++) {
     for(int j=0; j < refF_->nstate(); j++) {
-      cout << indent 
-	   << initial_states_[i] << " -> " << final_states_[j]
-	   << "     " << setprecision(7) << energies_[ij] << "     "
-	   << norms_[ij] << endl;
+      cout << indent
+	   << setw(3) << initial_states_[i] << "    ->  " << setw(3) << final_states_[j]
+	   << "         " << setprecision(7) << right << setw(10) << energies_[ij] << "         " << norms_[ij] << endl;
       ij++;
     }
   }

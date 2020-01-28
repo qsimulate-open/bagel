@@ -29,6 +29,7 @@
 #include <set>
 #include <bitset>
 
+#include <src/mat1e/overlap.h>
 #include <src/wfn/reference.h>
 #include <src/util/math/vectorb.h>
 

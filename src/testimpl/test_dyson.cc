@@ -32,23 +32,24 @@ using namespace bagel;
 VectorB dyson_norms(std::string filename) {
   auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
-
+  
   // a bit ugly to hardwire an input file, but anyway...
-  std::stringstream ss; ss << location__ << filename << ".json";
+  std::stringstream ss;
+  ss << location__ << filename << ".json";
   auto idata = std::make_shared<const PTree>(ss.str());
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
   std::shared_ptr<const Reference> ref;
 
   for (auto& itree : *keys) {
-
     const std::string title = to_lower(itree->get<std::string>("title", ""));
 
     if (title == "molecule") {
-      geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
+      geom = std::make_shared<Geometry>(itree);
     } else if (title == "dyson") {
       std::shared_ptr<DysonOrbitals> dyson = std::make_shared<DysonOrbitals>(itree);
       dyson->compute();
+      dyson->print_results();
       return dyson->norms();
       
 #ifndef DISABLE_SERIALIZATION
@@ -67,23 +68,39 @@ VectorB dyson_norms(std::string filename) {
   return VectorB(0);
 }
 
-VectorB reference_dyson_norms() {
+VectorB reference_dyson_norms_h2o() {
   VectorB norms(6);
-     
-  norms[0] = 0.9636565;
-  norms[1] = 0.9626057;
-  norms[2] = 0.0752643;
-  norms[3] = 0.0015795;
-  norms[4] = 0.0192686;
-  norms[5] = 0.0076390;
+  
+  norms[0] = 0.9483230;
+  norms[1] = 0.9554380;
+  norms[2] = 0.9671701;
+  norms[3] = 0.6968931;
+  norms[4] = 0.0008876;
+  norms[5] = 0.0000610;
+
+  return norms;
+}
+
+VectorB reference_dyson_norms_butadiene() {
+  VectorB norms(6);
+
+  norms[0] = 0.9352315;
+  norms[1] = 0.8525376;
+  norms[2] = 0.3318706;
+  norms[3] = 0.6169403;
+  norms[4] = 0.7019259;
+  norms[5] = 0.3065813;
 
   return norms;
 }
 
 BOOST_AUTO_TEST_SUITE(TEST_DYSON)
 
-BOOST_AUTO_TEST_CASE(NORMS) {
-  BOOST_CHECK(compare(dyson_norms("h2o_svp_cas_dyson.json"), reference_dyson_norms(), 0.000001));
+BOOST_AUTO_TEST_CASE(DYSON_NORMS_H2O) {
+  BOOST_CHECK(compare(dyson_norms("h2o_svp_cas_dyson"), reference_dyson_norms_h2o(), 0.000001));
+}
+BOOST_AUTO_TEST_CASE(DYSON_NORMS_BUTADIENE) {
+  BOOST_CHECK(compare(dyson_norms("butadiene_svp_cas_dyson"), reference_dyson_norms_butadiene(), 0.000001));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

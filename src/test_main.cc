@@ -73,10 +73,10 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 #include <src/testimpl/test_force.cc>
 #include <src/testimpl/test_opt.cc>
 #include <src/testimpl/test_localize.cc>
-#include <src/testimpl/test_dyson.cc>
 #include <src/testimpl/test_asd.cc>
 #include <src/testimpl/test_asd_dmrg.cc>
 #include <src/testimpl/test_london.cc>
 #include <src/testimpl/test_pseudospin.cc>
 #include <src/testimpl/test_smith.cc>
 #include <src/testimpl/test_response.cc>
+#include <src/testimpl/test_dyson.cc>

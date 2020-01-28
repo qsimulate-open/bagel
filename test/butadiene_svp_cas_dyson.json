@@ -1,0 +1,65 @@
+{"bagel": [
+    {
+	"title": "molecule",
+	"basis": "svp",
+	"df_basis": "svp-jkfit",
+	"angstrom": true,
+	"geometry": [
+            {"atom": "C","xyz": [ -1.86877379,  0.00000012, -0.10243701] },
+            {"atom": "C","xyz": [ -0.61055738,  0.00000036,  0.40498107] },
+            {"atom": "H","xyz": [ -2.75148157,  0.00000557,  0.54089271] },
+            {"atom": "H","xyz": [ -2.05296569, -0.00000539, -1.18152551] },
+            {"atom": "H","xyz": [ -0.46921450,  0.00000194,  1.49393306] },
+            {"atom": "C","xyz": [  0.61048874, -0.00000177, -0.40500781] },
+            {"atom": "H","xyz": [  0.46915828, -0.00000517, -1.49395554] },
+            {"atom": "C","xyz": [  1.86873447, -0.00000041,  0.10242907] },
+            {"atom": "H","xyz": [  2.05293133, -0.00001191,  1.18154837] },
+            {"atom": "H","xyz": [  2.75148189,  0.00001254, -0.54090037] }]
+    },
+
+    {
+	"title"   : "casscf",
+	"nclosed" : 13,
+	"nact"    : 4,
+	"nstate"  : 3,
+	"charge"  : 0,
+	"nspin"   : 0
+    },
+
+    {
+	"title" : "save_ref",
+	"file"  : "neutral"
+    },
+    
+    {
+	"title"   : "casscf",
+	"nclosed" : 13, 
+	"nact"    : 4,
+	"nstate"  : 2,
+	"charge"  : 1,
+	"nspin"   : 1
+    },
+
+    {
+	"title"  : "save_ref",
+	"file"   : "cation"
+    },
+
+    {
+	"title"   : "dyson",
+	"initial" :
+        {
+	    "states" : [0,1,2],
+	    "file"   : "neutral"
+	},
+	"final"   :
+	{
+	    "states" : [0,1],
+	    "file"   : "cation"
+	},
+	"thresh"  : 1.0e-8,
+	"molden_file" : "dyson_bagel.molden"
+    }
+
+]
+}
