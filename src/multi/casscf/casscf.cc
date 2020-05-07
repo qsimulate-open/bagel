@@ -60,12 +60,13 @@ CASSCF::CASSCF(shared_ptr<const PTree> idat, const shared_ptr<const Geometry> ge
 void CASSCF::common_init() {
   print_header();
 
+  const int nele = geom_->nele() - idata_->get<int>("charge", 0);
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) {
     set<int> active_indices;
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
     for (auto& i : *iactive) active_indices.insert(lexical_cast<int>(i->data()) - 1);
-    ref_ = ref_->set_active(active_indices);
+    ref_ = ref_->set_active(active_indices, nele);
     cout << " " << endl;
     cout << "    ==== Active orbitals : ===== " << endl;
     for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;

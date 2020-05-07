@@ -80,7 +80,7 @@ void Dimer::set_active(shared_ptr<const PTree> idata) {
   }
 
   // Make new References, with large basis sets, but with projected coeffs (MO space up to smaller basis sets); active orbitals are placed after closed orbitals
-  active_refs_ = {isolated_refs_.first->set_active(Alist), isolated_refs_.second->set_active(Blist)};
+  active_refs_ = {isolated_refs_.first->set_active(Alist, isolated_refs_.first->nclosed()*2), isolated_refs_.second->set_active(Blist, isolated_refs_.second->nclosed()*2)};
 
   if (print_orbital_ && mpi__->rank() == 0) {
     {

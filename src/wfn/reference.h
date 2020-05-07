@@ -131,7 +131,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int noccA() const { return noccA_; }
     int noccB() const { return noccB_; }
 
-    std::shared_ptr<Reference> set_active(std::set<int> active_indices) const;
+    std::shared_ptr<Reference> set_active(std::set<int> active_indices, const int nele) const;
     std::shared_ptr<Reference> set_ractive(std::set<int> ras1, std::set<int> ras2, std::set<int> ras3) const;
 
     // used in SA-CASSCF
