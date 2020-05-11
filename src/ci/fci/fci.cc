@@ -226,8 +226,12 @@ void FCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dvec> out
     bitset<nbit__> closed_bit = (alpha&beta);
 
     // This can happen if all possible determinants are checked without finding nstate acceptable ones.
-    if (alpha.count() + beta.count() != nelea_ + neleb_)
-      throw logic_error("FCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
+    if (alpha.count() + beta.count() != nelea_ + neleb_) {
+      stringstream ss;
+      ss << "FCI::generate_guess produced an invalid determinant.  Check the number of states being requested." << endl;
+      ss << "If the number is correct, a workaround may be to specify the \"nguess\" keyword.";
+      throw logic_error(ss.str());
+    }
 
     // make sure that we have enough unpaired alpha
     const int unpairalpha = (alpha ^ (alpha & beta)).count();
