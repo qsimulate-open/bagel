@@ -54,8 +54,10 @@ DFDistT::DFDistT(shared_ptr<const ParallelDF> in, shared_ptr<const StaticDist> d
     // first issue all the send and receive requests
     for (int i = 0; i != mpi__->size(); ++i) {
       if (i != myrank) {
-        srequest.push_back(mpi__->request_send(source->data()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), i, myrank));
-        rrequest.push_back(mpi__->request_recv(buf->data()+adist->start(i)*bsize_, adist->size(i)*bsize_, i, i));
+        if (source->asize()*dist_->size(i) > 0)
+          srequest.push_back(mpi__->request_send(source->data()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), i, myrank));
+        if (adist->size(i)*bsize_ > 0)
+          rrequest.push_back(mpi__->request_recv(buf->data()+adist->start(i)*bsize_, adist->size(i)*bsize_, i, i));
       } else {
         assert(source->asize()*dist_->size(i) == adist->size(i)*bsize_);
         copy_n(source->data()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), buf->data()+adist->start(i)*bsize_);
