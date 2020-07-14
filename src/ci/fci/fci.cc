@@ -44,9 +44,9 @@ FCI::FCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<
 
 HarrisonZarrabian::HarrisonZarrabian(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_ptr<const Reference> b,
                                      const int ncore, const int nocc, const int nstate, const bool store) : FCI(a, g, b, ncore, nocc, nstate, store) {
-  space_ = make_shared<HZSpace>(det_);
+  if (!only_ints_) space_ = make_shared<HZSpace>(det_);
   update(ref_->coeff());
-  if (idata_->get<bool>("only_ints", false)) {
+  if (only_ints_){
     OArchive ar("ref");
     ar << ref_;
     dump_ints();
@@ -58,7 +58,7 @@ HarrisonZarrabian::HarrisonZarrabian(shared_ptr<const PTree> a, shared_ptr<const
 KnowlesHandy::KnowlesHandy(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_ptr<const Reference> b,
                            const int ncore, const int nocc, const int nstate, const bool store) : FCI(a, g, b, ncore, nocc, nstate, store) {
   update(ref_->coeff());
-  if (idata_->get<bool>("only_ints", false)) {
+  if (only_ints_){
     OArchive ar("ref");
     ar << ref_;
     dump_ints();
@@ -99,6 +99,7 @@ void FCI::common_init() {
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   restart_ = idata_->get<bool>("restart", false);
+  only_ints_ = idata_->get<bool>("only_ints", false);
 
   if (nstate_ < 0) nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
@@ -142,7 +143,7 @@ void FCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
-  det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
+  if (!only_ints_) det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
 
 }
 

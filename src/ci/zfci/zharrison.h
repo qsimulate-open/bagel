@@ -58,6 +58,9 @@ class ZHarrison : public Method {
     int nstate_;
     std::vector<int> states_;
 
+    // dump integrals and quit
+    bool only_ints_;
+
     // total energy
     std::vector<double> energy_;
 
