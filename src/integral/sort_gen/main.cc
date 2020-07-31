@@ -35,10 +35,10 @@ int main() {
   out << "//" << endl;
   out << "// BAGEL - Brilliantly Advanced General Electronic Structure Library" << endl;
   out << "// Filename: " << filename << endl;
-  out << "// Copyright (C) 2009 Toru Shiozaki" << endl;
+  out << "// Copyright (C) 2009 Quantum Simulation Technologies, Inc." << endl;
   out << "//" << endl;
-  out << "// Author: Toru Shiozaki <shiozaki@northwestern.edu>" << endl;
-  out << "// Maintainer: Shiozaki group" << endl;
+  out << "// Author: Toru Shiozaki <shiozaki@qsimulate.com>" << endl;
+  out << "// Maintainer: QSimulate" << endl;
   out << "//" << endl;
   out << "// This file is part of the BAGEL package." << endl;
   out << "//" << endl;

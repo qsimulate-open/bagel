@@ -547,10 +547,10 @@ complex_get_C (Tbase, Rstride, Istride, rankt, cxr, cxi, cwr, cwi);
 //\n\
 // BAGEL - Brilliantly Advanced General Electronic Structure Library\n\
 // Filename: " + filename + "\n\
-// Copyright (C) 2013 Toru Shiozaki\n\
+// Copyright (C) 2013 Quantum Simulation Technologies, Inc.\n\
 //\n\
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>\n\
-// Maintainer: Shiozaki group\n\
+// Maintainer: QSimulate\n\
 //\n\
 // This file is part of the BAGEL package.\n\
 //\n\

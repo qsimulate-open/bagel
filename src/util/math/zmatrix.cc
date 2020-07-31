@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zmatrix.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2012 Quantum Simulation Technologies, Inc.
 //
 // Author: Matthew Kelley <matthewkelley2017@u.northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

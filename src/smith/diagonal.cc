@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: diagonal.cc
-// Copyright (C) 2015 Toru Shiozaki
+// Copyright (C) 2015 Quantum Simulation Technologies, Inc.
 //
-// Author: Shiozaki group <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: asd/orbital/asd_orbopt.cc
-// Copyright (C) 2015 Toru Shiozaki
+// Copyright (C) 2015 Quantum Simulation Technologies, Inc.
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
