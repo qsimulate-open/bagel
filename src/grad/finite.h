@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: finite.h
-// Copyright (C) 2016 Toru Shiozaki
+// Copyright (C) 2016 Quantum Simulation Technologies, Inc.
 //
 // Author: Jae Woo Park <jwpk1201@northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

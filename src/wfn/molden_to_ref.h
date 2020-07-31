@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: molden_to_ref.h
-// Copyright (C) 2018 Toru Shiozaki
+// Copyright (C) 2018 Quantum Simulation Technologies, Inc.
 //
 // Author: Toru Shiozaki <shiozaki.toru@gmail.com> 
-// Maintainer: NU theory
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

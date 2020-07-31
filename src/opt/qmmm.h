@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: qmmm.h
-// Copyright (C) 2017 Toru Shiozaki
+// Copyright (C) 2017 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: contractmat.h
-// Copyright (C) 2017 Toru Shiozaki
+// Copyright (C) 2017 Quantum Simulation Technologies, Inc.
 //
 // Author: Nils Strand <nilsstrand2022@u.northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

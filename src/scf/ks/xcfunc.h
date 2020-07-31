@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: xcfunc.h
-// Copyright (C) 2013 Toru Shiozaki
+// Copyright (C) 2013 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: NU theory
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

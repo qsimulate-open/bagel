@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dimer_cispace.h
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2012 Quantum Simulation Technologies, Inc.
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
