@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: asd/asd_rdm.cc
-// Copyright (C) 2014 Toru Shiozaki
+// Copyright (C) 2014 Quantum Simulation Technologies, Inc.
 //
 // Author: Inkoo Kim <inkoo.kim@northwestern.edu>
-// Maintainer: Shiozaki Group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

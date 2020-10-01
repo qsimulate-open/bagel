@@ -1,9 +1,9 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dfpcmo.cc
-// Copyright (C) 2018 Toru Shiozaki
+// Copyright (C) 2018 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
 //
 // This file is part of the BAGEL package.
 //

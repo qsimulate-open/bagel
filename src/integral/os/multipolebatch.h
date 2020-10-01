@@ -1,10 +1,10 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: multipolebatch.h
-// Copyright (C) 2014 Toru Shiozaki
+// Copyright (C) 2014 Quantum Simulation Technologies, Inc.
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

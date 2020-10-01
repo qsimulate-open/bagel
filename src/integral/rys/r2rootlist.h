@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: r2rootlist.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2009 Quantum Simulation Technologies, Inc.
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

@@ -1,13 +1,11 @@
 BAGEL, Brilliantly Advanced General Electronic-structure Library
 
+Open-source version of QSimulate-QM;
+QSimulate is committed to maintain the open source BAGEL.
+
 *** Website ***
 
   http://www.nubakery.org
-
-
-*** Authors ***
-
-  Author contributions can be found in the manual.
 
 
 *** Citation ***
@@ -25,20 +23,7 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
   BAGEL is distributed under the GPLv3+.
 
 
-*** Support ***
-
-  DOE Basic Energy Sciences (DE-FG02-13ER16398)
-  NSF CAREER Program (CHE-1351598)
-  NSF SI2-SSI (ACI-1550481)
-  AFOSR Young Investigator Program (FA9550-15-1-0031)
-  Alfred P. Sloan Foundation (FR-2015-65579)
-
 *** Disclaimer ***
-
-  If you find problems that persist for an extended period of time,
-  please open an issue or make a pull request with a patch.
-  The BAGEL developers are trying their best, but are not commited to fix
-  all the reported bugs in a timely manner due to time constraints.
 
   BAGEL is intended for use in parallel environments with a large amount
   of distributed memory (e.g., hence there is no disk interface).

@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: gamma_task.h
-// Copyright (C) 2013 Toru Shiozaki
+// Copyright (C) 2013 Quantum Simulation Technologies, Inc.
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Maintainer: Toru Shiozaki

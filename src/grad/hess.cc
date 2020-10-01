@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: hess.cc
-// Copyright (C) 2016 Toru Shiozaki
+// Copyright (C) 2016 Quantum Simulation Technologies, Inc.
 //
 // Author: Bess Vlaisavljevich <bess.vlaisavljevich@northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

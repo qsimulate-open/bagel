@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: multisite.h
-// Copyright (C) 2014 Toru Shiozaki
+// Copyright (C) 2014 Quantum Simulation Technologies, Inc.
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
-// Maintainer: Shiozaki Group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

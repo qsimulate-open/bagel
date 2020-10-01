@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: CASPT2_contract.cc
-// Copyright (C) 2017 Toru Shiozaki
+// Copyright (C) 2017 Quantum Simulation Technologies, Inc.
 //
 // Author: Jae Woo Park <jwpk1201@northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
