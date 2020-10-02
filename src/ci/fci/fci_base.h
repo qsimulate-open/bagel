@@ -50,6 +50,7 @@ class FCI_base : public Method {
     int norb_;
 
     int nstate_;
+    bool only_ints_;
 
     // extra
     std::shared_ptr<const Determinants> det_;

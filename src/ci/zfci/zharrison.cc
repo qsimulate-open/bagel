@@ -45,6 +45,7 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   restart_ = idata_->get<bool>("restart", false);
+  only_ints_ = idata_->get<bool>("only_ints", false);
 
   if (idata_->get<int>("nspin", -1) != -1 || idata_->get<int>("nstate", -1) != -1)
     throw runtime_error("nspin and nstate are used as inputs only for non-relativistic FCI or CASSCF.  \
@@ -81,9 +82,10 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   cout << "    * nact     : " << setw(6) << norb_ << endl;
   cout << "    * nvirt    : " << setw(6) << (coeff_zcas ? coeff_zcas->mdim() : geom_->nbasis()-ncore_-norb_) << endl << endl;
 
-  space_ = make_shared<RelSpace>(norb_, nele_);
-  int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
-
+  if (!only_ints_){
+      space_ = make_shared<RelSpace>(norb_, nele_);
+      int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
+  }
 }
 
 

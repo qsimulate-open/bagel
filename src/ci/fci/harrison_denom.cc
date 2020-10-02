@@ -51,6 +51,7 @@ void HarrisonZarrabian::const_denom() {
     (*h)(i) = jop_->mo1e(i,i);
   }
   denom_t.tick_print("jop, kop");
+  if (only_ints_) return;
 
   denom_ = make_shared<Civec>(det());
 

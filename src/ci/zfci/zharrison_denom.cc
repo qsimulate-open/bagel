@@ -45,6 +45,7 @@ void ZHarrison::const_denom() {
             + 0.5*jop_->mo1e("11", i,i).real();
   }
   denom_t.tick_print("jop, kop");
+  if (only_ints_) return;
 
   denom_ = make_shared<RelDvec>(space_, 1);
 
