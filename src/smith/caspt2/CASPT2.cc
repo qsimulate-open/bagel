@@ -253,6 +253,18 @@ void CASPT2::CASPT2::solve() {
     heff_->element(0,0) = 1.0;
   }
   energy_ = pt2energy_;
+
+  // added by A. Humeniuk
+  // Replace the reference energies with the XMS-CASPT2 energies
+  auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
+                                        info_->nvirt() + info_->nfrozenvirt(),
+					energy_,
+					info_->ref()->rdm1(), info_->ref()->rdm2(),
+                                        info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), info_->ref()->ciwfn());
+
+  // construct SMITH_info
+  info_ = make_shared<SMITH_Info<double>>(new_ref, info_);
+  //
 }
 
 

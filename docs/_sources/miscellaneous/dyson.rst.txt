@@ -24,7 +24,7 @@ Commands: ``dyson``
 ===========
 Limitations
 ===========
-So far Dyson orbitals have been implemented only for CASSCF wavefunctions.
+So far Dyson orbitals have been implemented only for CASSCF and CASPT2 wavefunctions.
 
 ========
 Keywords
