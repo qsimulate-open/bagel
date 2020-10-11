@@ -1,21 +1,20 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Required keywords &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Self-consistent field" href="../scf/scf.html" />
@@ -32,7 +31,8 @@
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
-          <li class="nav-item nav-item-2"><a href="molecule-toc.html" accesskey="U">Molecule specification</a> &#187;</li> 
+          <li class="nav-item nav-item-2"><a href="molecule-toc.html" accesskey="U">Molecule specification</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Required keywords</a></li> 
       </ul>
     </div>  
 
@@ -79,8 +79,8 @@ Please see the end of the file for some examples.</div>
 </div>
 </div>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">The use of mixed basis sets and/or density fitting basis sets is possible by specifying a different
+<p class="admonition-title">Note</p>
+<p>The use of mixed basis sets and/or density fitting basis sets is possible by specifying a different
 basis set other than the default for each atom (see example for <a class="reference internal" href="#basis-sets">Basis sets</a> below).</p>
 </div>
 </div>
@@ -191,48 +191,48 @@ either standard Gaussian functions or gauge-including atomic orbitals (GIAOs).</
 <h2>Orbital basis sets<a class="headerlink" href="#orbital-basis-sets" title="Permalink to this headline">¶</a></h2>
 <p>The following basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal notranslate"><span class="pre">basis</span></code> keyword.</p>
 <table class="hlist"><tr><td><ul class="simple">
-<li>sto-3g</li>
-<li>3-21g</li>
-<li>6-31g</li>
-<li>svp</li>
-<li>tzvpp</li>
-<li>qzvpp</li>
-<li>cc-pvdz</li>
-<li>cc-pvtz</li>
-<li>cc-pvqz</li>
-<li>cc-pv5z</li>
-<li>cc-pv6z</li>
-<li>cc-pcvdz</li>
-<li>cc-pcvtz</li>
+<li><p>sto-3g</p></li>
+<li><p>3-21g</p></li>
+<li><p>6-31g</p></li>
+<li><p>svp</p></li>
+<li><p>tzvpp</p></li>
+<li><p>qzvpp</p></li>
+<li><p>cc-pvdz</p></li>
+<li><p>cc-pvtz</p></li>
+<li><p>cc-pvqz</p></li>
+<li><p>cc-pv5z</p></li>
+<li><p>cc-pv6z</p></li>
+<li><p>cc-pcvdz</p></li>
+<li><p>cc-pcvtz</p></li>
 </ul>
 </td><td><ul class="simple">
-<li>cc-pcvqz</li>
-<li>cc-pcv5z</li>
-<li>cc-pcvdz-dk</li>
-<li>cc-pcvtz-dk</li>
-<li>aug-cc-pvdz</li>
-<li>aug-cc-pvtz</li>
-<li>aug-cc-pvqz</li>
-<li>aug-cc-pv5z</li>
-<li>aug-cc-pv6z</li>
-<li>aug-cc-pcvdz</li>
-<li>aug-cc-pcvtz</li>
-<li>aug-cc-pcvqz</li>
-<li>aug-cc-pcv5z</li>
+<li><p>cc-pcvqz</p></li>
+<li><p>cc-pcv5z</p></li>
+<li><p>cc-pcvdz-dk</p></li>
+<li><p>cc-pcvtz-dk</p></li>
+<li><p>aug-cc-pvdz</p></li>
+<li><p>aug-cc-pvtz</p></li>
+<li><p>aug-cc-pvqz</p></li>
+<li><p>aug-cc-pv5z</p></li>
+<li><p>aug-cc-pv6z</p></li>
+<li><p>aug-cc-pcvdz</p></li>
+<li><p>aug-cc-pcvtz</p></li>
+<li><p>aug-cc-pcvqz</p></li>
+<li><p>aug-cc-pcv5z</p></li>
 </ul>
 </td><td><ul class="simple">
-<li>aug-cc-pcvdz-dk</li>
-<li>aug-cc-pcvtz-dk</li>
-<li>aug-cc-pcvqz-dk</li>
-<li>aug-cc-pwcvdz</li>
-<li>aug-cc-pwcvtz</li>
-<li>aug-cc-pwcvqz</li>
-<li>aug-cc-pwcv5z</li>
-<li>d-aug-cc-pvdz</li>
-<li>d-aug-cc-pvtz</li>
-<li>d-aug-cc-pvqz</li>
-<li>d-aug-cc-pv5z</li>
-<li>ano-rcc</li>
+<li><p>aug-cc-pcvdz-dk</p></li>
+<li><p>aug-cc-pcvtz-dk</p></li>
+<li><p>aug-cc-pcvqz-dk</p></li>
+<li><p>aug-cc-pwcvdz</p></li>
+<li><p>aug-cc-pwcvtz</p></li>
+<li><p>aug-cc-pwcvqz</p></li>
+<li><p>aug-cc-pwcv5z</p></li>
+<li><p>d-aug-cc-pvdz</p></li>
+<li><p>d-aug-cc-pvtz</p></li>
+<li><p>d-aug-cc-pvqz</p></li>
+<li><p>d-aug-cc-pv5z</p></li>
+<li><p>ano-rcc</p></li>
 </ul>
 </td></tr></table>
 </div>
@@ -240,17 +240,17 @@ either standard Gaussian functions or gauge-including atomic orbitals (GIAOs).</
 <h2>Density fitting basis sets<a class="headerlink" href="#density-fitting-basis-sets" title="Permalink to this headline">¶</a></h2>
 <p>The following density fitting basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal notranslate"><span class="pre">df_basis</span></code> keyword.</p>
 <table class="hlist"><tr><td><ul class="simple">
-<li>svp-jkfit</li>
-<li>tzvpp-jkfit</li>
-<li>qzvpp-jkfit</li>
+<li><p>svp-jkfit</p></li>
+<li><p>tzvpp-jkfit</p></li>
+<li><p>qzvpp-jkfit</p></li>
 </ul>
 </td><td><ul class="simple">
-<li>cc-pvdz-jkfit</li>
-<li>cc-pvtz-jkfit</li>
+<li><p>cc-pvdz-jkfit</p></li>
+<li><p>cc-pvtz-jkfit</p></li>
 </ul>
 </td><td><ul class="simple">
-<li>cc-pvqz-jkfit</li>
-<li>cc-pv5z-jkfit</li>
+<li><p>cc-pvqz-jkfit</p></li>
+<li><p>cc-pv5z-jkfit</p></li>
 </ul>
 </td></tr></table>
 <div class="section" id="examples">
@@ -345,10 +345,10 @@ and providing a value for <code class="docutils literal notranslate"><span class
 <p>The following MP2-fit basis sets are available in BAGEL. The basis set name can be used with the <code class="docutils literal notranslate"><span class="pre">aux_basis</span></code> keyword
 in the method block (refer to <a class="reference internal" href="../pt2/mp2.html#mp2"><span class="std std-ref">Møller–Plesset perturbation theory (MP2)</span></a> for more details).</p>
 <ul class="simple">
-<li>cc-pvdz-ri</li>
-<li>cc-pvtz-ri</li>
-<li>cc-pvqz-ri</li>
-<li>cc-pv5z-ri</li>
+<li><p>cc-pvdz-ri</p></li>
+<li><p>cc-pvtz-ri</p></li>
+<li><p>cc-pvqz-ri</p></li>
+<li><p>cc-pv5z-ri</p></li>
 </ul>
 <div class="section" id="example">
 <h3>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
@@ -391,23 +391,23 @@ in the method block (refer to <a class="reference internal" href="../pt2/mp2.htm
 <h2>Effective core potential (ECP) basis sets<a class="headerlink" href="#effective-core-potential-ecp-basis-sets" title="Permalink to this headline">¶</a></h2>
 <p>The following auxiliary basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal notranslate"><span class="pre">basis</span></code> keyword.</p>
 <table class="hlist"><tr><td><ul class="simple">
-<li>ecp10mdf</li>
-<li>ecp28mdf</li>
-<li>ecp46mdf</li>
+<li><p>ecp10mdf</p></li>
+<li><p>ecp28mdf</p></li>
+<li><p>ecp46mdf</p></li>
 </ul>
 </td><td><ul class="simple">
-<li>ecp60mdf</li>
-<li>ecp78mdf</li>
-<li>def2-SVP-ecp</li>
+<li><p>ecp60mdf</p></li>
+<li><p>ecp78mdf</p></li>
+<li><p>def2-SVP-ecp</p></li>
 </ul>
 </td><td><ul class="simple">
-<li>def2-SVP-2c-ecp</li>
-<li>lanl2dz-ecp</li>
+<li><p>def2-SVP-2c-ecp</p></li>
+<li><p>lanl2dz-ecp</p></li>
 </ul>
 </td></tr></table>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">User-defined ECP basis sets need to contain the keyword “ecp” in the names.
+<p class="admonition-title">Note</p>
+<p>User-defined ECP basis sets need to contain the keyword “ecp” in the names.
 Refer to <a class="reference internal" href="#user-defined-basis-sets">User defined basis sets</a> for more details.</p>
 </div>
 <div class="section" id="id1">
@@ -473,15 +473,15 @@ The basis set for associated with each element is then made up of further arrays
 of a single basis function.</p>
 <blockquote>
 <div><ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">angular</span></code> defines the kind of orbital (s,p,d,f…) .</li>
-<li><code class="docutils literal notranslate"><span class="pre">prim</span></code> is a array containing the exponents of the primitive orbitals from which the basis function is composed.</li>
-<li><code class="docutils literal notranslate"><span class="pre">cont</span></code> is an array containing the coefficients associated with each of these primitive orbitals.</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">angular</span></code> defines the kind of orbital (s,p,d,f…) .</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prim</span></code> is a array containing the exponents of the primitive orbitals from which the basis function is composed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cont</span></code> is an array containing the coefficients associated with each of these primitive orbitals.</p></li>
 </ul>
 </div></blockquote>
 <p>The user can specify their own basis set using the above format, or use one of the predefined basis sets listed in <a class="reference internal" href="#basis-sets">Basis sets</a>.</p>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Not all of the the basis sets are defined for all atoms;  an error message of form “No such node(X)”, where X is the element, typically means that the relevant element was not found in the basis set file. Refer to the EMSL Basis set exchange library for more basis sets (<a class="reference external" href="https://bse.pnl.gov/bse/portal">https://bse.pnl.gov/bse/portal</a>).</p>
+<p class="admonition-title">Note</p>
+<p>Not all of the the basis sets are defined for all atoms;  an error message of form “No such node(X)”, where X is the element, typically means that the relevant element was not found in the basis set file. Refer to the EMSL Basis set exchange library for more basis sets (<a class="reference external" href="https://bse.pnl.gov/bse/portal">https://bse.pnl.gov/bse/portal</a>).</p>
 </div>
 <p>To use a user specified basis the explicit path to the basis set file must be specified in the basis set block.</p>
 <div class="section" id="id2">
@@ -654,34 +654,35 @@ The atom positions, basis set, and magnetic field must not be changed simultaneo
 </div>
 <div class="section" id="references">
 <h1>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h1>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="36%" />
-<col width="64%" />
+<col style="width: 36%" />
+<col style="width: 64%" />
 </colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">Description of Reference</th>
-<th class="head">Reference</th>
+<thead>
+<tr class="row-odd"><th class="head"><p>Description of Reference</p></th>
+<th class="head"><p>Reference</p></th>
 </tr>
 </thead>
-<tbody valign="top">
-<tr class="row-even"><td>General text on electronic structure theory</td>
-<td>A. Szabo and N. S. Ostlund,
+<tbody>
+<tr class="row-even"><td><p>General text on electronic structure theory</p></td>
+<td><p>A. Szabo and N. S. Ostlund,
 <em>Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory</em>
-(McGraw-Hill, New York, 1989).</td>
+(McGraw-Hill, New York, 1989).</p></td>
 </tr>
-<tr class="row-odd"><td>Gauge invariant atomic orbitals</td>
-<td>R. Ditchfield, Mol. Phys. <strong>27</strong>, 789 (1974).</td>
+<tr class="row-odd"><td><p>Gauge invariant atomic orbitals</p></td>
+<td><p>R. Ditchfield, Mol. Phys. <strong>27</strong>, 789 (1974).</p></td>
 </tr>
-<tr class="row-even"><td>Finite nuclear charge distribution and
-default exponents</td>
-<td>L. Visscher and K. G. Dyall, At. Data Nucl. Data Tables <strong>67</strong>, 207 (1997).</td>
+<tr class="row-even"><td><p>Finite nuclear charge distribution and
+default exponents</p></td>
+<td><p>L. Visscher and K. G. Dyall, At. Data Nucl. Data Tables <strong>67</strong>, 207 (1997).</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -714,17 +715,15 @@ default exponents</td>
   <p class="topless"><a href="../scf/scf.html"
                         title="next chapter">Self-consistent field</a></p>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -740,7 +739,8 @@ default exponents</td>
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
-          <li class="nav-item nav-item-2"><a href="molecule-toc.html" >Molecule specification</a> &#187;</li> 
+          <li class="nav-item nav-item-2"><a href="molecule-toc.html" >Molecule specification</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Required keywords</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

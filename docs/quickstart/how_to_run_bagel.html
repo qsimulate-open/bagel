@@ -1,21 +1,20 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>How to run BAGEL &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Molecule specification" href="../molecule/molecule-toc.html" />
@@ -32,7 +31,8 @@
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
-          <li class="nav-item nav-item-2"><a href="quickstart.html" accesskey="U">First steps with BAGEL</a> &#187;</li> 
+          <li class="nav-item nav-item-2"><a href="quickstart.html" accesskey="U">First steps with BAGEL</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">How to run BAGEL</a></li> 
       </ul>
     </div>  
 
@@ -65,7 +65,7 @@ $ export MKL_NUM_THREADS=16
 <p>The default value for $BAGEL_NUM_THREADS is copied from $OMP_NUM_THREADS or the number of available CPU cores.
 It is generally recommended to set this variable such that BAGEL_NUM_THREADS times the number of MPI processes
 equals the number of available cores on your machine.</p>
-<p>When you run BAGEL with Intel MPI using a large number (16 or larger) of processes, you have to set:</p>
+<p>When you run BAGEL with Intel MPI using a large number (&gt;16) of processes, you have to set:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ export I_MPI_SCALABLE_OPTIMIZATION=off
 </pre></div>
 </div>
@@ -207,6 +207,7 @@ equals the number of available cores on your machine.</p>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -239,17 +240,15 @@ equals the number of available cores on your machine.</p>
   <p class="topless"><a href="../molecule/molecule-toc.html"
                         title="next chapter">Molecule specification</a></p>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -265,7 +264,8 @@ equals the number of available cores on your machine.</p>
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
-          <li class="nav-item nav-item-2"><a href="quickstart.html" >First steps with BAGEL</a> &#187;</li> 
+          <li class="nav-item nav-item-2"><a href="quickstart.html" >First steps with BAGEL</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">How to run BAGEL</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

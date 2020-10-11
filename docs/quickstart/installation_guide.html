@@ -1,21 +1,20 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Installation &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="How to run BAGEL" href="how_to_run_bagel.html" />
@@ -32,7 +31,8 @@
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
-          <li class="nav-item nav-item-2"><a href="quickstart.html" accesskey="U">First steps with BAGEL</a> &#187;</li> 
+          <li class="nav-item nav-item-2"><a href="quickstart.html" accesskey="U">First steps with BAGEL</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Installation</a></li> 
       </ul>
     </div>  
 
@@ -46,44 +46,44 @@
 <div class="section" id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div><table border="1" class="docutils">
+<div><table class="docutils align-default">
 <colgroup>
-<col width="22%" />
-<col width="43%" />
-<col width="35%" />
+<col style="width: 22%" />
+<col style="width: 43%" />
+<col style="width: 35%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>MPI C++ compiler</td>
-<td>&#160;</td>
-<td>C++11 and MPI-3 support</td>
+<tbody>
+<tr class="row-odd"><td><p>MPI C++ compiler</p></td>
+<td></td>
+<td><p>C++11 and MPI-3 support</p></td>
 </tr>
-<tr class="row-even"><td>GNU Libtool</td>
-<td><a class="reference external" href="https://www.gnu.org/software/libtool">https://www.gnu.org/software/libtool</a></td>
-<td>&#160;</td>
+<tr class="row-even"><td><p>GNU Libtool</p></td>
+<td><p><a class="reference external" href="https://www.gnu.org/software/libtool">https://www.gnu.org/software/libtool</a></p></td>
+<td></td>
 </tr>
-<tr class="row-odd"><td>GNU Autoconf</td>
-<td><a class="reference external" href="https://www.gnu.org/software/autoconf">https://www.gnu.org/software/autoconf</a></td>
-<td>Version 2.69 or newer</td>
+<tr class="row-odd"><td><p>GNU Autoconf</p></td>
+<td><p><a class="reference external" href="https://www.gnu.org/software/autoconf">https://www.gnu.org/software/autoconf</a></p></td>
+<td><p>Version 2.69 or newer</p></td>
 </tr>
-<tr class="row-even"><td>GNU Automake</td>
-<td><a class="reference external" href="https://www.gnu.org/software/automake">https://www.gnu.org/software/automake</a></td>
-<td>&#160;</td>
+<tr class="row-even"><td><p>GNU Automake</p></td>
+<td><p><a class="reference external" href="https://www.gnu.org/software/automake">https://www.gnu.org/software/automake</a></p></td>
+<td></td>
 </tr>
-<tr class="row-odd"><td>Boost C++ Libraries</td>
-<td><a class="reference external" href="http://www.boost.org">http://www.boost.org</a></td>
-<td>Version 1.53.0 or newer</td>
+<tr class="row-odd"><td><p>Boost C++ Libraries</p></td>
+<td><p><a class="reference external" href="http://www.boost.org">http://www.boost.org</a></p></td>
+<td><p>Version 1.53.0 or newer</p></td>
 </tr>
-<tr class="row-even"><td>BLAS</td>
-<td><a class="reference external" href="http://www.netlib.org/blas">http://www.netlib.org/blas</a></td>
-<td>Use optimized BLAS</td>
+<tr class="row-even"><td><p>BLAS</p></td>
+<td><p><a class="reference external" href="http://www.netlib.org/blas">http://www.netlib.org/blas</a></p></td>
+<td><p>Use optimized BLAS</p></td>
 </tr>
-<tr class="row-odd"><td>LAPACK</td>
-<td><a class="reference external" href="http://www.netlib.org/lapack">http://www.netlib.org/lapack</a></td>
-<td>Use optimized LAPACK</td>
+<tr class="row-odd"><td><p>LAPACK</p></td>
+<td><p><a class="reference external" href="http://www.netlib.org/lapack">http://www.netlib.org/lapack</a></p></td>
+<td><p>Use optimized LAPACK</p></td>
 </tr>
-<tr class="row-even"><td>ScaLAPACK</td>
-<td><a class="reference external" href="http://www.netlib.org/scalapack">http://www.netlib.org/scalapack</a></td>
-<td>Use optimized ScaLPACK</td>
+<tr class="row-even"><td><p>ScaLAPACK</p></td>
+<td><p><a class="reference external" href="http://www.netlib.org/scalapack">http://www.netlib.org/scalapack</a></p></td>
+<td><p>Use optimized ScaLPACK</p></td>
 </tr>
 </tbody>
 </table>
@@ -93,11 +93,9 @@
 <div class="section" id="downloading-the-source">
 <h2>Downloading the source<a class="headerlink" href="#downloading-the-source" title="Permalink to this headline">¶</a></h2>
 <p>The simplest approach is to just download and extract the tarball containing the most recent BAGEL release:</p>
-<pre class="literal-block">
-$ wget <a class="reference external" href="https://github.com/nubakery/bagel/archive/v">https://github.com/nubakery/bagel/archive/v</a>1.1.1.tar.gz
+<pre class="literal-block">$ wget <a class="reference external" href="https://github.com/nubakery/bagel/archive/v">https://github.com/nubakery/bagel/archive/v</a>1.1.1.tar.gz
 $ tar xvf bagel-1.1.1.tar.gz
-$ cd bagel
-</pre>
+$ cd bagel</pre>
 <p>Alternatively, you can clone the git repository:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/nubakery/bagel.git
 $ cd bagel
@@ -108,7 +106,7 @@ $ cd bagel
 <div class="section" id="build-bagel">
 <h2>Build BAGEL<a class="headerlink" href="#build-bagel" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p class="first">Automake</p>
+<li><p>Automake</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ glibtoolize (or, libtoolize)
 $ aclocal
 $ autoconf
@@ -117,13 +115,13 @@ $ automake -a
 </pre></div>
 </div>
 </li>
-<li><p class="first">Create an object directory</p>
+<li><p>Create an object directory</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mkdir obj
 $ cd obj
 </pre></div>
 </div>
 </li>
-<li><p class="first">Configure</p>
+<li><p>Configure</p>
 <p>A minimal set of configure options is</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ export BOOST_ROOT=/path/to/boost
 $ export LD_LIBRARY_PATH=$BOOST_ROOT/lib:$LD_LIBRARY_PATH
@@ -131,9 +129,8 @@ $ export LD_LIBRARY_PATH=$BOOST_ROOT/lib:$LD_LIBRARY_PATH
 $ ../configure --enable-mkl --with-boost=$BOOST_ROOT
 </pre></div>
 </div>
-<dl class="docutils">
-<dt>Configure options:</dt>
-<dd><div class="first last line-block">
+<dl>
+<dt>Configure options:</dt><dd><div class="line-block">
 <div class="line"><code class="docutils literal notranslate"><span class="pre">--with-mpi=value</span></code>  turns on MPI, where “value” can be “mvapich”, “intel”, or “openmpi”.
 However, Open MPI is not recommended.</div>
 <div class="line"><code class="docutils literal notranslate"><span class="pre">--enable-mkl</span></code>  turns on MKL extensions, such as efficient matrix transposition. MKL libraries are automatically detected.</div>
@@ -155,13 +152,13 @@ $ ../configure CXXFLAGS=&quot;-DNDEBUG -O3 -mavx&quot; --enable-mkl --with-boost
 </pre></div>
 </div>
 </li>
-<li><p class="first">Compile</p>
+<li><p>Compile</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ make -j4
 $ make install
 </pre></div>
 </div>
 </li>
-<li><p class="first">Test run</p>
+<li><p>Test run</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ BAGEL path_to_bagel/test/benzene_svp_mp2.json
 </pre></div>
 </div>
@@ -174,16 +171,16 @@ $ ./TestSuite --log_level=all
 </div>
 <p>One of the tests (ASD-DMRG) is meant to fail.</p>
 </li>
-<li><p class="first">Additional Notes</p>
+<li><p>Additional Notes</p>
 <ul>
-<li><p class="first">Configuring without MKL</p>
+<li><p>Configuring without MKL</p>
 <div class="line-block">
 <div class="line">If MKL is not available, the path to cblas headers may need to be included as a configure option
      (e.g., ‘–with-include=-I/usr/path/to/cblas’). One may also add “LDFLAGS=-lcblas” as an option.
 Furthermore, if relativistic calculations fail without MKL, users may consider reconfiguring and recompiling with -DZDOT_RETURN in CXXFLAGS.</div>
 </div>
 </li>
-<li><p class="first">Compiling on small machines</p>
+<li><p>Compiling on small machines</p>
 <div class="line-block">
 <div class="line">Some files in BAGEL require several GB of RAM to compile.  This is generally not a problem for clusters, but on personal computers the
 compilation will occasionally fail.  Compiling with one thread (make -j1) and not using -DCOMPILE_J_ORB may help.</div>
@@ -196,6 +193,7 @@ compilation will occasionally fail.  Compiling with one thread (make -j1) and no
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -228,17 +226,15 @@ compilation will occasionally fail.  Compiling with one thread (make -j1) and no
   <p class="topless"><a href="how_to_run_bagel.html"
                         title="next chapter">How to run BAGEL</a></p>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -254,7 +250,8 @@ compilation will occasionally fail.  Compiling with one thread (make -j1) and no
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
-          <li class="nav-item nav-item-2"><a href="quickstart.html" >First steps with BAGEL</a> &#187;</li> 
+          <li class="nav-item nav-item-2"><a href="quickstart.html" >First steps with BAGEL</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Installation</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

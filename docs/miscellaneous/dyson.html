@@ -1,0 +1,289 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dyson Orbitals &#8212; BAGEL Manual</title>
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MOLDEN" href="molden.html" />
+    <link rel="prev" title="Orbital localization" href="localization.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="molden.html" title="MOLDEN"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="localization.html" title="Orbital localization"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="misc.html" accesskey="U">Miscellaneous features</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Dyson Orbitals</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="dyson-orbitals">
+<span id="dyson"></span><h1>Dyson Orbitals<a class="headerlink" href="#dyson-orbitals" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>Dyson orbitals are the effective one-particle wavefunctions for describing
+the ionization transition from a wavefunction with <cite>N</cite> electrons to one with
+<cite>N-1</cite> electrons. They can be evaluated as the overlap between the initial
+and final wavefunction. Since those wavefunctions differ by one electron,
+the overlap is not a scalar but a one-particle wavefunction. The norm of the
+Dyson orbital indicates the intensity of the ionization channel. For Koopmans-allowed
+transitions the norm is close to 1 and close 0 for forbidden transitions.</p>
+<p>Dyson orbitals require two calculations: one for the initial and one for the final
+wavefunctions. The wavefunctions have to be saved to files using the <code class="docutils literal notranslate"><span class="pre">save_ref</span></code>
+command.</p>
+<p>Commands: <code class="docutils literal notranslate"><span class="pre">dyson</span></code></p>
+</div>
+<div class="section" id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline">¶</a></h2>
+<p>So far Dyson orbitals have been implemented only for CASSCF and CASPT2 wavefunctions.</p>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">initial</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Specify initial N-electron wavefunctions.</div>
+<div class="line"><strong>Datatype:</strong> JSON</div>
+<div class="line"><strong>Keywords:</strong></div>
+<div class="line"><br /></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">states</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description:</strong> list of state indices</div>
+<div class="line"><strong>Datatype:</strong> vector&lt;int&gt;</div>
+<div class="line"><strong>Default:</strong> [0], i.e. only ground state</div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">file</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description:</strong> The initial wavefunctions, which were generated in a previous</div>
+<div class="line-block">
+<div class="line">calculation and saved via the <code class="docutils literal notranslate"><span class="pre">save_ref</span></code> command, are read in from this</div>
+<div class="line">file. The extension .archive will be appended.</div>
+</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">final</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Specify final (N-1)-electron wavefunctions.</div>
+<div class="line"><strong>Datatype:</strong> JSON</div>
+<div class="line"><strong>Keywords:</strong></div>
+<div class="line"><br /></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">states</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description:</strong> list of state indices</div>
+<div class="line"><strong>Datatype:</strong> vector&lt;int&gt;</div>
+<div class="line"><strong>Default:</strong> [0], i.e. only ground state</div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">file</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description:</strong> The final wavefunctions, which were generated in a previous</div>
+<div class="line-block">
+<div class="line">calculation and saved via the <code class="docutils literal notranslate"><span class="pre">save_ref</span></code> command, are read in from this</div>
+<div class="line">file. The extension .archive will be appended.</div>
+</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Threshold for neglecting products of CI coefficients in overlap calculations.</div>
+<div class="line"><strong>Datatype:</strong> double</div>
+<div class="line"><strong>Default:</strong> 1.0e-10</div>
+<div class="line"><strong>Recommendation:</strong> The calculation can be sped up by increasing this threshold.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">molden_file</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> File name for saving Dyson orbitals in molden format.</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Default:</strong> <code class="docutils literal notranslate"><span class="pre">dyson_orbitals.molden</span></code></div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="sample-input">
+<h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span><span class="o">:</span> <span class="p">[</span>
+ <span class="p">{</span>
+     <span class="s2">&quot;title&quot;</span><span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;basis&quot;</span><span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;df_basis&quot;</span><span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;angstrom&quot;</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+     <span class="s2">&quot;geometry&quot;</span><span class="o">:</span> <span class="p">[</span>
+         <span class="p">{</span><span class="s2">&quot;atom&quot;</span><span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.227</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.825</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.666</span><span class="p">]</span> <span class="p">},</span>
+         <span class="p">{</span><span class="s2">&quot;atom&quot;</span><span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.186</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.147</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.258</span><span class="p">]</span> <span class="p">},</span>
+         <span class="p">{</span><span class="s2">&quot;atom&quot;</span><span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.030</span><span class="p">,</span>  <span class="mf">0.714</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.796</span><span class="p">]</span> <span class="p">}</span>
+     <span class="p">]</span>
+ <span class="p">},</span>
+
+ <span class="p">{</span>
+     <span class="s2">&quot;title&quot;</span>   <span class="o">:</span> <span class="s2">&quot;casscf&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+     <span class="s2">&quot;nact&quot;</span>    <span class="o">:</span> <span class="mi">6</span><span class="p">,</span>
+     <span class="s2">&quot;nstate&quot;</span>  <span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+     <span class="s2">&quot;charge&quot;</span>  <span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+     <span class="s2">&quot;nspin&quot;</span>   <span class="o">:</span> <span class="mi">0</span>
+ <span class="p">},</span>
+
+ <span class="p">{</span>
+     <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;save_ref&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;file&quot;</span>  <span class="o">:</span> <span class="s2">&quot;h2o&quot;</span>
+ <span class="p">},</span>
+
+ <span class="p">{</span>
+     <span class="s2">&quot;title&quot;</span>   <span class="o">:</span> <span class="s2">&quot;casscf&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+     <span class="s2">&quot;nact&quot;</span>    <span class="o">:</span> <span class="mi">6</span><span class="p">,</span>
+     <span class="s2">&quot;nstate&quot;</span>  <span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+     <span class="s2">&quot;charge&quot;</span>  <span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+     <span class="s2">&quot;nspin&quot;</span>   <span class="o">:</span> <span class="mi">1</span>
+ <span class="p">},</span>
+
+ <span class="p">{</span>
+     <span class="s2">&quot;title&quot;</span>  <span class="o">:</span> <span class="s2">&quot;save_ref&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;file&quot;</span>   <span class="o">:</span> <span class="s2">&quot;h2o+&quot;</span>
+ <span class="p">},</span>
+
+ <span class="p">{</span>
+     <span class="s2">&quot;title&quot;</span>   <span class="o">:</span> <span class="s2">&quot;dyson&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;initial&quot;</span> <span class="o">:</span>
+     <span class="p">{</span>
+         <span class="s2">&quot;states&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+         <span class="s2">&quot;file&quot;</span>   <span class="o">:</span> <span class="s2">&quot;h2o&quot;</span>
+     <span class="p">},</span>
+     <span class="s2">&quot;final&quot;</span>   <span class="o">:</span>
+     <span class="p">{</span>
+         <span class="s2">&quot;states&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+         <span class="s2">&quot;file&quot;</span>   <span class="o">:</span> <span class="s2">&quot;h2o+&quot;</span>
+     <span class="p">},</span>
+     <span class="s2">&quot;thresh&quot;</span>  <span class="o">:</span> <span class="mf">1.0e-8</span><span class="p">,</span>
+     <span class="s2">&quot;molden_file&quot;</span> <span class="o">:</span> <span class="s2">&quot;dyson_orbitals.molden&quot;</span>
+ <span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 34%" />
+<col style="width: 66%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Description of Reference</p></th>
+<th class="head"><p>Reference</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Dyson orbitals are expanded according to eqn. (22)</p></td>
+<td><p>A. Humeniuk and M.Wohlgemuth and T. Suzuki and R.Mitric, J. Chem. Phys. <strong>139</strong>, 134104 (2013)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Dyson orbitals (definition and some applications)</p></td>
+<td><p>M. Oana and A. Krylov, J. Chem. Phys. <strong>127</strong>, 234106 (2007).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="localization.html"
+                        title="previous chapter">Orbital localization</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="molden.html"
+                        title="next chapter">MOLDEN</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="molden.html" title="MOLDEN"
+             >next</a></li>
+        <li class="right" >
+          <a href="localization.html" title="Orbital localization"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="misc.html" >Miscellaneous features</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Dyson Orbitals</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>
