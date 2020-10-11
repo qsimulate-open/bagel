@@ -50,6 +50,8 @@ VectorB dyson_norms(std::string filename) {
       std::shared_ptr<DysonOrbitals> dyson = std::make_shared<DysonOrbitals>(itree);
       dyson->compute();
       dyson->print_results();
+
+      std::cout.rdbuf(backup_stream);
       return dyson->norms();
       
 #ifndef DISABLE_SERIALIZATION
