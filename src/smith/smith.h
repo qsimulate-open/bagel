@@ -80,7 +80,11 @@ class Smith : public Method {
 
     // Returns the rotated XMS-CASPT2 reference.
     std::shared_ptr<const Reference> conv_to_ref() const override {
+#ifdef COMPILE_SMITH
       return algo()->info()->ref();
+#else
+      return ref_;
+#endif
     }
 
     std::shared_ptr<const Matrix> dm1() const { return dm1_; }
