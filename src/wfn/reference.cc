@@ -48,7 +48,6 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
     mpi__->broadcast(const_pointer_cast<Coeff>(c)->data(), c->size(), 0);
     coeff_ = c;
   }
-    
   for (auto& i : *rdm1_)
     mpi__->broadcast(i.second->data(), i.second->size(), 0);
   for (auto& i : *rdm2_)

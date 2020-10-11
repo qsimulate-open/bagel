@@ -368,11 +368,10 @@ void Matrix::sqrt() {
 }
 
 
-// compute determinant of square matrix
-double Matrix::det() {
+// compute determinant of square matrix via LU decomposition
+double Matrix::det() const {
   assert(ndim() == mdim());
   const int n = ndim();
-  // make copy of matrix as dgetrf_ destroys input
   shared_ptr<Matrix> mat = this->copy();
   
   int info;
@@ -381,32 +380,22 @@ double Matrix::det() {
   dgetrf_(n, n, mat->data(), n, ipiv.get(), info);
   if (info < 0) throw runtime_error("dgetrf_ failed in Matrix::det()");
 
-  /*
-    The LU decomposition factorizes the matrix into 
-      M = P.L.U,
-    where L is lower diagonal (with 1's on the diagonal) and U
-    is upper diagonal. Only the diagonal elements of U are stored.
-    The determinant of the product is
-      det(M) = det(P)*det(L)*det(U)
-             = det(P)*  1   *det(U)
-  */ 
   // determinant of triangular matrix U is product of the diagonals
   double detU = 1.0;
-  for (int i=0; i<n; i++) {
+  for (int i = 0; i < n; i++) {
     detU *= mat->element(i,i);
   }
   // determine sign of permutation, det(P), from sequence of row swaps
   double detP = 1.0;
-  for (int i=0; i<n; i++) {
+  for (int i = 0; i < n; i++) {
     // Apparently indices in ipiv are 1-based !
     if (ipiv[i] != i+1) {
       detP *= -1.0;
     }
   }
-  double detM = detP*detU;
-  
-  return detM;
+  return detP * detU;
 }
+
 
 shared_ptr<Matrix> Matrix::hadamard_product(const Matrix& o) const {
   assert(size() == o.size());

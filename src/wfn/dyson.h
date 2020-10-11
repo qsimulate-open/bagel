@@ -1,10 +1,9 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dyson.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2020 Quantum Simulation Technologies, Inc.
 //
 // Author: Alexander Humeniuk
-// Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
@@ -35,8 +34,6 @@
 
 namespace bagel {
 
-  const std::string indent = "  ";
-  
 class DysonOrbitals {
   protected:
     // Hang on to the input for convenience

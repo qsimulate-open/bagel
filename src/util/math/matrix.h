@@ -85,7 +85,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     void sqrt();
 
     // determinant of square matrix
-    double det();
+    double det() const;
     
     using Matrix_base<double>::copy_block;
     using Matrix_base<double>::add_block;

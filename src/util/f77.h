@@ -47,7 +47,6 @@ extern "C" {
              double* b, const int* ldb, double* work, const int* lwork, int* info);
  void drot_(const int*, const double*, const int*, const double*, const int*, const double*, const double*);
  void dger_(const int*, const int*, const double*, const double*, const int*, const double*, const int*, double*, const int*);
-  
  void zcopy_(const int*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
  void zscal_(const int*, const std::complex<double>*, std::complex<double>*, const int*);
 #ifndef ZDOT_RETURN

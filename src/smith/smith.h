@@ -78,11 +78,8 @@ class Smith : public Method {
     // Gradient module to be separated
     void compute_gradient(const int istate, const int jstate, std::shared_ptr<const NacmType> nacmtype = std::make_shared<const NacmType>("interstate"), const bool nocider = false);
 
-    // just return the reference used in SMITH code
+    // Returns the rotated XMS-CASPT2 reference.
     std::shared_ptr<const Reference> conv_to_ref() const override {
-      //return ref_;
-      // changed by A.Humeniuk
-      // We want to have the rotated XMS-CASPT2 reference.
       return algo()->info()->ref();
     }
 
