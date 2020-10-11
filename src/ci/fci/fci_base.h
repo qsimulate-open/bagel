@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: fci_base.h
-// Copyright (C) 2016 Toru Shiozaki
+// Copyright (C) 2016 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
@@ -50,6 +50,7 @@ class FCI_base : public Method {
     int norb_;
 
     int nstate_;
+    bool only_ints_;
 
     // extra
     std::shared_ptr<const Determinants> det_;

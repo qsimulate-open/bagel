@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: fci.cc
-// Copyright (C) 2011 Toru Shiozaki
+// Copyright (C) 2011 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
@@ -44,9 +44,9 @@ FCI::FCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<
 
 HarrisonZarrabian::HarrisonZarrabian(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_ptr<const Reference> b,
                                      const int ncore, const int nocc, const int nstate, const bool store) : FCI(a, g, b, ncore, nocc, nstate, store) {
-  space_ = make_shared<HZSpace>(det_);
+  if (!only_ints_) space_ = make_shared<HZSpace>(det_);
   update(ref_->coeff());
-  if (idata_->get<bool>("only_ints", false)) {
+  if (only_ints_){
     OArchive ar("ref");
     ar << ref_;
     dump_ints();
@@ -58,7 +58,7 @@ HarrisonZarrabian::HarrisonZarrabian(shared_ptr<const PTree> a, shared_ptr<const
 KnowlesHandy::KnowlesHandy(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_ptr<const Reference> b,
                            const int ncore, const int nocc, const int nstate, const bool store) : FCI(a, g, b, ncore, nocc, nstate, store) {
   update(ref_->coeff());
-  if (idata_->get<bool>("only_ints", false)) {
+  if (only_ints_){
     OArchive ar("ref");
     ar << ref_;
     dump_ints();
@@ -99,16 +99,20 @@ void FCI::common_init() {
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   restart_ = idata_->get<bool>("restart", false);
+  only_ints_ = idata_->get<bool>("only_ints", false);
 
   if (nstate_ < 0) nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
+
+  const int charge = idata_->get<int>("charge", 0);
+  const int nele = geom_->nele() - charge;
 
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) {
     set<int> tmp;
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
     for (auto& i : *iactive) tmp.insert(lexical_cast<int>(i->data()) - 1);
-    ref_ = ref_->set_active(tmp);
+    ref_ = ref_->set_active(tmp, nele);
     ncore_ = ref_->nclosed();
     norb_ = ref_->nact();
   }
@@ -119,9 +123,6 @@ void FCI::common_init() {
 
   // calculate dipole moments if requested
   dipoles_ = idata_->get<bool>("dipoles", false);
-
-  // additional charge
-  const int charge = idata_->get<int>("charge", 0);
 
   // nspin is #unpaired electron 0:singlet, 1:doublet, 2:triplet, ... (i.e., Molpro convention).
   const int nspin = idata_->get<int>("nspin", 0);
@@ -142,7 +143,7 @@ void FCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
-  det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
+  if (!only_ints_) det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
 
 }
 
@@ -226,8 +227,12 @@ void FCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dvec> out
     bitset<nbit__> closed_bit = (alpha&beta);
 
     // This can happen if all possible determinants are checked without finding nstate acceptable ones.
-    if (alpha.count() + beta.count() != nelea_ + neleb_)
-      throw logic_error("FCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
+    if (alpha.count() + beta.count() != nelea_ + neleb_) {
+      stringstream ss;
+      ss << "FCI::generate_guess produced an invalid determinant.  Check the number of states being requested." << endl;
+      ss << "If the number is correct, a workaround may be to specify the \"nguess\" keyword.";
+      throw logic_error(ss.str());
+    }
 
     // make sure that we have enough unpaired alpha
     const int unpairalpha = (alpha ^ (alpha & beta)).count();

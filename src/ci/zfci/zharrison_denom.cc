@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zharrison_denom.cc
-// Copyright (C) 2013 Toru Shiozaki
+// Copyright (C) 2013 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
@@ -45,6 +45,7 @@ void ZHarrison::const_denom() {
             + 0.5*jop_->mo1e("11", i,i).real();
   }
   denom_t.tick_print("jop, kop");
+  if (only_ints_) return;
 
   denom_ = make_shared<RelDvec>(space_, 1);
 

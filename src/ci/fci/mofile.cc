@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: mofile.cc
-// Copyright (C) 2011 Toru Shiozaki
+// Copyright (C) 2011 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
@@ -62,9 +62,10 @@ void MOFile::init(const int nstart, const int nfence, const bool store) {
 
   // core energy is set here
   if (nstart != 0) {
-    core_fock_ = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, coeff_->slice(0,nstart), /*grad*/store, /*rhf*/true);
+    shared_ptr<const Matrix> hcore = ref_->hcore() ? ref_->hcore() : make_shared<Hcore>(geom_);
+    core_fock_ = make_shared<Fock<1>>(geom_, hcore, nullptr, coeff_->slice(0,nstart), /*grad*/store, /*rhf*/true);
     shared_ptr<const Matrix> den = coeff_->form_density_rhf(nstart);
-    core_energy_ = (*den * (*ref_->hcore()+*core_fock_)).trace() * 0.5;
+    core_energy_ = (*den * (*hcore+*core_fock_)).trace() * 0.5;
   } else {
     core_fock_ = ref_->hcore();
     core_energy_ = 0.0;

@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: relcdmatrix.h
-// Copyright (C) 2013 Toru Shiozaki
+// Copyright (C) 2013 Quantum Simulation Technologies, Inc.
 //
 // Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

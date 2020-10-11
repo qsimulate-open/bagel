@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: test_zcasscf.cc
-// Copyright (C) 2014 Toru Shiozaki
+// Copyright (C) 2014 Quantum Simulation Technologies, Inc.
 //
 // Author: Jefferson E. Bates  <jefferson.bates@northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

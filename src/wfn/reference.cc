@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: reference.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2012 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
@@ -250,17 +250,17 @@ void Reference::set_coeff_AB(const shared_ptr<const Coeff> a, const shared_ptr<c
 }
 
 // This function currently assumes it is being called on a Reference object with no defined active space
-shared_ptr<Reference> Reference::set_active(set<int> active_indices) const {
+shared_ptr<Reference> Reference::set_active(set<int> active_indices, const int nele) const {
   if (!coeff_) throw logic_error("Reference::set_active is not implemented for relativistic cases");
   const int naobasis = geom_->nbasis();
   const int nmobasis = coeff_->mdim();
 
-  int nactive = active_indices.size();
+  const int nactive = active_indices.size();
 
-  int nclosed = nclosed_;
+  int nclosed = nele/2;
   int nvirt = nmobasis - nclosed;
   for (auto& iter : active_indices) {
-    if (iter < nclosed_) --nclosed;
+    if (iter < nele/2) --nclosed;
     else --nvirt;
   }
 
@@ -274,8 +274,8 @@ shared_ptr<Reference> Reference::set_active(set<int> active_indices) const {
   auto cp = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) { copy_n(coeff->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0, pos)); ++pos; };
 
   for (int i = 0; i < nmobasis; ++i) {
-    if ( active_indices.find(i) != active_indices.end() ) cp(i, iactive);
-    else if ( i < nclosed_ ) cp(i, iclosed);
+    if (active_indices.find(i) != active_indices.end()) cp(i, iactive);
+    else if (i < nele/2) cp(i, iclosed);
     else cp(i, ivirt);
   }
 

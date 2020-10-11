@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: fci/distfci.cc
-// Copyright (C) 2011 Toru Shiozaki
+// Copyright (C) 2011 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
@@ -58,12 +58,15 @@ void DistFCI::common_init() {
   if (nstate_ < 0) nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
 
+  const int charge = idata_->get<int>("charge", 0);
+  const int nele = geom_->nele() - charge;
+
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) {
     set<int> tmp;
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
     for (auto& i : *iactive) tmp.insert(lexical_cast<int>(i->data()) - 1);
-    ref_ = ref_->set_active(tmp);
+    ref_ = ref_->set_active(tmp, nele);
     ncore_ = ref_->nclosed();
     norb_ = ref_->nact();
   }
@@ -74,9 +77,6 @@ void DistFCI::common_init() {
 
   // Configure properties to be calculated on the final wavefunctions
   //if (idata_->get<bool>("dipoles", false)) properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
-
-  // additional charge
-  const int charge = idata_->get<int>("charge", 0);
 
   // nspin is #unpaired electron 0:singlet, 1:doublet, 2:triplet, ... (i.e., Molpro convention).
   const int nspin = idata_->get<int>("nspin", 0);

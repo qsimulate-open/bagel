@@ -337,10 +337,10 @@ int main(int argc, char** argv) {
 //\n\
 // BAGEL - Brilliantly Advanced General Electronic Structure Library\n\
 // Filename: " + filename + "\n\
-// Copyright (C) 2013 Toru Shiozaki\n\
+// Copyright (C) 2013 Quantum Simulation Technologies, Inc.\n\
 //\n\
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>\n\
-// Maintainer: Shiozaki group\n\
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>\n\
+// Maintainer: QSimulate\n\
 //\n\
 // This file is part of the BAGEL package.\n\
 //\n\

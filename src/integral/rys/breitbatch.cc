@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: breitbatch.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2009 Quantum Simulation Technologies, Inc.
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

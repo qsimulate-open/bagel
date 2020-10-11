@@ -112,10 +112,10 @@ int main() {
 //\n\
 // BAGEL - Parallel electron correlation program.\n\
 // Filename: " + filename + "\n\
-// Copyright (C) 2009 Toru Shiozaki\n\
+// Copyright (C) 2009 Quantum Simulation Technologies, Inc.\n\
 //\n\
 // Author: Hai-Anh Le <anh@u.northwestern.edu>\n\
-// Maintainer: Shiozaki group\n\
+// Maintainer: QSimulate\n\
 //\n\
 // This file is part of the BAGEL package.\n\
 //\n\

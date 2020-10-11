@@ -1,10 +1,10 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: box.h
-// Copyright (C) 2016 Toru Shiozaki
+// Copyright (C) 2016 Quantum Simulation Technologies, Inc.
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

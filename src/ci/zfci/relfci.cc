@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: relfci.cc
-// Copyright (C) 2013 Toru Shiozaki
+// Copyright (C) 2013 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
@@ -54,9 +54,7 @@ RelFCI::RelFCI(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_p
   update(coeff);
 
   // if integral dump is requested, do it here, and throw Termination
-  const bool only_ints = idata_->get<bool>("only_ints", false);
-  if (only_ints)
-    dump_integrals_and_exit();
+   if (only_ints_) dump_integrals_and_exit();
 }
 
 

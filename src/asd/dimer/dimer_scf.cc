@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dimer_scf.cc
-// Copyright (C) 2014 Toru Shiozaki
+// Copyright (C) 2014 Quantum Simulation Technologies, Inc.
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
-// Maintainer: NU theory
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
@@ -174,7 +174,7 @@ void Dimer::set_active(const shared_ptr<const PTree> idata, const bool localize_
   if (!Bi.empty()) Blist = Bi;
 
   // Make new References
-  active_refs_ = {isolated_refs_.first->set_active(Alist), isolated_refs_.second->set_active(Blist)};
+  active_refs_ = {isolated_refs_.first->set_active(Alist, isolated_refs_.first->nclosed()*2), isolated_refs_.second->set_active(Blist, isolated_refs_.second->nclosed()*2)};
 
   // Hold onto old occupation data
   const int noccA = isolated_refs_.first->nclosed();

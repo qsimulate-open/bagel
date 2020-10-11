@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zharrison.h
-// Copyright (C) 2013 Toru Shiozaki
+// Copyright (C) 2013 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
@@ -57,6 +57,9 @@ class ZHarrison : public Method {
     // number of states
     int nstate_;
     std::vector<int> states_;
+
+    // dump integrals and quit
+    bool only_ints_;
 
     // total energy
     std::vector<double> energy_;

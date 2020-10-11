@@ -4,7 +4,7 @@
 // Copyright (C) 2012 Quantum Simulation Technologies, Inc.
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
-// Maintainer: NU theory
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

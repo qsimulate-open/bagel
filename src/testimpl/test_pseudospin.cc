@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: test_zfs.cc
-// Copyright (C) 2016 Toru Shiozaki
+// Copyright (C) 2016 Quantum Simulation Technologies, Inc.
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
-// Maintainer: Shiozaki group
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //

@@ -1,10 +1,10 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: fci_io.cc
-// Copyright (C) 2017 Toru Shiozaki
+// Copyright (C) 2017 Quantum Simulation Technologies, Inc.
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Maintainer: Shiozaki group
+// Author: Toru Shiozaki <shiozaki@qsimulate.com>
+// Maintainer: QSimulate
 //
 // This file is part of the BAGEL package.
 //
@@ -43,7 +43,7 @@ void FCI::dump_ints() const {
 
   if (fs.is_open()) {
 
-    fs << " &FCI NORB= " << norb_ << ",NELEC= " << det_->nelea() + det_->neleb() << ",ORBSYM= ";
+    fs << " &FCI NORB= " << norb_ << ",NELEC= " << nelea_ + neleb_ << ",ORBSYM= ";
     for (int i = 0; i != norb_; ++i)
       fs << "1, ";
     fs << endl;
