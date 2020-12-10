@@ -40,8 +40,10 @@ class Hess {
 
     bool numhess_;
     bool numforce_;
+    bool partial_;
 
     int nproc_;
+    int block_;
 
     std::shared_ptr<Matrix> hess_;
     std::shared_ptr<Matrix> mw_hess_;
