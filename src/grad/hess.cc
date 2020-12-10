@@ -68,8 +68,15 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
 
   nproc_ = idata_->get<int>("nproc", 1);
 
+  partial_ = idata_->get<bool>("partial", false);
+  if (partial_) {
+      cout << "  The Hessian will be computed for only designated atoms" << endl;
+  } else {
+  }
+
   const int natom = geom_->natom();
-  const int ndispl = natom * 3;
+  nblock_ = idata_->get<int>("nblock", 0);
+  const int ndispl = (natom - nblock_) * 3;
   hess_      = make_shared<Matrix>(ndispl, ndispl);
   mw_hess_   = make_shared<Matrix>(ndispl, ndispl);
   cartesian_ = make_shared<Matrix>(3, ndispl); //matrix of dmu/dR
@@ -79,7 +86,8 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
 void Hess::compute() {
 
   const int natom = geom_->natom();
-  const int ndispl = natom * 3;
+  const int nmove = natom - nblock_;
+  const int ndispl = nmove * 3;
 
   muffle_ = make_shared<Muffle>("freq.log");
 
@@ -150,11 +158,12 @@ void Hess::compute() {
 void Hess::compute_finite_diff_() {
   Timer timer;
   const int natom = geom_->natom();
+  const int nmove = natom - nblock_;
   const int ncomm = mpi__->size() / nproc_;
-  const int npass = (natom * 3 - 1) / ncomm + 1;
+  const int npass = (nmove * 3 - 1) / ncomm + 1;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
-    const int ncolor = min(ncomm, natom*3-ncomm*ipass);
+    const int ncolor = min(ncomm, nmove*3-ncomm*ipass);
     const int icomm = mpi__->rank() % ncolor;
     mpi__->split(ncolor);
 
@@ -201,7 +210,7 @@ void Hess::compute_finite_diff_() {
     }
 
     if (mpi__->rank() == 0) {
-      for (int k = 0, step = 0; k != natom; ++k) { // atom j
+      for (int k = 0, step = 0; k != nmove; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
           (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
           (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
@@ -224,9 +233,10 @@ void Hess::compute_finite_diff_() {
 
 void Hess::project_zero_freq_() {
   const int natom = geom_->natom();
-  const int ndispl = natom * 3;
+  const int nmove = natom - nblock_;
+  const int ndispl = nmove * 3;
 
-  // calculate center of mass
+  // calculate center of mass of whole molecule
   VectorB cmass(3); // values needed to calc center of mass. mi*xi, mi*yi, mi*zi, and total mass
   double total_mass = 0.0;
   // compute center of mass
@@ -238,8 +248,10 @@ void Hess::project_zero_freq_() {
   blas::scale_n(1.0/total_mass, cmass.data(), 3);
   cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
 
+//TODO Calculate center of mass etc for blocks?
+//I modified the first for loop to be to nmove instead of natom so only for the area of the hessian. is this right?
   Matrix proj(6, ndispl);
-  for (int i = 0; i != natom; ++i) {
+  for (int i = 0; i != nmove; ++i) {
     const double imass = sqrt(geom_->atoms(i)->mass());
     const array<double,3> pos {{geom_->atoms(i)->position(0) - cmass(0),
                                 geom_->atoms(i)->position(1) - cmass(1),
