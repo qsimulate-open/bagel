@@ -219,7 +219,7 @@ void Hess::compute_finite_diff_() {
       }
     }
     muffle_->unmute();
-    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << natom * 3 << ")";
+    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << nmove * 3 << ")";
     timer.tick_print(ss.str());
 
     mpi__->merge();
@@ -241,14 +241,43 @@ void Hess::project_zero_freq_() {
   double total_mass = 0.0;
   // compute center of mass
   for (auto& atom : geom_->atoms()) {
-    for (int i = 0; i != 3; ++i)
+    for (int i = 0; i != 3; ++i) {
       cmass(i) += atom->mass() * atom->position(i);
+    }
     total_mass += atom->mass();
   }
   blas::scale_n(1.0/total_mass, cmass.data(), 3);
+
+  // calculate center of mass of the mobile block and free partitions
+  VectorB bmass(3); // Center of mass of the mobile block 
+  double block_mass = 0.0;
+  for (int i = nmove ; i != natom ; ++i) {
+    block_mass += geom_->atoms(i)->mass();
+    for (int j = 0; j != 3; ++j) { 
+      bmass(i) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
+cout << " geom_->atoms(i)->mass()  " << geom_->atoms(i)->mass() << " times geom_->atoms(i)->position(j)   " << geom_->atoms(i)->position(j)  << "for i " << i << " and j "<< j<< " is " << geom_->atoms(i)->mass() * geom_->atoms(i)->position(j) << endl;
+    }
+cout <<" bmass(i) for i " << i << "  " << bmass(i) <<endl;
+  }
+cout << " block mass " << block_mass <<endl;
+  blas::scale_n(1.0/block_mass, bmass.data(), 3);
+
+
+  // calculate center of mass of the mobile block and free partitions
+  VectorB fmass(3); // Center of mass of the mobile block 
+  for (int i = 0 ; i != nmove ; ++i) {
+    for (int j = 0; j != 3; ++j) 
+      fmass(i) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
+  }
+  double free_mass = total_mass - block_mass;
+  blas::scale_n(1.0/free_mass, fmass.data(), 3);
+
+cout << " bmass[0]  " << bmass[0] <<endl;
+cout << " bmass[1]  " << bmass[1] <<endl;
+cout << " bmass[2]  " << bmass[2] <<endl;
+
   cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
 
-//TODO Calculate center of mass etc for blocks?
 //I modified the first for loop to be to nmove instead of natom so only for the area of the hessian. is this right?
   Matrix proj(6, ndispl);
   for (int i = 0; i != nmove; ++i) {
