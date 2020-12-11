@@ -127,9 +127,9 @@ void Hess::compute() {
   // convert mw eigenvectors to normalized cartesian modes
   eigvec_cart_ = make_shared<Matrix>(ndispl,ndispl);
 
-  for (int i = 0, counter = 0; i != natom; ++i)
+  for (int i = 0, counter = 0; i != nmove; ++i)
     for (int j = 0; j != 3; ++j, ++counter)
-      for (int k = 0, step = 0; k != natom; ++k)
+      for (int k = 0, step = 0; k != nmove; ++k)
         for (int l = 0; l != 3; ++l, ++step)
           eigvec_cart_->element(step, counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->mass());
 
@@ -248,33 +248,25 @@ void Hess::project_zero_freq_() {
   }
   blas::scale_n(1.0/total_mass, cmass.data(), 3);
 
-  // calculate center of mass of the mobile block and free partitions
+  //TODO: Check if this breaks the code when partial_ = false  // I think cmass and fmass should be equal when that happens and then using fmass in the projection will still be ok.
+  // calculate center of mass of the mobile block 
   VectorB bmass(3); // Center of mass of the mobile block 
   double block_mass = 0.0;
   for (int i = nmove ; i != natom ; ++i) {
     block_mass += geom_->atoms(i)->mass();
-    for (int j = 0; j != 3; ++j) { 
-      bmass(i) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
-cout << " geom_->atoms(i)->mass()  " << geom_->atoms(i)->mass() << " times geom_->atoms(i)->position(j)   " << geom_->atoms(i)->position(j)  << "for i " << i << " and j "<< j<< " is " << geom_->atoms(i)->mass() * geom_->atoms(i)->position(j) << endl;
-    }
-cout <<" bmass(i) for i " << i << "  " << bmass(i) <<endl;
+    for (int j = 0; j != 3; ++j)  
+      bmass(j) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
   }
-cout << " block mass " << block_mass <<endl;
   blas::scale_n(1.0/block_mass, bmass.data(), 3);
 
-
-  // calculate center of mass of the mobile block and free partitions
+  // calculate center of mass of the free partitions
   VectorB fmass(3); // Center of mass of the mobile block 
   for (int i = 0 ; i != nmove ; ++i) {
     for (int j = 0; j != 3; ++j) 
-      fmass(i) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
+      fmass(j) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
   }
   double free_mass = total_mass - block_mass;
   blas::scale_n(1.0/free_mass, fmass.data(), 3);
-
-cout << " bmass[0]  " << bmass[0] <<endl;
-cout << " bmass[1]  " << bmass[1] <<endl;
-cout << " bmass[2]  " << bmass[2] <<endl;
 
   cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
 
@@ -282,9 +274,9 @@ cout << " bmass[2]  " << bmass[2] <<endl;
   Matrix proj(6, ndispl);
   for (int i = 0; i != nmove; ++i) {
     const double imass = sqrt(geom_->atoms(i)->mass());
-    const array<double,3> pos {{geom_->atoms(i)->position(0) - cmass(0),
-                                geom_->atoms(i)->position(1) - cmass(1),
-                                geom_->atoms(i)->position(2) - cmass(2)}};
+    const array<double,3> pos {{geom_->atoms(i)->position(0) - fmass(0),
+                                geom_->atoms(i)->position(1) - fmass(1),
+                                geom_->atoms(i)->position(2) - fmass(2)}};
     for (int j = 0; j != 3; ++ j)
       proj(j, 3*i+j) = imass;
 
