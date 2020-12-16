@@ -248,14 +248,18 @@ void Hess::project_zero_freq_() {
   }
   blas::scale_n(1.0/total_mass, cmass.data(), 3);
 
-  //TODO: Check if this breaks the code when partial_ = false  // I think cmass and fmass should be equal when that happens and then using fmass in the projection will still be ok.
   // calculate center of mass of the mobile block 
+  // TODO: Extend to more than one block 
   VectorB bmass(3); // Center of mass of the mobile block 
   double block_mass = 0.0;
   for (int i = nmove ; i != natom ; ++i) {
     block_mass += geom_->atoms(i)->mass();
-    for (int j = 0; j != 3; ++j)  
+    for (int j = 0; j != 3; ++j) { 
       bmass(j) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
+    }
+
+// for MBH, you need the bmass and to translate it. Initialy trying Head's approach of "infinite mass"
+//      bmass(j) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
   }
   blas::scale_n(1.0/block_mass, bmass.data(), 3);
 
