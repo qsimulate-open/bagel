@@ -108,16 +108,15 @@ void Hess::compute() {
   }
   hess_->print("Hessian");
 
-/*  for (int i = 0, counter = 0 ; i != natom; ++i) {
-    for (int k = 0, step = 0; k != natom; ++k) {
-      (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
-cout << "counter  step   i   k " << counter << " " << step << " " << i << " " << k <<endl; 
-    }
-  }
-*/
+  for (int i = 0, counter = 0; i != natom; ++i) 
+    for (int j = 0; j != 3; ++j, ++counter) 
+       for (int k = 0, step = 0; k != natom; ++k) 
+         for (int l = 0; l != 3; ++l, ++step) 
+          (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
+
   // symmetrize mass weighted hessian
-  mw_hess_->symmetrize();
   mw_hess_->print("Mass Weighted Hessian", ndim);
+  mw_hess_->symmetrize();
 
   // check if all of the mass are equal to the averaged mass
   bool averaged = true;
@@ -147,9 +146,9 @@ cout << "counter  step   i   k " << counter << " " << step << " " << i << " " <<
   // convert mw eigenvectors to normalized cartesian modes
   eigvec_cart_ = make_shared<Matrix>(ndim,ndim);
  
-  for (int i = 0, counter = 0; i != ndim; ++i)
+  for (int i = 0, counter = 0; i != natom; ++i)
     for (int j = 0; j != 3; ++j, ++counter)
-      for (int k = 0, step = 0; k != ndim; ++k)
+      for (int k = 0, step = 0; k != natom; ++k)
         for (int l = 0; l != 3; ++l, ++step)
           eigvec_cart_->element(step, counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->mass());
 
