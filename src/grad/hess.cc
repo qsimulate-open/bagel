@@ -127,8 +127,6 @@ void Hess::compute() {
   else
     cout << "    (custom masses were specified in the input)" << endl << endl;
 
-//  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndim);
-
   // compute projected Hessian
   project_zero_freq_();
 
@@ -170,7 +168,7 @@ void Hess::compute() {
       ((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3.0 * 1000.0 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i)) : 0.0);
   }
 
-//  print_ir_();
+  print_ir_();
 
 }
 
