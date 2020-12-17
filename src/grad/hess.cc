@@ -75,11 +75,17 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   }
 
   const int natom = geom_->natom();
+  const int ndim = natom * 3;
+  hess_      = make_shared<Matrix>(ndim, ndim); // changed from ndispl to ndim since in the partial hessian we will not displace all atoms so ndispl is definied differently below
+  mw_hess_   = make_shared<Matrix>(ndim, ndim);
+  cartesian_ = make_shared<Matrix>(3, ndim); //matrix of dmu/dR
+
   nblock_ = idata_->get<int>("nblock", 0);
-  const int ndispl = (natom - nblock_) * 3;
-  hess_      = make_shared<Matrix>(ndispl, ndispl);
-  mw_hess_   = make_shared<Matrix>(ndispl, ndispl);
-  cartesian_ = make_shared<Matrix>(3, ndispl); //matrix of dmu/dR
+  const int nmove = natom - nblock_;
+  const int ndispl = nmove * 3;
+  block_hess_      = make_shared<Matrix>(ndispl, ndispl);
+  mw_block_hess_   = make_shared<Matrix>(ndispl, ndispl);
+  block_cartesian_ = make_shared<Matrix>(3, ndispl); //matrix of dmu/dR
 }
 
 
@@ -87,6 +93,7 @@ void Hess::compute() {
 
   const int natom = geom_->natom();
   const int nmove = natom - nblock_;
+  const int ndim = natom * 3;
   const int ndispl = nmove * 3;
 
   muffle_ = make_shared<Muffle>("freq.log");
@@ -94,9 +101,30 @@ void Hess::compute() {
   // compute Hessian and dipole derivatives using finite difference
   compute_finite_diff_();
 
+  for (int i = 0; i != ndispl; ++i ) {
+    for (int j = 0; j != ndispl; ++j ) {
+      (*hess_)(i,j) = (*block_hess_)(i,j); 
+      (*mw_hess_)(i,j) = (*mw_block_hess_)(i,j);
+      (*cartesian_)(i,j) = (*block_cartesian_)(i,j);
+    }
+  }
+
+  (*hess_)(15,15) = 1.0e-8; 
+  (*hess_)(16,16) = 1.0e-8;
+  (*hess_)(17,17) = 1.0e-8;
+  (*hess_)(18,18) = 1.0e-8;
+  (*hess_)(19,19) = 1.0e-8;
+  (*hess_)(20,20) = 1.0e-8;
+  (*hess_)(21,21) = 1.0e-8;
+  (*hess_)(22,22) = 1.0e-8;
+  (*hess_)(23,23) = 1.0e-8;
+  (*hess_)(24,24) = 1.0e-8;
+  (*hess_)(25,25) = 1.0e-8;
+  (*hess_)(26,26) = 1.0e-8;
+
   // symmetrize mass weighted hessian
   hess_->print("Hessian");
-  mw_hess_->print("Mass Weighted Hessian", ndispl);
+  mw_hess_->print("Mass Weighted Hessian", ndim);
   mw_hess_->symmetrize();
 
   // check if all of the mass are equal to the averaged mass
@@ -108,25 +136,25 @@ void Hess::compute() {
   else
     cout << "    (custom masses were specified in the input)" << endl << endl;
 
-  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndispl);
+  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndim);
 
   // compute projected Hessian
   project_zero_freq_();
 
   // diagonalize hessian; eig(i) in Hartree/bohr^2*amu
-  VectorB eig(ndispl);
+  VectorB eig(ndim);
   proj_hess_->diagonalize(eig);
 
   cout << endl << " Mass Weighted Hessian Eigenvalues" << endl; // units Hartree/bohr^2*amu
-  for (int i = 0; i != ndispl; ++i )
+  for (int i = 0; i != ndim; ++i )
     cout << setw(10) << setprecision(5) << eig(i);
   cout << endl;
 
-  proj_hess_->print("Mass Weighted Hessian Eigenvectors", ndispl);
+  proj_hess_->print("Mass Weighted Hessian Eigenvectors", ndim);
 
   // convert mw eigenvectors to normalized cartesian modes
-  eigvec_cart_ = make_shared<Matrix>(ndispl,ndispl);
-
+  eigvec_cart_ = make_shared<Matrix>(ndim,ndim);
+ 
   for (int i = 0, counter = 0; i != nmove; ++i)
     for (int j = 0; j != 3; ++j, ++counter)
       for (int k = 0, step = 0; k != nmove; ++k)
@@ -136,15 +164,15 @@ void Hess::compute() {
   // calculate IR intensities:
   auto normal = make_shared<Matrix>(*cartesian_ * *eigvec_cart_); // dipole derivatives for the normal modes dmu/dQ; units (e bohr / bohr) * 1/sqrt(amu)
 
-  VectorB dmudq2(ndispl); //square of the dipole derivative in hartree*bohr/amu
-  for (int i = 0; i != ndispl; ++i)
+  VectorB dmudq2(ndim); //square of the dipole derivative in hartree*bohr/amu
+  for (int i = 0; i != ndim; ++i)
     dmudq2(i) = blas::dot_product(normal->element_ptr(0, i), 3, normal->element_ptr(0, i));
 
-  ir_ = vector<double>(ndispl, 0.0);
-  freq_ = vector<double>(ndispl, 0.0);
+  ir_ = vector<double>(ndim, 0.0);
+  freq_ = vector<double>(ndim, 0.0);
 
   //frequences and IR intensity ( N*pi/3*c^2 * (dmu/dQ)^2 )
-  for (int i = 0; i != ndispl; ++i) {
+  for (int i = 0; i != ndim; ++i) {
     freq_[i] = (fabs(eig(i)) > 1.0e-6 ? (eig(i) > 0.0 ? sqrt((eig(i) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) :
       -sqrt((-eig(i)     * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
     ir_[i] = (fabs(eig(i)) > 1.0e-6 ? (eig(i) > 0.0 ? ((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3.0 * 1000.0 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i) :
@@ -159,10 +187,15 @@ void Hess::compute_finite_diff_() {
   Timer timer;
   const int natom = geom_->natom();
   const int nmove = natom - nblock_;
+  const int ndispl = nmove * 3;
   const int ncomm = mpi__->size() / nproc_;
   const int npass = (nmove * 3 - 1) / ncomm + 1;
 
+cout << " npass out " << npass << endl;
+
   for (int ipass = 0; ipass != npass; ++ipass) {
+cout << " ipass out " << ipass << endl;
+
     const int ncolor = min(ncomm, nmove*3-ncomm*ipass);
     const int icomm = mpi__->rank() % ncolor;
     mpi__->split(ncolor);
@@ -209,12 +242,13 @@ void Hess::compute_finite_diff_() {
       dipole_minus = minus->force_dipole();
     }
 
+
     if (mpi__->rank() == 0) {
       for (int k = 0, step = 0; k != nmove; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
-          (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
-          (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
-          (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
+          (*block_hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
+          (*mw_block_hess_)(counter,step) =  (*block_hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
+          (*block_cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
         }
       }
     }
@@ -225,9 +259,9 @@ void Hess::compute_finite_diff_() {
     mpi__->merge();
   }
 
-  hess_->allreduce();
-  mw_hess_->allreduce();
-  cartesian_->allreduce();
+  block_hess_->allreduce();
+  mw_block_hess_->allreduce();
+  block_cartesian_->allreduce();
 }
 
 
@@ -248,29 +282,25 @@ void Hess::project_zero_freq_() {
   }
   blas::scale_n(1.0/total_mass, cmass.data(), 3);
 
-  // calculate center of mass of the mobile block 
-  // TODO: Extend to more than one block 
-  VectorB bmass(3); // Center of mass of the mobile block 
+  // calculate center of mass for the block of the molecule that is frozen 
+  VectorB bmass(3); // Center of mass of the block 
   double block_mass = 0.0;
   for (int i = nmove ; i != natom ; ++i) {
     block_mass += geom_->atoms(i)->mass();
     for (int j = 0; j != 3; ++j) { 
       bmass(j) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
     }
-
-// for MBH, you need the bmass and to translate it. Initialy trying Head's approach of "infinite mass"
-//      bmass(j) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
   }
   blas::scale_n(1.0/block_mass, bmass.data(), 3);
 
   // calculate center of mass of the free partitions
-  VectorB fmass(3); // Center of mass of the mobile block 
+  VectorB pmass(3); // Center of mass of the partition 
   for (int i = 0 ; i != nmove ; ++i) {
     for (int j = 0; j != 3; ++j) 
-      fmass(j) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
+      pmass(j) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
   }
   double free_mass = total_mass - block_mass;
-  blas::scale_n(1.0/free_mass, fmass.data(), 3);
+  blas::scale_n(1.0/free_mass, pmass.data(), 3);
 
   cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
 
@@ -278,9 +308,9 @@ void Hess::project_zero_freq_() {
   Matrix proj(6, ndispl);
   for (int i = 0; i != nmove; ++i) {
     const double imass = sqrt(geom_->atoms(i)->mass());
-    const array<double,3> pos {{geom_->atoms(i)->position(0) - fmass(0),
-                                geom_->atoms(i)->position(1) - fmass(1),
-                                geom_->atoms(i)->position(2) - fmass(2)}};
+    const array<double,3> pos {{geom_->atoms(i)->position(0) - pmass(0),
+                                geom_->atoms(i)->position(1) - pmass(1),
+                                geom_->atoms(i)->position(2) - pmass(2)}};
     for (int j = 0; j != 3; ++ j)
       proj(j, 3*i+j) = imass;
 
