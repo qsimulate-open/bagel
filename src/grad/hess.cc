@@ -83,9 +83,9 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   nblock_ = idata_->get<int>("nblock", 0);
   const int nmove = natom - nblock_;
   const int ndispl = nmove * 3;
-  block_hess_      = make_shared<Matrix>(ndispl, ndispl);
-  mw_block_hess_   = make_shared<Matrix>(ndispl, ndispl);
-  block_cartesian_ = make_shared<Matrix>(3, ndispl); //matrix of dmu/dR
+//  block_hess_      = make_shared<Matrix>(ndispl, ndispl);
+//  mw_block_hess_   = make_shared<Matrix>(ndispl, ndispl);
+//  block_cartesian_ = make_shared<Matrix>(3, ndispl); //matrix of dmu/dR
 }
 
 
@@ -100,32 +100,24 @@ void Hess::compute() {
 
   // compute Hessian and dipole derivatives using finite difference
   compute_finite_diff_();
+  
+  //In PHVA, the diagonal elements for frozen atoms are replaced epsilon = 1.0e-8 (this results in near-infinite mass for these atoms)
+  if (ndispl != ndim) {
+    for (int m = ndispl ; m != ndim; ++m) 
+      (*hess_)(m,m) = 1.0e-8;
+  }
+  hess_->print("Hessian");
 
-  for (int i = 0; i != ndispl; ++i ) {
-    for (int j = 0; j != ndispl; ++j ) {
-      (*hess_)(i,j) = (*block_hess_)(i,j); 
-      (*mw_hess_)(i,j) = (*mw_block_hess_)(i,j);
-      (*cartesian_)(i,j) = (*block_cartesian_)(i,j);
+/*  for (int i = 0, counter = 0 ; i != natom; ++i) {
+    for (int k = 0, step = 0; k != natom; ++k) {
+      (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
+cout << "counter  step   i   k " << counter << " " << step << " " << i << " " << k <<endl; 
     }
   }
-
-  (*hess_)(15,15) = 1.0e-8; 
-  (*hess_)(16,16) = 1.0e-8;
-  (*hess_)(17,17) = 1.0e-8;
-  (*hess_)(18,18) = 1.0e-8;
-  (*hess_)(19,19) = 1.0e-8;
-  (*hess_)(20,20) = 1.0e-8;
-  (*hess_)(21,21) = 1.0e-8;
-  (*hess_)(22,22) = 1.0e-8;
-  (*hess_)(23,23) = 1.0e-8;
-  (*hess_)(24,24) = 1.0e-8;
-  (*hess_)(25,25) = 1.0e-8;
-  (*hess_)(26,26) = 1.0e-8;
-
+*/
   // symmetrize mass weighted hessian
-  hess_->print("Hessian");
-  mw_hess_->print("Mass Weighted Hessian", ndim);
   mw_hess_->symmetrize();
+  mw_hess_->print("Mass Weighted Hessian", ndim);
 
   // check if all of the mass are equal to the averaged mass
   bool averaged = true;
@@ -136,7 +128,7 @@ void Hess::compute() {
   else
     cout << "    (custom masses were specified in the input)" << endl << endl;
 
-  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndim);
+//  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndim);
 
   // compute projected Hessian
   project_zero_freq_();
@@ -155,9 +147,9 @@ void Hess::compute() {
   // convert mw eigenvectors to normalized cartesian modes
   eigvec_cart_ = make_shared<Matrix>(ndim,ndim);
  
-  for (int i = 0, counter = 0; i != nmove; ++i)
+  for (int i = 0, counter = 0; i != ndim; ++i)
     for (int j = 0; j != 3; ++j, ++counter)
-      for (int k = 0, step = 0; k != nmove; ++k)
+      for (int k = 0, step = 0; k != ndim; ++k)
         for (int l = 0; l != 3; ++l, ++step)
           eigvec_cart_->element(step, counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->mass());
 
@@ -179,7 +171,8 @@ void Hess::compute() {
       ((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3.0 * 1000.0 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i)) : 0.0);
   }
 
-  print_ir_();
+//  print_ir_();
+
 }
 
 
@@ -194,8 +187,6 @@ void Hess::compute_finite_diff_() {
 cout << " npass out " << npass << endl;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
-cout << " ipass out " << ipass << endl;
-
     const int ncolor = min(ncomm, nmove*3-ncomm*ipass);
     const int icomm = mpi__->rank() % ncolor;
     mpi__->split(ncolor);
@@ -242,13 +233,13 @@ cout << " ipass out " << ipass << endl;
       dipole_minus = minus->force_dipole();
     }
 
-
+//TODO: Be sure this works when nmove = natom!!!
     if (mpi__->rank() == 0) {
-      for (int k = 0, step = 0; k != nmove; ++k) { // atom j
+      for (int k = 0, step = 0; k != natom; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
-          (*block_hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
-          (*mw_block_hess_)(counter,step) =  (*block_hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
-          (*block_cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
+          (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_); 
+ //         (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
+          (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
         }
       }
     }
@@ -259,9 +250,9 @@ cout << " ipass out " << ipass << endl;
     mpi__->merge();
   }
 
-  block_hess_->allreduce();
-  mw_block_hess_->allreduce();
-  block_cartesian_->allreduce();
+  hess_->allreduce();
+//  mw_hess_->allreduce();
+  cartesian_->allreduce();
 }
 
 
@@ -282,6 +273,7 @@ void Hess::project_zero_freq_() {
   }
   blas::scale_n(1.0/total_mass, cmass.data(), 3);
 
+/*
   // calculate center of mass for the block of the molecule that is frozen 
   VectorB bmass(3); // Center of mass of the block 
   double block_mass = 0.0;
@@ -301,16 +293,16 @@ void Hess::project_zero_freq_() {
   }
   double free_mass = total_mass - block_mass;
   blas::scale_n(1.0/free_mass, pmass.data(), 3);
-
+*/
   cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
 
 //I modified the first for loop to be to nmove instead of natom so only for the area of the hessian. is this right?
   Matrix proj(6, ndispl);
   for (int i = 0; i != nmove; ++i) {
     const double imass = sqrt(geom_->atoms(i)->mass());
-    const array<double,3> pos {{geom_->atoms(i)->position(0) - pmass(0),
-                                geom_->atoms(i)->position(1) - pmass(1),
-                                geom_->atoms(i)->position(2) - pmass(2)}};
+    const array<double,3> pos {{geom_->atoms(i)->position(0) - cmass(0),
+                                geom_->atoms(i)->position(1) - cmass(1),
+                                geom_->atoms(i)->position(2) - cmass(2)}};
     for (int j = 0; j != 3; ++ j)
       proj(j, 3*i+j) = imass;
 
