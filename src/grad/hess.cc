@@ -232,10 +232,9 @@ cout << " npass out " << npass << endl;
 
 //TODO: Be sure this works when nmove = natom!!!
     if (mpi__->rank() == 0) {
-      for (int k = 0, step = 0; k != natom; ++k) { // atom j
+      for (int k = 0, step = 0; k != nmove; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
           (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_); 
- //         (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
           (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
         }
       }
@@ -256,7 +255,7 @@ cout << " npass out " << npass << endl;
 void Hess::project_zero_freq_() {
   const int natom = geom_->natom();
   const int nmove = natom - nblock_;
-  const int ndispl = nmove * 3;
+  const int ndim = natom * 3;
 
   // calculate center of mass of whole molecule
   VectorB cmass(3); // values needed to calc center of mass. mi*xi, mi*yi, mi*zi, and total mass
@@ -293,9 +292,8 @@ void Hess::project_zero_freq_() {
 */
   cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
 
-//I modified the first for loop to be to nmove instead of natom so only for the area of the hessian. is this right?
-  Matrix proj(6, ndispl);
-  for (int i = 0; i != nmove; ++i) {
+  Matrix proj(6, ndim);
+  for (int i = 0; i != natom; ++i) {
     const double imass = sqrt(geom_->atoms(i)->mass());
     const array<double,3> pos {{geom_->atoms(i)->position(0) - cmass(0),
                                 geom_->atoms(i)->position(1) - cmass(1),
@@ -318,16 +316,16 @@ void Hess::project_zero_freq_() {
 
   //normalize the set of six orthogonal vectors
   vector<double> norm(6, 0.0);
-  for (int i = 0; i != ndispl; ++i)
+  for (int i = 0; i != ndim; ++i)
     for (int j = 0; j != 6; ++j)
       norm[j] += proj(j, i) * proj(j, i);
 
-  for (int i = 0; i != ndispl; ++i)
+  for (int i = 0; i != ndim; ++i)
     for (int j = 0; j != 6; ++j)
       if (fabs(norm[j]) > 1.0e-15)
         proj(j, i) /= sqrt(norm[j]);
 
-  Matrix p(ndispl, ndispl);
+  Matrix p(ndim,ndim);
   p.unit();
   p -= proj % proj;
 
