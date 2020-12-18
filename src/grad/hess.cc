@@ -74,27 +74,20 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   } else {
   }
 
+  nhess_ = idata_->get<int>("nhess", 0);
   const int natom = geom_->natom();
   const int ndim = natom * 3;
-  hess_      = make_shared<Matrix>(ndim, ndim); // changed from ndispl to ndim since in the partial hessian we will not displace all atoms so ndispl is definied differently below
+  hess_      = make_shared<Matrix>(ndim, ndim); // changed from ndispl to ndim since in the partial hessian does not displace all atoms 
   mw_hess_   = make_shared<Matrix>(ndim, ndim);
   cartesian_ = make_shared<Matrix>(3, ndim); //matrix of dmu/dR
-
-  nblock_ = idata_->get<int>("nblock", 0);
-  const int nmove = natom - nblock_;
-  const int ndispl = nmove * 3;
-//  block_hess_      = make_shared<Matrix>(ndispl, ndispl);
-//  mw_block_hess_   = make_shared<Matrix>(ndispl, ndispl);
-//  block_cartesian_ = make_shared<Matrix>(3, ndispl); //matrix of dmu/dR
 }
 
 
 void Hess::compute() {
 
   const int natom = geom_->natom();
-  const int nmove = natom - nblock_;
   const int ndim = natom * 3;
-  const int ndispl = nmove * 3;
+  const int ndispl = nhess_ * 3;
 
   muffle_ = make_shared<Muffle>("freq.log");
 
@@ -108,11 +101,14 @@ void Hess::compute() {
   }
   hess_->print("Hessian");
 
+  //Compute Mass Weighted Hessian
   for (int i = 0, counter = 0; i != natom; ++i) 
     for (int j = 0; j != 3; ++j, ++counter) 
        for (int k = 0, step = 0; k != natom; ++k) 
          for (int l = 0; l != 3; ++l, ++step) 
           (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
+
+  mw_hess_->allreduce();
 
   // symmetrize mass weighted hessian
   mw_hess_->print("Mass Weighted Hessian", ndim);
@@ -176,15 +172,13 @@ void Hess::compute() {
 void Hess::compute_finite_diff_() {
   Timer timer;
   const int natom = geom_->natom();
-  const int nmove = natom - nblock_;
-  const int ndispl = nmove * 3;
   const int ncomm = mpi__->size() / nproc_;
-  const int npass = (nmove * 3 - 1) / ncomm + 1;
+  const int npass = (nhess_ * 3 - 1) / ncomm + 1;
 
 cout << " npass out " << npass << endl;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
-    const int ncolor = min(ncomm, nmove*3-ncomm*ipass);
+    const int ncolor = min(ncomm, nhess_*3-ncomm*ipass);
     const int icomm = mpi__->rank() % ncolor;
     mpi__->split(ncolor);
 
@@ -230,9 +224,8 @@ cout << " npass out " << npass << endl;
       dipole_minus = minus->force_dipole();
     }
 
-//TODO: Be sure this works when nmove = natom!!!
     if (mpi__->rank() == 0) {
-      for (int k = 0, step = 0; k != nmove; ++k) { // atom j
+      for (int k = 0, step = 0; k != nhess_; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
           (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_); 
           (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
@@ -240,21 +233,19 @@ cout << " npass out " << npass << endl;
       }
     }
     muffle_->unmute();
-    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << nmove * 3 << ")";
+    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << nhess_ * 3 << ")";
     timer.tick_print(ss.str());
 
     mpi__->merge();
   }
 
   hess_->allreduce();
-//  mw_hess_->allreduce();
   cartesian_->allreduce();
 }
 
 
 void Hess::project_zero_freq_() {
   const int natom = geom_->natom();
-  const int nmove = natom - nblock_;
   const int ndim = natom * 3;
 
   // calculate center of mass of whole molecule
@@ -269,27 +260,6 @@ void Hess::project_zero_freq_() {
   }
   blas::scale_n(1.0/total_mass, cmass.data(), 3);
 
-/*
-  // calculate center of mass for the block of the molecule that is frozen 
-  VectorB bmass(3); // Center of mass of the block 
-  double block_mass = 0.0;
-  for (int i = nmove ; i != natom ; ++i) {
-    block_mass += geom_->atoms(i)->mass();
-    for (int j = 0; j != 3; ++j) { 
-      bmass(j) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
-    }
-  }
-  blas::scale_n(1.0/block_mass, bmass.data(), 3);
-
-  // calculate center of mass of the free partitions
-  VectorB pmass(3); // Center of mass of the partition 
-  for (int i = 0 ; i != nmove ; ++i) {
-    for (int j = 0; j != 3; ++j) 
-      pmass(j) += geom_->atoms(i)->mass() * geom_->atoms(i)->position(j);
-  }
-  double free_mass = total_mass - block_mass;
-  blas::scale_n(1.0/free_mass, pmass.data(), 3);
-*/
   cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
 
   Matrix proj(6, ndim);
