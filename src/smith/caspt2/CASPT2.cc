@@ -829,13 +829,13 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       const int target = targetJ;
       for (int ist = 0; ist != nstates_; ++ist)
         for (int jst = 0; jst != nstates_; ++jst)
-          ci_deriv_->data(jst)->ax_plus_y(2.0*ur(ist,target)*(*heff_)(jst,target)*ref->energy(ist), info_orig_->ciwfn()->civectors()->data(ist));
+          ci_deriv_->data(jst)->ax_plus_y(2.0*ur(ist,target)*(*heff_)(jst,target)*info_orig_->ref()->energy(ist), info_orig_->ciwfn()->civectors()->data(ist));
     } else {
       // NACME case. targetJ and target I are separately used
       const Matrix ur(xmsmat_ ? *xmsmat_ * *heff_ : *heff_);
       for (int ist = 0; ist != nstates_; ++ist)
         for (int jst = 0; jst != nstates_; ++jst) {
-          double urheff = (ur(ist,targetJ)*(*heff_)(jst,targetI) + ur(ist, targetI)*(*heff_)(jst,targetJ)) * ref->energy(ist);
+          double urheff = (ur(ist,targetJ)*(*heff_)(jst,targetI) + ur(ist, targetI)*(*heff_)(jst,targetJ)) * info_orig_->ref()->energy(ist);
           ci_deriv_->data(jst)->ax_plus_y(urheff, info_orig_->ciwfn()->civectors()->data(ist));
         }
     }
