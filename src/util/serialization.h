@@ -32,6 +32,7 @@
 #include <unordered_map>
 #include <type_traits>
 #include <boost/version.hpp>
+#include <boost/archive/basic_archive.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/complex.hpp>
 #include <boost/serialization/bitset.hpp>
