@@ -325,7 +325,7 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
     x1->scale(1.0 / x1norm);
   auto xf = make_shared<GradFile>(*x1);
   const double en  = en2 - en1;
-  xf->scale(2.0 * en / x1norm);
+  xf->scale(2.0 * en);
 
   shared_ptr<GradFile> xg;
   const bool refg = idata_->get<bool>("mdci_reference_geometry", false);
