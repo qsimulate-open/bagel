@@ -76,6 +76,7 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
 
   nfroz_ = idata_->get<int>("nfrozen", 0); 
   const int natom = geom_->natom();
+
   const int ndim = natom * 3;
   hess_      = make_shared<Matrix>(ndim, ndim); 
   mw_hess_   = make_shared<Matrix>(ndim, ndim);
@@ -87,7 +88,8 @@ void Hess::compute() {
 
   const int natom = geom_->natom();
   const int ndim = natom * 3;
-  const int ndispl = (natom - nfroz_) * 3;
+  const int nmove = natom - nfroz_;
+  const int ndispl = nmove * 3;
 
   muffle_ = make_shared<Muffle>("freq.log");
 
@@ -99,16 +101,24 @@ void Hess::compute() {
     for (int m = ndispl ; m != ndim; ++m) 
       (*hess_)(m,m) = 1.0e-8;
   }
-  hess_->print("Hessian");
 
   //Compute Mass Weighted Hessian
-  for (int i = 0, counter = 0; i != natom; ++i) 
+  for (int i = 0, counter = 0; i != nmove; ++i) 
     for (int j = 0; j != 3; ++j, ++counter) 
-       for (int k = 0, step = 0; k != natom; ++k) 
+       for (int k = 0, step = 0; k != nmove; ++k) 
          for (int l = 0; l != 3; ++l, ++step) 
           (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
 
+  hess_->allreduce();
   mw_hess_->allreduce();
+
+//  //In PHVA, the diagonal elements for frozen atoms are replaced epsilon = 1.0e-8 (this results in near-infinite mass for these atoms)
+//  if (ndispl != ndim) { 
+//    for (int m = ndispl ; m != ndim; ++m)
+//      (*mw_hess_)(m,m) = 1.0e-8;
+//  }
+
+  hess_->print("Hessian");
 
   // symmetrize mass weighted hessian
   mw_hess_->print("Mass Weighted Hessian", ndim);
@@ -173,11 +183,11 @@ void Hess::compute_finite_diff_() {
   Timer timer;
   const int natom = geom_->natom();
   const int ncomm = mpi__->size() / nproc_;
-  const int ndispl = (natom - nfroz_)*3; 
-  const int npass = (ndispl - 1) / ncomm + 1; //TODO: Something wrong here. Works on 1 node, not 2 
+  const int nmove = natom - nfroz_;
+  const int npass = (nmove * 3 - 1) / ncomm + 1;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
-    const int ncolor = min(ncomm, ndispl-ncomm*ipass);
+    const int ncolor = min(ncomm, nmove*3-ncomm*ipass);
     const int icomm = mpi__->rank() % ncolor;
     mpi__->split(ncolor);
 
@@ -191,7 +201,7 @@ void Hess::compute_finite_diff_() {
     shared_ptr<const GradFile> outplus;
     //displace +dx
     {
-      auto displ = make_shared<XYZFile>(natom);
+      auto displ = make_shared<XYZFile>(nmove);
       displ->element(j,i) = dx_;
       auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
       geom_plus->print_atoms();
@@ -209,7 +219,7 @@ void Hess::compute_finite_diff_() {
     vector<double> dipole_minus;
     shared_ptr<const GradFile> outminus;
     {
-      auto displ = make_shared<XYZFile>(natom);
+      auto displ = make_shared<XYZFile>(nmove);
       displ->element(j,i) = -dx_;
       auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
       geom_minus->print_atoms();
@@ -224,27 +234,28 @@ void Hess::compute_finite_diff_() {
     }
 
     if (mpi__->rank() == 0) {
-      for (int k = 0, step = 0; k != ndispl; ++k) { // atom j
+      for (int k = 0, step = 0; k != nmove; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
-          (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_); 
+          (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
           (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
         }
       }
     }
     muffle_->unmute();
-    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << ndispl * 3 << ")";
+    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << nmove * 3 << ")";
     timer.tick_print(ss.str());
 
     mpi__->merge();
   }
 
-  hess_->allreduce();
+//  hess_->allreduce();
   cartesian_->allreduce();
 }
-
+    
 
 void Hess::project_zero_freq_() {
   const int natom = geom_->natom();
+//  const int nmove = natom - nfroz_;  TODO: can I remove this?
   const int ndim = natom * 3;
 
   // calculate center of mass of whole molecule
