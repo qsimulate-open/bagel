@@ -74,10 +74,10 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   } else {
   }
 
-  nhess_ = idata_->get<int>("nhess", 0);
+  nfroz_ = idata_->get<int>("nfrozen", 0); 
   const int natom = geom_->natom();
   const int ndim = natom * 3;
-  hess_      = make_shared<Matrix>(ndim, ndim); // changed from ndispl to ndim since in the partial hessian does not displace all atoms 
+  hess_      = make_shared<Matrix>(ndim, ndim); 
   mw_hess_   = make_shared<Matrix>(ndim, ndim);
   cartesian_ = make_shared<Matrix>(3, ndim); //matrix of dmu/dR
 }
@@ -87,7 +87,7 @@ void Hess::compute() {
 
   const int natom = geom_->natom();
   const int ndim = natom * 3;
-  const int ndispl = nhess_ * 3;
+  const int ndispl = (natom - nfroz_) * 3;
 
   muffle_ = make_shared<Muffle>("freq.log");
 
@@ -173,12 +173,11 @@ void Hess::compute_finite_diff_() {
   Timer timer;
   const int natom = geom_->natom();
   const int ncomm = mpi__->size() / nproc_;
-  const int npass = (nhess_ * 3 - 1) / ncomm + 1;
-
-cout << " npass out " << npass << endl;
+  const int ndispl = (natom - nfroz_)*3; 
+  const int npass = (ndispl - 1) / ncomm + 1; //TODO: Something wrong here. Works on 1 node, not 2 
 
   for (int ipass = 0; ipass != npass; ++ipass) {
-    const int ncolor = min(ncomm, nhess_*3-ncomm*ipass);
+    const int ncolor = min(ncomm, ndispl-ncomm*ipass);
     const int icomm = mpi__->rank() % ncolor;
     mpi__->split(ncolor);
 
@@ -225,7 +224,7 @@ cout << " npass out " << npass << endl;
     }
 
     if (mpi__->rank() == 0) {
-      for (int k = 0, step = 0; k != nhess_; ++k) { // atom j
+      for (int k = 0, step = 0; k != ndispl; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
           (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_); 
           (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
@@ -233,7 +232,7 @@ cout << " npass out " << npass << endl;
       }
     }
     muffle_->unmute();
-    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << nhess_ * 3 << ")";
+    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << ndispl * 3 << ")";
     timer.tick_print(ss.str());
 
     mpi__->merge();

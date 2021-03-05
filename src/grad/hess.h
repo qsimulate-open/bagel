@@ -43,7 +43,7 @@ class Hess {
     bool partial_;
 
     int nproc_;
-    int nhess_;
+    int nfroz_;
 
     std::shared_ptr<Matrix> hess_;
     std::shared_ptr<Matrix> mw_hess_;
