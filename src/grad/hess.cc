@@ -95,28 +95,18 @@ void Hess::compute() {
 
   // compute Hessian and dipole derivatives using finite difference
   compute_finite_diff_();
-  
-  //In PHVA, the diagonal elements for frozen atoms are replaced epsilon = 1.0e-8 (this results in near-infinite mass for these atoms)
-  if (ndispl != ndim) {
-    for (int m = ndispl ; m != ndim; ++m) 
-      (*hess_)(m,m) = 1.0e-8;
-  }
+
+  hess_->print("Before All Red");
 
   //Compute Mass Weighted Hessian
-  for (int i = 0, counter = 0; i != nmove; ++i) 
+  for (int i = 0, counter = 0; i != natom; ++i) 
     for (int j = 0; j != 3; ++j, ++counter) 
-       for (int k = 0, step = 0; k != nmove; ++k) 
+       for (int k = 0, step = 0; k != natom; ++k) 
          for (int l = 0; l != 3; ++l, ++step) 
           (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
 
   hess_->allreduce();
   mw_hess_->allreduce();
-
-//  //In PHVA, the diagonal elements for frozen atoms are replaced epsilon = 1.0e-8 (this results in near-infinite mass for these atoms)
-//  if (ndispl != ndim) { 
-//    for (int m = ndispl ; m != ndim; ++m)
-//      (*mw_hess_)(m,m) = 1.0e-8;
-//  }
 
   hess_->print("Hessian");
 
@@ -201,7 +191,7 @@ void Hess::compute_finite_diff_() {
     shared_ptr<const GradFile> outplus;
     //displace +dx
     {
-      auto displ = make_shared<XYZFile>(nmove);
+      auto displ = make_shared<XYZFile>(natom);
       displ->element(j,i) = dx_;
       auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
       geom_plus->print_atoms();
@@ -219,7 +209,7 @@ void Hess::compute_finite_diff_() {
     vector<double> dipole_minus;
     shared_ptr<const GradFile> outminus;
     {
-      auto displ = make_shared<XYZFile>(nmove);
+      auto displ = make_shared<XYZFile>(natom);
       displ->element(j,i) = -dx_;
       auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
       geom_minus->print_atoms();
@@ -248,7 +238,6 @@ void Hess::compute_finite_diff_() {
     mpi__->merge();
   }
 
-//  hess_->allreduce();
   cartesian_->allreduce();
 }
     
