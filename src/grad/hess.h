@@ -52,6 +52,7 @@ class Hess {
     std::shared_ptr<Matrix> cartesian_;
     std::vector<double> ir_;
     std::vector<double> freq_;
+    std::vector<int> indices_;
 
     double dx_;
     double energy_;
