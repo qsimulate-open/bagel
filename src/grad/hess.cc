@@ -165,11 +165,16 @@ void Hess::compute() {
   }
 
   print_ir_();
-
 }
 
 
 void Hess::compute_finite_diff_() {
+  //Select atoms for PVHA from input 
+  std::vector<int> atom_list = idata_->get_vector<int>("atom_list");
+cout << " atom_list[0]   " << atom_list[0] << endl;
+cout << " size " << atom_list.size() <<endl;
+  // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+
   Timer timer;
   const int natom = geom_->natom();
   const int ncomm = mpi__->size() / nproc_;
@@ -185,29 +190,17 @@ void Hess::compute_finite_diff_() {
     const int i = counter / 3;
     const int j = counter % 3;
 
-//cout << "before the list" << endl;
-
-    //Select atoms for PVHA from input 
-//    std::vector<int> atom_list = idata_->get_vector<int>("atom_list");
-    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-//    for (auto& i : atom_list) indices_[i] = atom_list[i] - 1;
-
-//    cout << " " << endl;
-//    cout << "    ==== Atom Indices : ===== " << endl;
-//    for (auto& i : indices_) cout << "         Atom " << i+1 << endl;
-//    cout << "    ============================ " << endl << endl;
-
-//cout << "after the list" << endl;
-
     muffle_->mute();
 
-//TODO: IDEA. If j is in the atom list, then you do the displacement. TODO2: Fix default to be atom_list = all 
+//TODO: IDEA. If i is in the atom list, then you do the displacement. TODO2: maybe return code to always loop over natom... 
     vector<double> dipole_plus;
     shared_ptr<const GradFile> outplus;
     //displace +dx
     {
       auto displ = make_shared<XYZFile>(natom);
-      //if (atom_list(j))  //TODO: CHECK IF RIGHT 
+      if (i==atom_list[i]-1) {  //TODO: CHECK IF RIGHT 
+        cout << "THIS IS IN THE LIST for i " << i << " and then atom list[i] " << atom_list[i] <<endl;
+      }
       displ->element(j,i) = dx_;
       auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
       geom_plus->print_atoms();
@@ -266,8 +259,8 @@ void Hess::project_zero_freq_() {
   VectorB cmass(3); // values needed to calc center of mass. mi*xi, mi*yi, mi*zi, and total mass
   double total_mass = 0.0;
   // compute center of mass
-  for (auto& atom : geom_->atoms()) { 
-    for (int i = 0; i != 3; ++i) 
+  for (auto& atom : geom_->atoms()) {
+    for (int i = 0; i != 3; ++i)
       cmass(i) += atom->mass() * atom->position(i);
     total_mass += atom->mass();
   }
