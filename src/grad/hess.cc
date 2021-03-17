@@ -70,13 +70,13 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
 
   partial_ = idata_->get<bool>("partial", false);
   if (partial_) {
-      cout << "  The Hessian will be computed for only designated atoms" << endl;
+     cout << "  The Hessian will be computed for only designated atoms" << endl;
+//TODO: print which atoms. 
   } else {
+//TODO: update atomlist if not 
   }
 
-  nfroz_ = idata_->get<int>("nfrozen", 0); 
   const int natom = geom_->natom();
-
   const int ndim = natom * 3;
   hess_      = make_shared<Matrix>(ndim, ndim); 
   mw_hess_   = make_shared<Matrix>(ndim, ndim);
@@ -88,6 +88,7 @@ void Hess::compute() {
 
   const int natom = geom_->natom();
   const int ndim = natom * 3;
+  nfroz_ = idata_->get<int>("nfrozen", 0); //TODO: Do not read from input. should come from atom_list to avoid input errors if they don't match.
   const int nmove = natom - nfroz_;
   const int ndispl = nmove * 3;
 
@@ -96,6 +97,8 @@ void Hess::compute() {
   // compute Hessian and dipole derivatives using finite difference
   compute_finite_diff_();
 
+//TODO: Make diagonal the 1e-8...
+//
   //Compute Mass Weighted Hessian
   for (int i = 0, counter = 0; i != natom; ++i) 
     for (int j = 0; j != 3; ++j, ++counter) 
@@ -109,7 +112,7 @@ void Hess::compute() {
   hess_->print("Hessian");
 
   // symmetrize mass weighted hessian
-  mw_hess_->print("Mass Weighted Hessian", ndim);
+//  mw_hess_->print("Mass Weighted Hessian", ndim);
   mw_hess_->symmetrize();
 
   // check if all of the mass are equal to the averaged mass
@@ -121,7 +124,7 @@ void Hess::compute() {
   else
     cout << "    (custom masses were specified in the input)" << endl << endl;
 
-  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndim);
+//  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndim);
 
   // compute projected Hessian
   project_zero_freq_();
@@ -135,7 +138,7 @@ void Hess::compute() {
     cout << setw(10) << setprecision(5) << eig(i);
   cout << endl;
 
-  proj_hess_->print("Mass Weighted Hessian Eigenvectors", ndim);
+//  proj_hess_->print("Mass Weighted Hessian Eigenvectors", ndim);
 
   // convert mw eigenvectors to normalized cartesian modes
   eigvec_cart_ = make_shared<Matrix>(ndim, ndim);
@@ -169,20 +172,17 @@ void Hess::compute() {
 
 
 void Hess::compute_finite_diff_() {
-  //Select atoms for PVHA from input 
+  //Read atoms for PVHA from input in 1-based format 
   std::vector<int> atom_list = idata_->get_vector<int>("atom_list");
-cout << " atom_list[0]   " << atom_list[0] << endl;
-cout << " size " << atom_list.size() <<endl;
-  // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+  const int natom = geom_->natom();
 
   Timer timer;
-  const int natom = geom_->natom();
   const int ncomm = mpi__->size() / nproc_;
-  const int nmove = natom - nfroz_;
-  const int npass = (nmove * 3 - 1) / ncomm + 1;
+  const int nmove = natom - nfroz_; 
+  const int npass = (natom * 3 - 1) / ncomm + 1;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
-    const int ncolor = min(ncomm, nmove*3-ncomm*ipass);
+    const int ncolor = min(ncomm, natom*3-ncomm*ipass);
     const int icomm = mpi__->rank() % ncolor;
     mpi__->split(ncolor);
 
@@ -192,54 +192,57 @@ cout << " size " << atom_list.size() <<endl;
 
     muffle_->mute();
 
-//TODO: IDEA. If i is in the atom list, then you do the displacement. TODO2: maybe return code to always loop over natom... 
     vector<double> dipole_plus;
-    shared_ptr<const GradFile> outplus;
-    //displace +dx
-    {
-      auto displ = make_shared<XYZFile>(natom);
-      if (i==atom_list[i]-1) {  //TODO: CHECK IF RIGHT 
-        cout << "THIS IS IN THE LIST for i " << i << " and then atom list[i] " << atom_list[i] <<endl;
-      }
-      displ->element(j,i) = dx_;
-      auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
-      geom_plus->print_atoms();
-
-      shared_ptr<const Reference> ref_plus;
-      if (ref_)
-        ref_plus = ref_->project_coeff(geom_plus);
-
-      auto plus = make_shared<Force>(idata_, geom_plus, ref_plus);
-      outplus = plus->compute();
-      dipole_plus = plus->force_dipole();
-    }
-
-    // displace -dx
     vector<double> dipole_minus;
+    shared_ptr<const GradFile> outplus;
     shared_ptr<const GradFile> outminus;
-    {
-      auto displ = make_shared<XYZFile>(natom);
-      displ->element(j,i) = -dx_;
-      auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
-      geom_minus->print_atoms();
 
-      shared_ptr<const Reference> ref_minus;
-      if (ref_)
-        ref_minus = ref_->project_coeff(geom_minus);
+    if ( atom_list[i] != -1 ) { //TODO: fix how atom_list is read from input
+      //displace +dx
+      {
+        auto displ = make_shared<XYZFile>(natom);
+        displ->element(j,i) = dx_;
+        auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+        geom_plus->print_atoms();
 
-      auto minus = make_shared<Force>(idata_, geom_minus, ref_minus);
-      outminus = minus->compute();
-      dipole_minus = minus->force_dipole();
-    }
+        shared_ptr<const Reference> ref_plus;
+        if (ref_)
+          ref_plus = ref_->project_coeff(geom_plus);
 
+        auto plus = make_shared<Force>(idata_, geom_plus, ref_plus);
+        outplus = plus->compute();
+        dipole_plus = plus->force_dipole();
+      }
+
+      // displace -dx
+      {
+        auto displ = make_shared<XYZFile>(natom);
+        displ->element(j,i) = -dx_;
+        auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+        geom_minus->print_atoms();
+
+        shared_ptr<const Reference> ref_minus;
+        if (ref_)
+          ref_minus = ref_->project_coeff(geom_minus);
+
+        auto minus = make_shared<Force>(idata_, geom_minus, ref_minus);
+        outminus = minus->compute();
+        dipole_minus = minus->force_dipole();
+      }
+    }    
     if (mpi__->rank() == 0) {
       for (int k = 0, step = 0; k != nmove; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
-          (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
-          (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
+          if ( atom_list[i] != -1 ) {
+            (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
+            (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
+          } else {
+            (*hess_)(counter,counter) = 1e-8;
+          }
         }
       }
     }
+
     muffle_->unmute();
     stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << nmove * 3 << ")";
     timer.tick_print(ss.str());
