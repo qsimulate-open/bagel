@@ -88,17 +88,14 @@ void Hess::compute() {
 
   const int natom = geom_->natom();
   const int ndim = natom * 3;
-  nfroz_ = idata_->get<int>("nfrozen", 0); //TODO: Do not read from input. should come from atom_list to avoid input errors if they don't match.
-  const int nmove = natom - nfroz_;
-  const int ndispl = nmove * 3;
+  atom_list_ = idata_->get_vector<int>("atom_list");
+  const int ndispl = atom_list_.size() * 3;
 
   muffle_ = make_shared<Muffle>("freq.log");
 
   // compute Hessian and dipole derivatives using finite difference
   compute_finite_diff_();
 
-//TODO: Make diagonal the 1e-8...
-//
   //Compute Mass Weighted Hessian
   for (int i = 0, counter = 0; i != natom; ++i) 
     for (int j = 0; j != 3; ++j, ++counter) 
@@ -172,13 +169,22 @@ void Hess::compute() {
 
 
 void Hess::compute_finite_diff_() {
-  //Read atoms for PVHA from input in 1-based format 
-  std::vector<int> atom_list = idata_->get_vector<int>("atom_list");
   const int natom = geom_->natom();
+
+  //TODO: Move up and print which atoms are frozen to output 
+  //Read atoms for PVHA from input in 1-based format 
+  map<int,int> map;
+  for (int i = 0; i != atom_list_.size(); ++i) {
+    map[i] = atom_list_[i] - 1; // Convert to 0-based C++ format
+    if (atom_list_.size() != natom) {
+      for (int j = atom_list_.size(); j != natom; ++j) { 
+        map[j] = -1;
+      }
+    } 
+  }
 
   Timer timer;
   const int ncomm = mpi__->size() / nproc_;
-  const int nmove = natom - nfroz_; 
   const int npass = (natom * 3 - 1) / ncomm + 1;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
@@ -197,11 +203,11 @@ void Hess::compute_finite_diff_() {
     shared_ptr<const GradFile> outplus;
     shared_ptr<const GradFile> outminus;
 
-    if ( atom_list[i] != -1 ) { //TODO: fix how atom_list is read from input
+    if ( map[i] != -1 ) { 
       //displace +dx
       {
         auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,i) = dx_;
+        displ->element(j,map[i]) = dx_;
         auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_plus->print_atoms();
 
@@ -217,7 +223,7 @@ void Hess::compute_finite_diff_() {
       // displace -dx
       {
         auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,i) = -dx_;
+        displ->element(j,map[i]) = -dx_;
         auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_minus->print_atoms();
 
@@ -231,10 +237,11 @@ void Hess::compute_finite_diff_() {
       }
     }    
     if (mpi__->rank() == 0) {
-      for (int k = 0, step = 0; k != nmove; ++k) { // atom j
+      for (int k = 0, step = 0; k != atom_list_.size(); ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
-          if ( atom_list[i] != -1 ) {
+          if ( map[i] != -1 ) {
             (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
+cout << " (*hess_)(counter,step) " << setprecision(7) << (*hess_)(counter,step)  << "  counter and step and map[i] and i  " << counter << " " << step << " " << map[i] << " " << i << endl;
             (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
           } else {
             (*hess_)(counter,counter) = 1e-8;
@@ -244,7 +251,7 @@ void Hess::compute_finite_diff_() {
     }
 
     muffle_->unmute();
-    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << nmove * 3 << ")";
+    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << atom_list_.size() * 3 << ")";
     timer.tick_print(ss.str());
 
     mpi__->merge();

@@ -43,7 +43,6 @@ class Hess {
     bool partial_;
 
     int nproc_;
-    int nfroz_;
 
     std::shared_ptr<Matrix> hess_;
     std::shared_ptr<Matrix> mw_hess_;
@@ -52,7 +51,7 @@ class Hess {
     std::shared_ptr<Matrix> cartesian_;
     std::vector<double> ir_;
     std::vector<double> freq_;
-    std::vector<int> indices_;
+    std::vector<int> atom_list_;
 
     double dx_;
     double energy_;
