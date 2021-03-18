@@ -69,14 +69,31 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   nproc_ = idata_->get<int>("nproc", 1);
 
   partial_ = idata_->get<bool>("partial", false);
+  const int natom = geom_->natom();
+
+  //TODO: print which atoms. 
   if (partial_) {
-     cout << "  The Hessian will be computed for only designated atoms" << endl;
-//TODO: print which atoms. 
-  } else {
-//TODO: update atomlist if not 
+    cout << "  The Hessian will be computed for only designated atoms" << endl;
+    const vector<int>  atom_list = idata_->get_vector<int>("atom_list");
+    nmove_ = atom_list.size();
+    //Read atoms for PVHA from input in 1-based format 
+    for (int i = 0; i != nmove_; ++i) {
+      map_[i] = atom_list[i] - 1; // Convert to 0-based C++ format
+      if (nmove_ != natom) { 
+        for (int j = nmove_; j != natom; ++j) { 
+          map_[j] = -1;
+        }
+      }
+    }
   }
 
-  const int natom = geom_->natom();
+  if (!partial_) {
+    for (int i = 0; i != natom; ++i) { 
+      nmove_ = natom;
+      map_[i] = i;
+    }
+  }
+
   const int ndim = natom * 3;
   hess_      = make_shared<Matrix>(ndim, ndim); 
   mw_hess_   = make_shared<Matrix>(ndim, ndim);
@@ -88,8 +105,7 @@ void Hess::compute() {
 
   const int natom = geom_->natom();
   const int ndim = natom * 3;
-  atom_list_ = idata_->get_vector<int>("atom_list");
-  const int ndispl = atom_list_.size() * 3;
+  const int ndispl = nmove_ * 3;
 
   muffle_ = make_shared<Muffle>("freq.log");
 
@@ -97,19 +113,23 @@ void Hess::compute() {
   compute_finite_diff_();
 
   //Compute Mass Weighted Hessian
-  for (int i = 0, counter = 0; i != natom; ++i) 
+  for (int i = 0, counter = 0 ; i != natom; ++i) 
     for (int j = 0; j != 3; ++j, ++counter) 
        for (int k = 0, step = 0; k != natom; ++k) 
-         for (int l = 0; l != 3; ++l, ++step) 
-          (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
-
+         for (int l = 0; l != 3; ++l, ++step) { 
+           if (map_[i] != -1 && map_[k] != -1) {
+             (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(map_[i])->mass() * geom_->atoms(map_[k])->mass());
+           } else if (map_[i] == -1 ) {
+             (*mw_hess_)(counter,counter) = 1e-8; 
+           }
+         }		
   hess_->allreduce();
   mw_hess_->allreduce();
 
   hess_->print("Hessian");
 
   // symmetrize mass weighted hessian
-//  mw_hess_->print("Mass Weighted Hessian", ndim);
+  mw_hess_->print("Mass Weighted Hessian", ndim);
   mw_hess_->symmetrize();
 
   // check if all of the mass are equal to the averaged mass
@@ -121,7 +141,7 @@ void Hess::compute() {
   else
     cout << "    (custom masses were specified in the input)" << endl << endl;
 
-//  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndim);
+  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndim);
 
   // compute projected Hessian
   project_zero_freq_();
@@ -169,22 +189,10 @@ void Hess::compute() {
 
 
 void Hess::compute_finite_diff_() {
-  const int natom = geom_->natom();
-
-  //TODO: Move up and print which atoms are frozen to output 
-  //Read atoms for PVHA from input in 1-based format 
-  map<int,int> map;
-  for (int i = 0; i != atom_list_.size(); ++i) {
-    map[i] = atom_list_[i] - 1; // Convert to 0-based C++ format
-    if (atom_list_.size() != natom) {
-      for (int j = atom_list_.size(); j != natom; ++j) { 
-        map[j] = -1;
-      }
-    } 
-  }
 
   Timer timer;
   const int ncomm = mpi__->size() / nproc_;
+  const int natom = geom_->natom();
   const int npass = (natom * 3 - 1) / ncomm + 1;
 
   for (int ipass = 0; ipass != npass; ++ipass) {
@@ -203,11 +211,11 @@ void Hess::compute_finite_diff_() {
     shared_ptr<const GradFile> outplus;
     shared_ptr<const GradFile> outminus;
 
-    if ( map[i] != -1 ) { 
+    if ( map_[i] != -1 ) { 
       //displace +dx
       {
         auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,map[i]) = dx_;
+        displ->element(j,map_[i]) = dx_;
         auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_plus->print_atoms();
 
@@ -223,7 +231,7 @@ void Hess::compute_finite_diff_() {
       // displace -dx
       {
         auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,map[i]) = -dx_;
+        displ->element(j,map_[i]) = -dx_;
         auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_minus->print_atoms();
 
@@ -237,13 +245,12 @@ void Hess::compute_finite_diff_() {
       }
     }    
     if (mpi__->rank() == 0) {
-      for (int k = 0, step = 0; k != atom_list_.size(); ++k) { // atom j
+      for (int k = 0, step = 0; k != nmove_; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
-          if ( map[i] != -1 ) {
-            (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
-cout << " (*hess_)(counter,step) " << setprecision(7) << (*hess_)(counter,step)  << "  counter and step and map[i] and i  " << counter << " " << step << " " << map[i] << " " << i << endl;
+          if (map_[i] != -1 && map_[k] != -1) {
+            (*hess_)(counter,step) = (outplus->element(l,map_[k]) - outminus->element(l,map_[k])) / (2*dx_);
             (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
-          } else {
+         } else {
             (*hess_)(counter,counter) = 1e-8;
           }
         }
@@ -251,7 +258,7 @@ cout << " (*hess_)(counter,step) " << setprecision(7) << (*hess_)(counter,step) 
     }
 
     muffle_->unmute();
-    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << atom_list_.size() * 3 << ")";
+    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << nmove_ * 3 << ")"; //TODO: Fix i*3+j+1 for partial hessian
     timer.tick_print(ss.str());
 
     mpi__->merge();
