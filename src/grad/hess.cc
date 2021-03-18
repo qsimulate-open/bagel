@@ -155,16 +155,16 @@ void Hess::compute() {
     cout << setw(10) << setprecision(5) << eig(i);
   cout << endl;
 
-//  proj_hess_->print("Mass Weighted Hessian Eigenvectors", ndim);
+  proj_hess_->print("Mass Weighted Hessian Eigenvectors", ndim);
 
   // convert mw eigenvectors to normalized cartesian modes
-  eigvec_cart_ = make_shared<Matrix>(ndim, ndim);
+  eigvec_cart_ = make_shared<Matrix>(ndim,ndim);
  
   for (int i = 0, counter = 0; i != natom; ++i)
     for (int j = 0; j != 3; ++j, ++counter)
       for (int k = 0, step = 0; k != natom; ++k)
         for (int l = 0; l != 3; ++l, ++step)
-          eigvec_cart_->element(step, counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->mass());
+          eigvec_cart_->element(step,counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->mass());
 
   // calculate IR intensities:
   auto normal = make_shared<Matrix>(*cartesian_ * *eigvec_cart_); // dipole derivatives for the normal modes dmu/dQ; units (e bohr / bohr) * 1/sqrt(amu)
@@ -266,7 +266,7 @@ void Hess::compute_finite_diff_() {
 
   cartesian_->allreduce();
 }
-    
+
 
 void Hess::project_zero_freq_() {
   const int natom = geom_->natom();
