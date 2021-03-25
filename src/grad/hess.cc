@@ -77,12 +77,11 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
     const vector<int>  atom_list = idata_->get_vector<int>("atom_list");
     nmove_ = atom_list.size();
     //Read atoms for PVHA from input in 1-based format 
-    for (int i = 0; i != nmove_; ++i) {
-      map_[i] = atom_list[i] - 1; // Convert to 0-based C++ format
-      if (nmove_ != natom) { 
-        for (int j = nmove_; j != natom; ++j) { 
-          map_[j] = -1;
-        }
+    for (int i = 0; i != natom; ++i) {
+      if (i < nmove_) { 
+        map_[i] = atom_list[i] - 1; // Convert to 0-based C++ format
+      } else {
+        map_[i] = -1; 
       }
     }
   }
