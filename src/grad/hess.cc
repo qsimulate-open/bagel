@@ -266,7 +266,7 @@ void Hess::compute_finite_diff_() {
     }
 
     muffle_->unmute();
-    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << nmove_ * 3 << ")"; //TODO: Fix i*3+j+1 for partial hessian
+    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << natom * 3 << ")"; //TODO: Should only print iterations that are nonzero in PVHA 
     timer.tick_print(ss.str());
 
     mpi__->merge();
