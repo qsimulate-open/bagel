@@ -218,6 +218,8 @@ void Hess::compute_finite_diff_() {
     shared_ptr<const GradFile> outplus;
     shared_ptr<const GradFile> outminus;
 
+cout << " map_[i] " << map_[i] << "    and i " << i <<endl;
+
     if ( map_[i] != -1 ) { 
       //displace +dx
       {
@@ -256,7 +258,7 @@ void Hess::compute_finite_diff_() {
       for (int k = 0, step = 0; k != natom; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
           if (map_[i] != -1 && map_[k] != -1) {
-            (*hess_)(counter,step) = (outplus->element(l,map_[k]) - outminus->element(l,map_[k])) / (2*dx_);
+            (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
             (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
            } else if (map_[i] == -1 ) {
             (*hess_)(counter,counter) = 1e-8;
