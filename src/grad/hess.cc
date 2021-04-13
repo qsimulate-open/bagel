@@ -71,17 +71,25 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   partial_ = idata_->get<bool>("partial", false);
   const int natom = geom_->natom();
 
-  //TODO: print which atoms. 
   if (partial_) {
     cout << "  The Hessian will be computed for only designated atoms" << endl;
-    const vector<int>  atom_list = idata_->get_vector<int>("atom_list");
-    nmove_ = atom_list.size();
-    //Read atoms for PVHA from input in 1-based format 
+    const vector<int>  input_list = idata_->get_vector<int>("atom_list");
+    nmove_ = input_list.size();  
+
+    cout << " " << endl;
+    cout << "    ==== Atoms Displaced : ===== " << endl;
+    for (int i = 0; i != nmove_; ++i) 
+      cout << "             Atom " << input_list[i] << endl;
+    cout << "    ============================ " << endl << endl;
+
+    std:vector<int> atom_list(nmove_);
+    for (int i = 0; i != 3; ++i) 
+      atom_list[i] = input_list[i] - 1; // Convert from 1-based input format to 0-based for C++ 
+
     for (int i = 0; i != natom; ++i) {
-      if (i < nmove_) { 
-        map_[i] = atom_list[i] - 1; // Convert to 0-based C++ format
-      } else {
-        map_[i] = -1; 
+      bool found = (std::find(atom_list.begin(), atom_list.end(), i) != atom_list.end());
+      if (found == false) { 
+        map_[i] = -1;  
       }
     }
   }
@@ -89,7 +97,7 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   if (!partial_) {
     for (int i = 0; i != natom; ++i) { 
       nmove_ = natom;
-      map_[i] = i;
+      map_[i] = i; // In 0-based format 
     }
   }
 
@@ -117,7 +125,7 @@ void Hess::compute() {
        for (int k = 0, step = 0; k != natom; ++k) 
          for (int l = 0; l != 3; ++l, ++step) { 
            if (map_[i] != -1 && map_[k] != -1) {
-             (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(map_[i])->mass() * geom_->atoms(map_[k])->mass());
+             (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
            } else if (map_[i] == -1 ) {
              (*mw_hess_)(counter,counter) = 1e-8; 
            }
@@ -214,7 +222,7 @@ void Hess::compute_finite_diff_() {
       //displace +dx
       {
         auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,map_[i]) = dx_;
+        displ->element(j,i) = dx_;
         auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_plus->print_atoms();
 
@@ -230,7 +238,7 @@ void Hess::compute_finite_diff_() {
       // displace -dx
       {
         auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,map_[i]) = -dx_;
+        displ->element(j,i) = -dx_;
         auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_minus->print_atoms();
 
@@ -243,13 +251,14 @@ void Hess::compute_finite_diff_() {
         dipole_minus = minus->force_dipole();
       }
     }    
+
     if (mpi__->rank() == 0) {
-      for (int k = 0, step = 0; k != nmove_; ++k) { // atom j
+      for (int k = 0, step = 0; k != natom; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
           if (map_[i] != -1 && map_[k] != -1) {
             (*hess_)(counter,step) = (outplus->element(l,map_[k]) - outminus->element(l,map_[k])) / (2*dx_);
             (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
-         } else {
+           } else if (map_[i] == -1 ) {
             (*hess_)(counter,counter) = 1e-8;
           }
         }
