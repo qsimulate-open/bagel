@@ -83,7 +83,7 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
     cout << "    ============================ " << endl << endl;
 
     std:vector<int> atom_list(nmove_);
-    for (int i = 0; i != 3; ++i) 
+    for (int i = 0; i != nmove_; ++i) 
       atom_list[i] = input_list[i] - 1; // Convert from 1-based input format to 0-based for C++ 
 
     for (int i = 0; i != natom; ++i) {
