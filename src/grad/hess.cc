@@ -191,6 +191,15 @@ void Hess::compute_finite_diff_() {
   const int natom = geom_->natom();
   const int npass = (natom * 3 - 1) / ncomm + 1;
 
+  // helper for status printing
+  map<int, int> status;
+  for (int i = 0, cnt = 1; i != natom; ++i)
+    if (atom_list_contains(i)) {
+      status.emplace(i*3, cnt++); 
+      status.emplace(i*3+1, cnt++); 
+      status.emplace(i*3+2, cnt++); 
+    }
+
   for (int ipass = 0; ipass != npass; ++ipass) {
     const int ncolor = min(ncomm, natom*3-ncomm*ipass);
     const int icomm = mpi__->rank() % ncolor;
@@ -255,8 +264,10 @@ void Hess::compute_finite_diff_() {
     }
 
     muffle_->unmute();
-    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << natom * 3 << ")"; //TODO: Should only print iterations that are nonzero in PVHA 
-    timer.tick_print(ss.str());
+    if (atom_list_contains(i)) {
+      stringstream ss; ss << "Hessian evaluation (" << setw(2) << status.at(i*3+j) << " / " << status.size() << ")";
+      timer.tick_print(ss.str());
+    }
 
     mpi__->merge();
   }
