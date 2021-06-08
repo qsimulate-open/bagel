@@ -74,16 +74,16 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   if (partial_) {
     cout << "  The Hessian will be computed for only designated atoms" << endl;
     vector<int> input_list = idata_->get_vector<int>("atom_list");
-    nmove_ = input_list.size();  
+    nmove_ = input_list.size();
 
     cout << " " << endl;
     cout << "    ==== Atoms Displaced : ===== " << endl;
-    for (int i = 0; i != nmove_; ++i) 
+    for (int i = 0; i != nmove_; ++i)
       cout << "             Atom " << input_list[i] << endl;
     cout << "    ============================ " << endl << endl;
 
-    for (int i = 0; i != nmove_; ++i) 
-      input_list[i] -= 1; // Convert from 1-based input format to 0-based for C++ 
+    for (int i = 0; i != nmove_; ++i)
+      input_list[i] -= 1; // Convert from 1-based input format to 0-based for C++
     atom_list_ = set<int>(input_list.begin(), input_list.end());
   } else {
     nmove_ = natom;
@@ -92,7 +92,7 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   }
 
   const int ndim = natom * 3;
-  hess_      = make_shared<Matrix>(ndim, ndim); 
+  hess_      = make_shared<Matrix>(ndim, ndim);
   mw_hess_   = make_shared<Matrix>(ndim, ndim);
   cartesian_ = make_shared<Matrix>(3, ndim); //matrix of dmu/dR
 }
@@ -109,14 +109,14 @@ void Hess::compute() {
   compute_finite_diff_();
 
   //Compute Mass Weighted Hessian
-  for (int i = 0, counter = 0 ; i != natom; ++i) 
-    for (int j = 0; j != 3; ++j, ++counter) 
-       for (int k = 0, step = 0; k != natom; ++k) 
-         for (int l = 0; l != 3; ++l, ++step) { 
+  for (int i = 0, counter = 0 ; i != natom; ++i)
+    for (int j = 0; j != 3; ++j, ++counter)
+       for (int k = 0, step = 0; k != natom; ++k)
+         for (int l = 0; l != 3; ++l, ++step) {
            if (atom_list_contains(i) && atom_list_contains(k)) {
              (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
            } else if (!atom_list_contains(i)) {
-             (*mw_hess_)(counter,counter) = 1.0e-8; 
+             (*mw_hess_)(counter,counter) = 1.0e-8;
            }
          }		
   hess_->allreduce();
@@ -155,7 +155,7 @@ void Hess::compute() {
 
   // convert mw eigenvectors to normalized cartesian modes
   eigvec_cart_ = make_shared<Matrix>(ndim,ndim);
- 
+
   for (int i = 0, counter = 0; i != natom; ++i)
     for (int j = 0; j != 3; ++j, ++counter)
       for (int k = 0, step = 0; k != natom; ++k)
@@ -195,9 +195,9 @@ void Hess::compute_finite_diff_() {
   map<int, int> status;
   for (int i = 0, cnt = 1; i != natom; ++i)
     if (atom_list_contains(i)) {
-      status.emplace(i*3, cnt++); 
-      status.emplace(i*3+1, cnt++); 
-      status.emplace(i*3+2, cnt++); 
+      status.emplace(i*3, cnt++);
+      status.emplace(i*3+1, cnt++);
+      status.emplace(i*3+2, cnt++);
     }
 
   for (int ipass = 0; ipass != npass; ++ipass) {
@@ -216,7 +216,7 @@ void Hess::compute_finite_diff_() {
     shared_ptr<const GradFile> outplus;
     shared_ptr<const GradFile> outminus;
 
-    if (atom_list_contains(i)) { 
+    if (atom_list_contains(i)) {
       //displace +dx
       {
         auto displ = make_shared<XYZFile>(natom);
@@ -248,7 +248,7 @@ void Hess::compute_finite_diff_() {
         outminus = minus->compute();
         dipole_minus = minus->force_dipole();
       }
-    }    
+    }
 
     if (mpi__->rank() == 0) {
       for (int k = 0, step = 0; k != natom; ++k) { // atom j
