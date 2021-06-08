@@ -25,6 +25,7 @@
 #ifndef __SRC_GRAD_HESS_H
 #define __SRC_GRAD_HESS_H
 
+#include <set>
 #include <src/wfn/reference.h>
 #include <src/util/muffle.h>
 #include <src/util/atommap.h>
@@ -53,7 +54,8 @@ class Hess {
     std::vector<double> ir_;
     std::vector<double> freq_;
 
-    std::map<int,int> map_;
+    std::set<int> atom_list_;
+    bool atom_list_contains(const int x) const { return atom_list_.find(x) != atom_list_.end(); } 
 
     double dx_;
     double energy_;

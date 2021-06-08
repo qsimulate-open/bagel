@@ -73,7 +73,7 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
 
   if (partial_) {
     cout << "  The Hessian will be computed for only designated atoms" << endl;
-    const vector<int>  input_list = idata_->get_vector<int>("atom_list");
+    vector<int> input_list = idata_->get_vector<int>("atom_list");
     nmove_ = input_list.size();  
 
     cout << " " << endl;
@@ -82,23 +82,13 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
       cout << "             Atom " << input_list[i] << endl;
     cout << "    ============================ " << endl << endl;
 
-    std:vector<int> atom_list(nmove_);
     for (int i = 0; i != nmove_; ++i) 
-      atom_list[i] = input_list[i] - 1; // Convert from 1-based input format to 0-based for C++ 
-
-    for (int i = 0; i != natom; ++i) {
-      bool found = (std::find(atom_list.begin(), atom_list.end(), i) != atom_list.end());
-      if (found == false) { 
-        map_[i] = -1;  
-      }
-    }
-  }
-
-  if (!partial_) {
-    for (int i = 0; i != natom; ++i) { 
-      nmove_ = natom;
-      map_[i] = i; // In 0-based format 
-    }
+      input_list[i] -= 1; // Convert from 1-based input format to 0-based for C++ 
+    atom_list_ = set<int>(input_list.begin(), input_list.end());
+  } else {
+    nmove_ = natom;
+    for (int i = 0; i != natom; ++i)
+      atom_list_.insert(i);
   }
 
   const int ndim = natom * 3;
@@ -112,7 +102,6 @@ void Hess::compute() {
 
   const int natom = geom_->natom();
   const int ndim = natom * 3;
-  const int ndispl = nmove_ * 3;
 
   muffle_ = make_shared<Muffle>("freq.log");
 
@@ -124,10 +113,10 @@ void Hess::compute() {
     for (int j = 0; j != 3; ++j, ++counter) 
        for (int k = 0, step = 0; k != natom; ++k) 
          for (int l = 0; l != 3; ++l, ++step) { 
-           if (map_[i] != -1 && map_[k] != -1) {
+           if (atom_list_contains(i) && atom_list_contains(k)) {
              (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
-           } else if (map_[i] == -1 ) {
-             (*mw_hess_)(counter,counter) = 1e-8; 
+           } else if (!atom_list_contains(i)) {
+             (*mw_hess_)(counter,counter) = 1.0e-8; 
            }
          }		
   hess_->allreduce();
@@ -218,9 +207,7 @@ void Hess::compute_finite_diff_() {
     shared_ptr<const GradFile> outplus;
     shared_ptr<const GradFile> outminus;
 
-cout << " map_[i] " << map_[i] << "    and i " << i <<endl;
-
-    if ( map_[i] != -1 ) { 
+    if (atom_list_contains(i)) { 
       //displace +dx
       {
         auto displ = make_shared<XYZFile>(natom);
@@ -257,11 +244,11 @@ cout << " map_[i] " << map_[i] << "    and i " << i <<endl;
     if (mpi__->rank() == 0) {
       for (int k = 0, step = 0; k != natom; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
-          if (map_[i] != -1 && map_[k] != -1) {
+          if (atom_list_contains(i) && atom_list_contains(k)) {
             (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
             (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
-           } else if (map_[i] == -1 ) {
-            (*hess_)(counter,counter) = 1e-8;
+           } else if (!atom_list_contains(i)) {
+            (*hess_)(counter,counter) = 1.0e-8;
           }
         }
       }
