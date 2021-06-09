@@ -23,6 +23,8 @@
 //
 
 #include <src/grad/force.h>
+#include <src/grad/hess.h>
+#include <src/scf/hf/rhf.h>
 #include <src/wfn/reference.h>
 
 std::vector<double> run_force(std::string filename) {
@@ -44,10 +46,18 @@ std::vector<double> run_force(std::string filename) {
 
     if (method == "molecule") {
       geom = std::make_shared<const Geometry>(itree);
+    } else if (method == "hf") {
+      auto scf = std::make_shared<RHF>(itree, geom, ref);
+      scf->compute();
+      ref = scf->conv_to_ref();
     } else if (method == "force") {
       auto force = std::make_shared<Force>(itree, geom, ref);
       std::shared_ptr<const GradFile> grad = force->compute();
       out = std::vector<double>(grad->data(), grad->data()+grad->size());
+    } else if (method == "hessian") {
+      auto hess = std::make_shared<Hess>(itree, geom, ref);
+      hess->compute();
+      out = hess->freq();
     } else if (method == "nacme") {
       // sign of nacme depends on the phase of wfn, so compare absolute values
       auto force = std::make_shared<Force>(itree, geom, ref);
@@ -98,6 +108,11 @@ std::vector<double> reference_dkh_grad() {
   out[5] = -0.1590879594;
   return out;
 }
+std::vector<double> reference_hess() {
+  std::vector<double> out(9, 0.0);
+  out[8] = 4493.44;
+  return out;
+}
 
 BOOST_AUTO_TEST_SUITE(TEST_FORCE)
 
@@ -118,6 +133,10 @@ BOOST_AUTO_TEST_CASE(Finite_Grad) {
 
 BOOST_AUTO_TEST_CASE(Hcore_Grad) {
     BOOST_CHECK(compare(run_force("hf_svp_dfhf_dkh_grad"),   reference_dkh_grad(), 1.0e-5));
+}
+
+BOOST_AUTO_TEST_CASE(Hessian) {
+    BOOST_CHECK(compare(run_force("hf_svp_dfhf_hess"),   reference_hess(), 1.0e-2));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,0 +1,29 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "basis" : "svp",
+  "df_basis" : "svp-jkfit",
+  "angstrom" : "false",
+  "geometry" : [
+    { "atom" : "F",  "xyz" : [ -0.000000,     -0.000000,      2.649334]},
+    { "atom" : "He",  "xyz" : [ -0.000000,     -0.000000,    100.000000]},
+    { "atom" : "H",  "xyz" : [ -0.000000,     -0.000000,      0.947492]}
+  ]
+},
+
+{
+  "title" : "hf"
+},
+
+{
+  "title" : "hessian",
+  "partial" : true,
+  "atom_list" : [1, 3],
+  "method" : [ {
+    "title" : "hf",
+    "thresh" : 1.0e-10
+  } ]
+}
+
+]}

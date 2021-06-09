@@ -70,6 +70,7 @@ class Hess {
   public:
     Hess(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
+    const std::vector<double>& freq() const { return freq_; } 
     std::shared_ptr<const Matrix> hess() const { return hess_; }
     std::shared_ptr<const Matrix> mw_hess() const { return mw_hess_; }
     std::shared_ptr<const Matrix> proj_hess() const { return proj_hess_; }
