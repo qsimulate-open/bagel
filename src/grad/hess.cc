@@ -68,27 +68,64 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
 
   nproc_ = idata_->get<int>("nproc", 1);
 
+  partial_ = idata_->get<bool>("partial", false);
   const int natom = geom_->natom();
-  const int ndispl = natom * 3;
-  hess_      = make_shared<Matrix>(ndispl, ndispl);
-  mw_hess_   = make_shared<Matrix>(ndispl, ndispl);
-  cartesian_ = make_shared<Matrix>(3, ndispl); //matrix of dmu/dR
+
+  if (partial_) {
+    cout << "  The Hessian will be computed for only designated atoms" << endl;
+    vector<int> input_list = idata_->get_vector<int>("atom_list");
+    nmove_ = input_list.size();
+
+    cout << " " << endl;
+    cout << "    ==== Atoms Displaced : ===== " << endl;
+    for (int i = 0; i != nmove_; ++i)
+      cout << "             Atom " << input_list[i] << endl;
+    cout << "    ============================ " << endl << endl;
+
+    for (int i = 0; i != nmove_; ++i)
+      input_list[i] -= 1; // Convert from 1-based input format to 0-based for C++
+    atom_list_ = set<int>(input_list.begin(), input_list.end());
+  } else {
+    nmove_ = natom;
+    for (int i = 0; i != natom; ++i)
+      atom_list_.insert(i);
+  }
+
+  const int ndim = natom * 3;
+  hess_      = make_shared<Matrix>(ndim, ndim);
+  mw_hess_   = make_shared<Matrix>(ndim, ndim);
+  cartesian_ = make_shared<Matrix>(3, ndim); //matrix of dmu/dR
 }
 
 
 void Hess::compute() {
 
   const int natom = geom_->natom();
-  const int ndispl = natom * 3;
+  const int ndim = natom * 3;
 
   muffle_ = make_shared<Muffle>("freq.log");
 
   // compute Hessian and dipole derivatives using finite difference
   compute_finite_diff_();
 
-  // symmetrize mass weighted hessian
+  //Compute Mass Weighted Hessian
+  for (int i = 0, counter = 0 ; i != natom; ++i)
+    for (int j = 0; j != 3; ++j, ++counter)
+       for (int k = 0, step = 0; k != natom; ++k)
+         for (int l = 0; l != 3; ++l, ++step) {
+           if (atom_list_contains(i) && atom_list_contains(k)) {
+             (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
+           } else if (!atom_list_contains(i)) {
+             (*mw_hess_)(counter,counter) = 1.0e-8;
+           }
+         }		
+  hess_->allreduce();
+  mw_hess_->allreduce();
+
   hess_->print("Hessian");
-  mw_hess_->print("Mass Weighted Hessian", ndispl);
+
+  // symmetrize mass weighted hessian
+  mw_hess_->print("Mass Weighted Hessian", ndim);
   mw_hess_->symmetrize();
 
   // check if all of the mass are equal to the averaged mass
@@ -100,43 +137,43 @@ void Hess::compute() {
   else
     cout << "    (custom masses were specified in the input)" << endl << endl;
 
-  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndispl);
+  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndim);
 
   // compute projected Hessian
   project_zero_freq_();
 
   // diagonalize hessian; eig(i) in Hartree/bohr^2*amu
-  VectorB eig(ndispl);
+  VectorB eig(ndim);
   proj_hess_->diagonalize(eig);
 
   cout << endl << " Mass Weighted Hessian Eigenvalues" << endl; // units Hartree/bohr^2*amu
-  for (int i = 0; i != ndispl; ++i )
+  for (int i = 0; i != ndim; ++i )
     cout << setw(10) << setprecision(5) << eig(i);
   cout << endl;
 
-  proj_hess_->print("Mass Weighted Hessian Eigenvectors", ndispl);
+  proj_hess_->print("Mass Weighted Hessian Eigenvectors", ndim);
 
   // convert mw eigenvectors to normalized cartesian modes
-  eigvec_cart_ = make_shared<Matrix>(ndispl,ndispl);
+  eigvec_cart_ = make_shared<Matrix>(ndim,ndim);
 
   for (int i = 0, counter = 0; i != natom; ++i)
     for (int j = 0; j != 3; ++j, ++counter)
       for (int k = 0, step = 0; k != natom; ++k)
         for (int l = 0; l != 3; ++l, ++step)
-          eigvec_cart_->element(step, counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->mass());
+          eigvec_cart_->element(step,counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->mass());
 
   // calculate IR intensities:
   auto normal = make_shared<Matrix>(*cartesian_ * *eigvec_cart_); // dipole derivatives for the normal modes dmu/dQ; units (e bohr / bohr) * 1/sqrt(amu)
 
-  VectorB dmudq2(ndispl); //square of the dipole derivative in hartree*bohr/amu
-  for (int i = 0; i != ndispl; ++i)
+  VectorB dmudq2(ndim); //square of the dipole derivative in hartree*bohr/amu
+  for (int i = 0; i != ndim; ++i)
     dmudq2(i) = blas::dot_product(normal->element_ptr(0, i), 3, normal->element_ptr(0, i));
 
-  ir_ = vector<double>(ndispl, 0.0);
-  freq_ = vector<double>(ndispl, 0.0);
+  ir_ = vector<double>(ndim, 0.0);
+  freq_ = vector<double>(ndim, 0.0);
 
   //frequences and IR intensity ( N*pi/3*c^2 * (dmu/dQ)^2 )
-  for (int i = 0; i != ndispl; ++i) {
+  for (int i = 0; i != ndim; ++i) {
     freq_[i] = (fabs(eig(i)) > 1.0e-6 ? (eig(i) > 0.0 ? sqrt((eig(i) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) :
       -sqrt((-eig(i)     * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
     ir_[i] = (fabs(eig(i)) > 1.0e-6 ? (eig(i) > 0.0 ? ((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3.0 * 1000.0 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i) :
@@ -148,10 +185,20 @@ void Hess::compute() {
 
 
 void Hess::compute_finite_diff_() {
+
   Timer timer;
-  const int natom = geom_->natom();
   const int ncomm = mpi__->size() / nproc_;
+  const int natom = geom_->natom();
   const int npass = (natom * 3 - 1) / ncomm + 1;
+
+  // helper for status printing
+  map<int, int> status;
+  for (int i = 0, cnt = 1; i != natom; ++i)
+    if (atom_list_contains(i)) {
+      status.emplace(i*3, cnt++);
+      status.emplace(i*3+1, cnt++);
+      status.emplace(i*3+2, cnt++);
+    }
 
   for (int ipass = 0; ipass != npass; ++ipass) {
     const int ncolor = min(ncomm, natom*3-ncomm*ipass);
@@ -165,66 +212,73 @@ void Hess::compute_finite_diff_() {
     muffle_->mute();
 
     vector<double> dipole_plus;
-    shared_ptr<const GradFile> outplus;
-    //displace +dx
-    {
-      auto displ = make_shared<XYZFile>(natom);
-      displ->element(j,i) = dx_;
-      auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
-      geom_plus->print_atoms();
-
-      shared_ptr<const Reference> ref_plus;
-      if (ref_)
-        ref_plus = ref_->project_coeff(geom_plus);
-
-      auto plus = make_shared<Force>(idata_, geom_plus, ref_plus);
-      outplus = plus->compute();
-      dipole_plus = plus->force_dipole();
-    }
-
-    // displace -dx
     vector<double> dipole_minus;
+    shared_ptr<const GradFile> outplus;
     shared_ptr<const GradFile> outminus;
-    {
-      auto displ = make_shared<XYZFile>(natom);
-      displ->element(j,i) = -dx_;
-      auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
-      geom_minus->print_atoms();
 
-      shared_ptr<const Reference> ref_minus;
-      if (ref_)
-        ref_minus = ref_->project_coeff(geom_minus);
+    if (atom_list_contains(i)) {
+      //displace +dx
+      {
+        auto displ = make_shared<XYZFile>(natom);
+        displ->element(j,i) = dx_;
+        auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+        geom_plus->print_atoms();
 
-      auto minus = make_shared<Force>(idata_, geom_minus, ref_minus);
-      outminus = minus->compute();
-      dipole_minus = minus->force_dipole();
+        shared_ptr<const Reference> ref_plus;
+        if (ref_)
+          ref_plus = ref_->project_coeff(geom_plus);
+
+        auto plus = make_shared<Force>(idata_, geom_plus, ref_plus);
+        outplus = plus->compute();
+        dipole_plus = plus->force_dipole();
+      }
+
+      // displace -dx
+      {
+        auto displ = make_shared<XYZFile>(natom);
+        displ->element(j,i) = -dx_;
+        auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+        geom_minus->print_atoms();
+
+        shared_ptr<const Reference> ref_minus;
+        if (ref_)
+          ref_minus = ref_->project_coeff(geom_minus);
+
+        auto minus = make_shared<Force>(idata_, geom_minus, ref_minus);
+        outminus = minus->compute();
+        dipole_minus = minus->force_dipole();
+      }
     }
 
     if (mpi__->rank() == 0) {
       for (int k = 0, step = 0; k != natom; ++k) { // atom j
         for (int l = 0; l != 3; ++l, ++step) { //xyz
-          (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
-          (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
-          (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
+          if (atom_list_contains(i) && atom_list_contains(k)) {
+            (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
+            (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
+           } else if (!atom_list_contains(i)) {
+            (*hess_)(counter,counter) = 1.0e-8;
+          }
         }
       }
     }
+
     muffle_->unmute();
-    stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << natom * 3 << ")";
-    timer.tick_print(ss.str());
+    if (atom_list_contains(i)) {
+      stringstream ss; ss << "Hessian evaluation (" << setw(2) << status.at(i*3+j) << " / " << status.size() << ")";
+      timer.tick_print(ss.str());
+    }
 
     mpi__->merge();
   }
 
-  hess_->allreduce();
-  mw_hess_->allreduce();
   cartesian_->allreduce();
 }
 
 
 void Hess::project_zero_freq_() {
   const int natom = geom_->natom();
-  const int ndispl = natom * 3;
+  const int ndim = natom * 3;
 
   // calculate center of mass
   VectorB cmass(3); // values needed to calc center of mass. mi*xi, mi*yi, mi*zi, and total mass
@@ -238,7 +292,7 @@ void Hess::project_zero_freq_() {
   blas::scale_n(1.0/total_mass, cmass.data(), 3);
   cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
 
-  Matrix proj(6, ndispl);
+  Matrix proj(6, ndim);
   for (int i = 0; i != natom; ++i) {
     const double imass = sqrt(geom_->atoms(i)->mass());
     const array<double,3> pos {{geom_->atoms(i)->position(0) - cmass(0),
@@ -262,16 +316,16 @@ void Hess::project_zero_freq_() {
 
   //normalize the set of six orthogonal vectors
   vector<double> norm(6, 0.0);
-  for (int i = 0; i != ndispl; ++i)
+  for (int i = 0; i != ndim; ++i)
     for (int j = 0; j != 6; ++j)
       norm[j] += proj(j, i) * proj(j, i);
 
-  for (int i = 0; i != ndispl; ++i)
+  for (int i = 0; i != ndim; ++i)
     for (int j = 0; j != 6; ++j)
       if (fabs(norm[j]) > 1.0e-15)
         proj(j, i) /= sqrt(norm[j]);
 
-  Matrix p(ndispl, ndispl);
+  Matrix p(ndim,ndim);
   p.unit();
   p -= proj % proj;
 

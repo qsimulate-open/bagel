@@ -25,6 +25,7 @@
 #ifndef __SRC_GRAD_HESS_H
 #define __SRC_GRAD_HESS_H
 
+#include <set>
 #include <src/wfn/reference.h>
 #include <src/util/muffle.h>
 #include <src/util/atommap.h>
@@ -40,8 +41,10 @@ class Hess {
 
     bool numhess_;
     bool numforce_;
+    bool partial_;
 
     int nproc_;
+    int nmove_;
 
     std::shared_ptr<Matrix> hess_;
     std::shared_ptr<Matrix> mw_hess_;
@@ -50,6 +53,9 @@ class Hess {
     std::shared_ptr<Matrix> cartesian_;
     std::vector<double> ir_;
     std::vector<double> freq_;
+
+    std::set<int> atom_list_;
+    bool atom_list_contains(const int x) const { return atom_list_.find(x) != atom_list_.end(); } 
 
     double dx_;
     double energy_;
@@ -64,6 +70,7 @@ class Hess {
   public:
     Hess(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
+    const std::vector<double>& freq() const { return freq_; } 
     std::shared_ptr<const Matrix> hess() const { return hess_; }
     std::shared_ptr<const Matrix> mw_hess() const { return mw_hess_; }
     std::shared_ptr<const Matrix> proj_hess() const { return proj_hess_; }

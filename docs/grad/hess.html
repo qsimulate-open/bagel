@@ -75,11 +75,27 @@
 <div class="section" id="optional-keywords">
 <h3>Optional Keywords<a class="headerlink" href="#optional-keywords" title="Permalink to this headline">¶</a></h3>
 <div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">atom_list</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Atoms to be displaced in Partial Hessian Vibrational Analysis (PHVA).</div> 
+<div class="line"><strong>Datatype:</strong> vector</div>
+<div class="line"><strong>Default:</strong> all atoms (Full Harmonic Vibrational Analysis (FHVA))</div>
+</div>
+</div>
+<div class="topic">
 <p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nproc</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The Hessian code is embarrassingly parallelized so that the displacements in the central gradient difference calculations can be run at the same time. The nproc keyword allows the user to specify the number of MPI processes to be used for each gradient calculation.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
 <div class="line"><strong>Default:</strong> 1</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">partial</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Requests Partial Hessian Vibrational Analysis (PHVA) be used.</div> 
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> false</div>
 </div>
 </div>
 </div>
