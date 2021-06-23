@@ -82,7 +82,7 @@ complex<double> SphHarmonics::ylm() const {
   if (am > l)
     throw runtime_error ("SphHarmonics.ylm: |m| > l");
 
-  const double plm = legendre.compute(l, am, cth);
+  const double plm = ::legendre.compute(l, am, cth);
   double fact = 1.0;
   for (int i = 1; i <= 2*am; ++i)
     fact *= l - am + i;
@@ -109,7 +109,7 @@ double SphHarmonics::zlm() const {
   const double cth = cos(theta_);
   const int am = abs(m);
 
-  const double plm = legendre.compute(l, am, cth);
+  const double plm = ::legendre.compute(l, am, cth);
 
   double coef0 = 1.0;
   for (unsigned int i = l + am; i > (l - am); i--) coef0 *= i;
@@ -133,7 +133,7 @@ double SphHarmonics::zlm(const int l, const int m) const {
     throw runtime_error ("SphHarmonics.zlm: |m| > l");
   const double cth = cos(theta_);
 
-  const double plm = legendre.compute(l, am, cth);
+  const double plm = ::legendre.compute(l, am, cth);
 
   double coef0 = 1.0;
   for (unsigned int i = l + am; i > (l - am); i--) coef0 *= i;
