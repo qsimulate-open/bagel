@@ -24,6 +24,7 @@
 
 #include <fstream>
 #include <string>
+#include <boost/archive/basic_archive.hpp>
 #include <src/util/input/input.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
