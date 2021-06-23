@@ -23,6 +23,7 @@
 //
 
 
+#include <boost/archive/basic_archive.hpp>
 #include <sstream>
 #include <src/molecule/shell_base.h>
 
