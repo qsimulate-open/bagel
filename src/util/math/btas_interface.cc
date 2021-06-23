@@ -22,6 +22,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <boost/archive/basic_archive.hpp>
 #include <src/util/serialization.h>
 #include <src/util/math/btas_interface.h>
 
