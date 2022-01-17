@@ -27,8 +27,8 @@
 using namespace std;
 using namespace bagel;
 
-StackMem::StackMem() : pointer_(0LU), total_(20000000LU) { // TODO this should not be hardwired
-  stack_area_ = unique_ptr<double[]>(new double[total_]);
+StackMem::StackMem(size_t init_line_size) :current_size_(0LU),  water_line_(init_line_size) {
+  stack_lines_.push_back(StackMemLine(water_line_));
 
   // in case we use Libint for ERI
 #ifdef LIBINT_INTERFACE
@@ -39,6 +39,18 @@ StackMem::StackMem() : pointer_(0LU), total_(20000000LU) { // TODO this should n
   else
     LIBINT2_PREFIXED_NAME(libint2_init_3eri1)(&libint_t_[0], LIBINT2_MAX_AM_3eri1, 0);
 #endif
+}
+
+void StackMem::clear(){
+  current_size_ = 0LU;
+  if (water_line_ > stack_lines_.front().max_size()) {
+    stack_lines_.clear();
+    stack_lines_.push_back(StackMemLine(water_line_));
+  } else {
+    stack_lines_.resize(1);
+    stack_lines_.front().clear();
+  }
+  assert(stack_lines_.size() == 1);
 }
 
 
