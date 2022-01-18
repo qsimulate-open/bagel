@@ -53,7 +53,7 @@ class CASNoopt : public CASSCF {
         energy_ = ref_->energy();
       }
 
-      if (canonical_) {
+      {
         auto tmp = semi_canonical_orb();
         coeff_ = std::get<0>(tmp);
         eig_   = std::get<1>(tmp);
