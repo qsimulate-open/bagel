@@ -584,7 +584,7 @@ void DysonOrbitals::write_molden()
       // Spin doesn't matter.
       ss << " Spin= Alpha" << endl;
       // We abuse the symmetry keyword for storing information about the transition, I->F.
-      ss << " Sym= " << i << "->" << j << endl;
+      ss << " Sym= " << initial_states_[i] << "->" << final_states_[j] << endl;
       // The occupation keyword is abused for storing the dyson norm.
       ss << " Occup= " << setw(12) << norms_[ij] << endl;
       mfs.write_mo_single(ss, coeff_.element_ptr(0, ij));
