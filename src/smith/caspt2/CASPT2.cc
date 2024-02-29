@@ -29,6 +29,7 @@
 #include <iostream>
 #include <iomanip>
 #include <src/smith/caspt2/CASPT2.h>
+#include <src/util/archive.h>
 #include <src/util/math/linearRM.h>
 #include <src/smith/caspt2/MSCASPT2.h>
 
@@ -253,6 +254,41 @@ void CASPT2::CASPT2::solve() {
     heff_->element(0,0) = 1.0;
   }
   energy_ = pt2energy_;
+
+  if (!info_->save_ref_file().empty()) {
+    // If XMS is enabled, at this stage the CI vectors in info->ciwfn()
+    // are the rotated reference functions
+    //  |N~> = ∑_{M} |M> U_{M,N}
+    // The XMS-CASPT2 wavefunctions are obtained by transforming the rotated
+    // reference functions with the normalized eigenvectors T of the effective
+    // Hamiltonian Heff,
+    // Eqn.(11) in Shiozaki et al. J. Chem. Phys. 135, 081106 (2011):
+    //  |Ψ_N> = ∑_{M} |M~> T_{M,N}
+    // After diagonalization, heff_ contains the eigenvectors T of Heff.
+
+    // Compute |Ψ_N> from |M~> and eigenvectors of Heff.
+    auto mscaspt2_ciwfn = this->rotate_ciwfn(info_->ciwfn(), *heff_);
+    cout << endl;
+    if (xmsmat_) {
+      cout << "X";
+    }
+    cout << "MS-CASPT2 CI vectors" << endl;
+    mscaspt2_ciwfn->civectors()->print();
+
+    auto mscaspt2_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
+					      info_->nvirt() + info_->nfrozenvirt(),
+					      energy_, info_->ref()->rdm1(), info_->ref()->rdm2(),
+					      info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), mscaspt2_ciwfn);
+    // Save the (X)MS-CASPT2 CI vectors to file.
+    cout << endl << "The ";
+    if (xmsmat_) {
+      cout << "X";
+    }
+    cout << "MS-CASPT2 references are saved to "
+	 << info_->save_ref_file() << ".archive" << endl;
+    OArchive archive(info_->save_ref_file());
+    archive << mscaspt2_ref;
+  }
 
   // Replace the reference energies with the XMS-CASPT2 energies
   auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
