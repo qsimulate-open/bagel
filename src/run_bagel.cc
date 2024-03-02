@@ -65,6 +65,7 @@ void bagel::run_bagel_from_json(const string& input) {
 void bagel::impl::run_bagel_(shared_ptr<const PTree> idata) {
 
   print_header();
+  print_version();
 
   shared_ptr<const Geometry> geom;
   shared_ptr<const Reference> ref;
