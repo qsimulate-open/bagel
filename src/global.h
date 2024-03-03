@@ -32,8 +32,6 @@
 #include <stdexcept>
 #include <cstdlib>
 
-#include <bagel_config.h>
-
 namespace bagel {
 
 extern void static_variables();
@@ -46,10 +44,6 @@ static void print_header() {
   std::cout << std::endl;
 }
 
-static void print_version() {
-  std::cout << "    Version: " << VERSION << std::endl;
-  std::cout << std::endl;
-}
 
 static void print_footer() {
   std::cout << std::endl;
