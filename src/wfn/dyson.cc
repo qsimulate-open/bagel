@@ -112,9 +112,9 @@ DysonOrbitals::DysonOrbitals(shared_ptr<const PTree> input) :
   molden_file_ = input_->get<string>("molden_file", "dyson_orbitals.molden");
   
   // initialize member variables
-  geom_     = refF_->geom();
-  nao_      = !refF_->coeffB() ? refF_->coeff()->ndim() : refF_->coeffB()->ndim();
-  nmo_      = !refF_->coeffB() ? refF_->coeff()->mdim() : refF_->coeffB()->mdim();
+  geom_     = refI_->geom();
+  nao_      = !refI_->coeffB() ? refI_->coeff()->ndim() : refI_->coeffB()->ndim();
+  nmo_      = !refI_->coeffB() ? refI_->coeff()->mdim() : refI_->coeffB()->mdim();
   nchan_    = refI_->nstate() * refF_->nstate();
   norms_    = VectorB(nchan_);
   energies_ = VectorB(nchan_);
@@ -487,18 +487,21 @@ void DysonOrbitals::ci_dyson()
   }
   //coeffMO.print("Dyson orbitals in MO basis", 0);
   
-  // convert coefficients of Dyson orbitals from MO to AO basis
+  // Convert coefficients of Dyson orbitals from MO to AO basis.
+  // Since the Dyson orbital is expanded in terms of the MOs
+  // of the inital (N-electron) wavefunctions, the MO coefficients
+  // of refI have to be used.
   if (detF->nelea() == detI->nelea()-1) {
     assert(detF->neleb() == detI->neleb());
     // Dyson orbital has alpha spin
-    auto coeffAf = !refF_->coeffB() ? refF_->coeff() : refF_->coeffA();
-    coeff_ = *coeffAf * coeffMO;
+    auto coeffAi = !refI_->coeffB() ? refI_->coeff() : refI_->coeffA();
+    coeff_ = *coeffAi * coeffMO;
   } else {
     assert(detF->neleb() == detI->neleb()-1);
     assert(detF->nelea() == detI->nelea());
     // Dyson orbital has beta spin
-    auto coeffBf = !refF_->coeffB() ? refF_->coeff() : refF_->coeffB();
-    coeff_ = *coeffBf * coeffMO;
+    auto coeffBi = !refI_->coeffB() ? refI_->coeff() : refI_->coeffB();
+    coeff_ = *coeffBi * coeffMO;
   }
   //coeff_.print("Dyson orbitals in AO basis", 0);
   
@@ -584,7 +587,7 @@ void DysonOrbitals::write_molden()
       // Spin doesn't matter.
       ss << " Spin= Alpha" << endl;
       // We abuse the symmetry keyword for storing information about the transition, I->F.
-      ss << " Sym= " << i << "->" << j << endl;
+      ss << " Sym= " << initial_states_[i] << "->" << final_states_[j] << endl;
       // The occupation keyword is abused for storing the dyson norm.
       ss << " Occup= " << setw(12) << norms_[ij] << endl;
       mfs.write_mo_single(ss, coeff_.element_ptr(0, ij));

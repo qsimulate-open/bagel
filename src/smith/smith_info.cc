@@ -112,6 +112,8 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   external_rdm_ = idata->get<string>("external_rdm", "");
   if (nact() && external_rdm_.empty() && !ciwfn()->civectors())
     throw runtime_error("CI vectors are missing. Most likely you ran CASSCF with external RDMs and forgot to specify external_rdm in the smith input block.");
+
+  save_ref_file_ = idata->get<string>("save_ref", "");
 }
 
 
@@ -123,7 +125,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const
     do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
     shift_diag_(info->shift_diag_), shift_imag_(info->shift_imag_), block_diag_fock_(info->block_diag_fock_), orthogonal_basis_(info->orthogonal_basis_), restart_(info->restart_),
     restart_each_iter_(info->restart_each_iter_), convergence_throw_(info->convergence_throw_), thresh_overlap_(info->thresh_overlap_),
-    state_begin_(info->state_begin_), restart_iter_(info->restart_iter_), aniso_data_(info->aniso_data_), external_rdm_(info->external_rdm_) {
+    state_begin_(info->state_begin_), restart_iter_(info->restart_iter_), aniso_data_(info->aniso_data_), external_rdm_(info->external_rdm_), save_ref_file_(info->save_ref_file_) {
 }
 
 
