@@ -38,7 +38,7 @@ differently for CASSCF than for XMS-CASPT2 calculations:
     },
     ...
 
-- To store the XMS-CASSCF wavefunctions, the filename of the archive
+- To store the XMS-rotated CASSCF wavefunctions, the filename of the archive
   has to be specified with the "save_ref" keyword on the "smith" block:
 
 .. code-block::
@@ -59,7 +59,9 @@ Commands: ``dyson``
 ===========
 Limitations
 ===========
-So far Dyson orbitals have been implemented only for CASSCF and (X)MS-CASPT2 wavefunctions.
+So far Dyson orbitals are only implemented for CASSCF and XMS-rotated reference wavefunctions.
+The perturbative corrections to the XMS-CASPT2 wavefunctions are neglected when calculating
+Dyson orbitals.
 
 ========
 Keywords
@@ -186,8 +188,8 @@ CASSCF Dyson orbitals for ionization of water
    ]}
 
 
-XMS-CASPT2 Dyson orbitals for ionization of water
--------------------------------------------------
+XMS-CAS(PT2) Dyson orbitals for ionization of water
+---------------------------------------------------
 
 .. code-block:: javascript
 
@@ -269,6 +271,6 @@ References
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------+
 | Dyson orbitals (definition and some applications)  | M\. Oana and A. Krylov, J. Chem. Phys. **127**, 234106 (2007).                                      |
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------+
-| XMS-CASPT2 Dyson orbitals                          | T\. Piteša, M\. Sapunar, A\. Ponzi, M\. Gelin, N\. Došlić, W\. Domcke and P\. Decleva,              |
-|                                                    | J. Chem. Theory Comput. **17**, 5098 (2021).                                                        |
+| Dyson orbitals from XMS-rotated reference          | T\. Piteša, M\. Sapunar, A\. Ponzi, M\. Gelin, N\. Došlić, W\. Domcke and P\. Decleva,              |
+| wavefunctions                                      | J. Chem. Theory Comput. **17**, 5098 (2021).                                                        |
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------+
