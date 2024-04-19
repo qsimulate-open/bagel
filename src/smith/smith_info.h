@@ -73,6 +73,9 @@ class SMITH_Info {
     std::shared_ptr<const PTree> aniso_data_;  // Inputs to pseudospin Hamiltonian module
     std::string external_rdm_;
 
+    // If not an empty string, the (X)MS-CASPT2 CI wavefunctions
+    // are saved to an archive. They are needed for calculating Dyson orbitals.
+    std::string save_ref_file_;
   private:
     // serialization
     friend class boost::serialization::access;
@@ -81,7 +84,7 @@ class SMITH_Info {
       ar & ref_ & method_ & ncore_ & nfrozenvirt_ & thresh_ & shift_ & maxiter_;
       ar & maxtile_ & cimaxchunk_ & davidson_subspace_ & grad_;
       ar & do_ms_ & do_xms_ & sssr_ & shift_diag_ & shift_imag_ & block_diag_fock_ & orthogonal_basis_ & restart_ & restart_each_iter_ & convergence_throw_;
-      ar & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_ & external_rdm_;
+      ar & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_ & external_rdm_ & save_ref_file_;
     }
 
   public:
@@ -143,6 +146,7 @@ class SMITH_Info {
     std::shared_ptr<const Geometry> geom() const { return ref_->geom(); }
     std::shared_ptr<const CIWfnT> ciwfn() const;
     std::string external_rdm() const { return external_rdm_; }
+    std::string save_ref_file() const { return save_ref_file_; }
 
     // this function hides coeff function in Reference and RelReference
     std::shared_ptr<const MatType> coeff() const { assert(false); }

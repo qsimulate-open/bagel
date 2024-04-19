@@ -19,12 +19,49 @@ Dyson orbitals require two calculations: one for the initial and one for the fin
 wavefunctions. The wavefunctions have to be saved to files using the ``save_ref``
 command.
 
+As illustrated in the example inputs below, the wavefunctions have to be saved
+differently for CASSCF than for XMS-CASPT2 calculations:
+
+- The CASSCF wavefunctions are saved to file with a "save_ref" block
+  following the "casscf" block:
+
+.. code-block:: javascript
+
+    ...
+    {
+	"title": "casscf",
+	...
+    },
+    {
+	"title" : "save_ref",
+	"file"  : "h2o"
+    },
+    ...
+
+- To store the XMS-rotated CASSCF wavefunctions, the filename of the archive
+  has to be specified with the "save_ref" keyword on the "smith" block:
+
+.. code-block::
+
+   ...
+   {
+	"title": "smith",
+	"method" : "caspt2",
+	"ms" : "true",
+	"xms" : "true",
+	"save_ref": "h2o"
+    },
+    ...
+
+
 Commands: ``dyson``
 
 ===========
 Limitations
 ===========
-So far Dyson orbitals have been implemented only for CASSCF and CASPT2 wavefunctions.
+So far Dyson orbitals are only implemented for CASSCF and XMS-rotated reference wavefunctions.
+The perturbative corrections to the XMS-CASPT2 wavefunctions are neglected when calculating
+Dyson orbitals.
 
 ========
 Keywords
@@ -87,8 +124,8 @@ Keywords
 Example
 =======
 
-Sample input
-------------
+CASSCF Dyson orbitals for ionization of water
+---------------------------------------------
 
 .. code-block:: javascript
 
@@ -151,6 +188,78 @@ Sample input
    ]}
 
 
+XMS-CAS(PT2) Dyson orbitals for ionization of water
+---------------------------------------------------
+
+.. code-block:: javascript
+
+   { "bagel": [
+    {
+	"title": "molecule",
+	"basis": "cc-pvdz",
+	"df_basis": "cc-pvdz-jkfit",
+	"angstrom": true,
+	"geometry": [
+	    {"atom": "H", "xyz" : [ -0.227, -0.825, -2.666] },
+	    {"atom": "O", "xyz" : [  0.186, -0.147, -3.258] },
+	    {"atom": "H", "xyz" : [  0.030,  0.714, -2.796] }
+	]
+    },
+
+    {
+	"title"   : "casscf",
+	"nclosed" : 1,
+	"nact"    : 6,
+	"nstate"  : 5,
+	"charge"  : 0,
+	"nspin"   : 0
+    },
+    {
+	"title": "smith",
+	"method" : "caspt2",
+	"ms" : "true",
+	"xms" : "true",
+	"sssr" : "true",
+	"shift" : 0.2,
+	"save_ref": "h2o"
+    },
+
+    {
+	"title"   : "casscf",
+	"nclosed" : 1,
+	"nact"    : 6,
+	"nstate"  : 5,
+	"charge"  : 1,
+	"nspin"   : 1
+    },
+    {
+	"title": "smith",
+	"method" : "caspt2",
+	"ms" : "true",
+	"xms" : "true",
+	"sssr" : "true",
+	"shift" : 0.2,
+	"save_ref": "h2o+"
+    },
+
+    {
+	"title"   : "dyson",
+	"initial" :
+        {
+	    "states" : [0,1,2,3,4],
+	    "file"   : "h2o"
+	},
+	"final"   :
+	{
+	    "states" : [0,1,2,3,4],
+	    "file"   : "h2o+"
+	},
+	"thresh"  : 1.0e-8,
+	"molden_file" : "dyson_orbitals.molden"
+    }
+    ]}
+
+
 ==========
 References
 ==========
@@ -162,5 +271,6 @@ References
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------+
 | Dyson orbitals (definition and some applications)  | M\. Oana and A. Krylov, J. Chem. Phys. **127**, 234106 (2007).                                      |
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------+
-
-
+| Dyson orbitals from XMS-rotated reference          | T\. Piteša, M\. Sapunar, A\. Ponzi, M\. Gelin, N\. Došlić, W\. Domcke and P\. Decleva,              |
+| wavefunctions                                      | J. Chem. Theory Comput. **17**, 5098 (2021).                                                        |
++----------------------------------------------------+-----------------------------------------------------------------------------------------------------+
