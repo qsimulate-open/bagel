@@ -96,13 +96,31 @@ VectorB reference_dyson_norms_butadiene() {
   return norms;
 }
 
+VectorB reference_dyson_norms_h2o_xmscaspt2() {
+  VectorB norms(9);
+
+  norms[0] = 0.9483230;
+  norms[1] = 0.9554380;
+  norms[2] = 0.9671701;
+  norms[3] = 0.6968931;
+  norms[4] = 0.0008876;
+  norms[5] = 0.0000602;
+  norms[6] = 0.6954588;
+  norms[7] = 0.0000079;
+  norms[8] = 0.0148538;
+
+  return norms;
+}
+
 BOOST_AUTO_TEST_SUITE(TEST_DYSON)
 
-BOOST_AUTO_TEST_CASE(DYSON_NORMS_H2O) {
+BOOST_AUTO_TEST_CASE(DYSON_NORMS_H2O_CASSCF) {
   BOOST_CHECK(compare(dyson_norms("h2o_svp_cas_dyson"), reference_dyson_norms_h2o(), 0.000001));
 }
-BOOST_AUTO_TEST_CASE(DYSON_NORMS_BUTADIENE) {
+BOOST_AUTO_TEST_CASE(DYSON_NORMS_BUTADIENE_CASSCF) {
   BOOST_CHECK(compare(dyson_norms("butadiene_svp_cas_dyson"), reference_dyson_norms_butadiene(), 0.000001));
 }
-
+BOOST_AUTO_TEST_CASE(DYSON_NORMS_H2O_XMSCASPT2) {
+  BOOST_CHECK(compare(dyson_norms("h2o_svp_xms-caspt2_dyson"), reference_dyson_norms_h2o_xmscaspt2(), 0.000001));
+}
 BOOST_AUTO_TEST_SUITE_END()

@@ -2,8 +2,8 @@
 
     { 
 	"title": "molecule",
-	"basis": "cc-pvdz",
-	"df_basis": "cc-pvdz-jkfit",
+	"basis": "svp",
+	"df_basis": "svp-jkfit",
 	"angstrom": true,
 	"geometry": [
 	    {"atom": "H",
@@ -19,14 +19,9 @@
 	"title"   : "casscf",
 	"nclosed" : 1,
 	"nact"    : 6,
-	"nstate"  : 5,
+	"nstate"  : 3,
 	"charge"  : 0,
 	"nspin"   : 0
-    },
-    {
-	"title": "print",
-	"file": "h2o.molden",
-	"orbitals": true
     },
     {
 	"title": "smith",
@@ -34,7 +29,7 @@
 	"ms" : "true",
 	"xms" : "true",
 	"sssr" : "true",
-	"shift" : 0.2,
+	"shift" : 0.5,
 	"save_ref": "h2o"
     },
     
@@ -42,14 +37,9 @@
 	"title"   : "casscf",
 	"nclosed" : 1,
 	"nact"    : 6,
-	"nstate"  : 5,
+	"nstate"  : 3,
 	"charge"  : 1,
 	"nspin"   : 1
-    },
-    {
-	"title": "print",
-	"file": "h2o+.molden",
-	"orbitals": true
     },
     {
 	"title": "smith",
@@ -57,7 +47,7 @@
 	"ms" : "true",
 	"xms" : "true",
 	"sssr" : "true",
-	"shift" : 0.2,
+	"shift" : 0.5,
 	"save_ref": "h2o+"
     },
 
@@ -65,12 +55,12 @@
 	"title"   : "dyson",
 	"initial" :
         {
-	    "states" : [0,1,2,3,4],
+	    "states" : [0,1,2],
 	    "file"   : "h2o"
 	},
 	"final"   :
 	{
-	    "states" : [0,1,2,3,4],
+	    "states" : [0,1,2],
 	    "file"   : "h2o+"
 	},
 	"thresh"  : 1.0e-8,
